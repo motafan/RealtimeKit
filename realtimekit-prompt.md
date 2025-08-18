@@ -11,6 +11,9 @@
 - 高性能、低延迟的实时通信体验
 - 完善的错误处理和状态管理
 - **音量指示器功能，支持"谁在说话"波纹动画**
+- **音频设置持久化存储**
+- **身份切换功能**
+- **灵活的音频流控制**
 
 ## 技术要求
 
@@ -26,6 +29,7 @@
 4. **Async/Await** - 全面支持现代 Swift 异步编程
 5. **Memory Safety** - 避免内存泄漏，合理管理资源
 6. **Modular Design** - 模块化架构，可直接封装为 Swift Package
+7. **Data Persistence** - 智能的设置持久化机制
 
 ## 核心功能模块
 
@@ -35,15 +39,31 @@
 public protocol RTCProvider {
     func initialize(config: RTCConfig) async throws
     func createRoom(roomId: String) async throws -> RTCRoom
-    func joinRoom(roomId: String, userId: String) async throws
+    func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws
     func leaveRoom() async throws
+    func switchUserRole(_ role: UserRole) async throws
+    
+    // 音频流控制
+    func muteMicrophone(_ muted: Bool) async throws
+    func isMicrophoneMuted() -> Bool
+    func stopLocalAudioStream() async throws
+    func resumeLocalAudioStream() async throws
+    func isLocalAudioStreamActive() -> Bool
+    
+    // 音量控制 API
+    func setAudioMixingVolume(_ volume: Int) async throws      // 0-100
+    func getAudioMixingVolume() -> Int
+    func setPlaybackSignalVolume(_ volume: Int) async throws   // 0-100
+    func getPlaybackSignalVolume() -> Int
+    func setRecordingSignalVolume(_ volume: Int) async throws  // 0-100
+    func getRecordingSignalVolume() -> Int
     
     // 转推流功能
     func startStreamPush(config: StreamPushConfig) async throws
     func stopStreamPush() async throws
     func updateStreamPushLayout(layout: StreamLayout) async throws
     
-    // 继媒体流功能
+    // 跨媒体流功能
     func startMediaRelay(config: MediaRelayConfig) async throws
     func stopMediaRelay() async throws
     func updateMediaRelayChannels(config: MediaRelayConfig) async throws
@@ -60,7 +80,7 @@ public protocol RTCProvider {
     
     // Token 管理
     func renewToken(_ newToken: String) async throws
-    func onTokenWillExpire(_ handler: @escaping (Int) -> Void) // 秒数倒计时
+    func onTokenWillExpire(_ handler: @escaping (Int) -> Void)
 }
 
 public protocol RTMProvider {
@@ -78,7 +98,88 @@ public protocol RTMProvider {
     func onTokenWillExpire(_ handler: @escaping (Int) -> Void)
 }
 
-// 新增转推流配置
+// 新增用户角色枚举
+public enum UserRole: String, CaseIterable, Codable {
+    case broadcaster = "broadcaster"    // 主播
+    case audience = "audience"         // 观众
+    case coHost = "co_host"           // 连麦嘉宾
+    case moderator = "moderator"      // 主持人
+    
+    public var displayName: String {
+        switch self {
+        case .broadcaster: return "主播"
+        case .audience: return "观众"
+        case .coHost: return "连麦嘉宾"
+        case .moderator: return "主持人"
+        }
+    }
+    
+    public var hasAudioPermission: Bool {
+        switch self {
+        case .broadcaster, .coHost, .moderator: return true
+        case .audience: return false
+        }
+    }
+    
+    public var hasVideoPermission: Bool {
+        switch self {
+        case .broadcaster, .coHost: return true
+        case .audience, .moderator: return false
+        }
+    }
+}
+
+// 新增音频设置模型
+public struct AudioSettings: Codable {
+    let microphoneMuted: Bool
+    let audioMixingVolume: Int        // 0-100
+    let playbackSignalVolume: Int     // 0-100
+    let recordingSignalVolume: Int    // 0-100
+    let localAudioStreamActive: Bool
+    
+    public init(
+        microphoneMuted: Bool = false,
+        audioMixingVolume: Int = 100,
+        playbackSignalVolume: Int = 100,
+        recordingSignalVolume: Int = 100,
+        localAudioStreamActive: Bool = true
+    ) {
+        self.microphoneMuted = microphoneMuted
+        self.audioMixingVolume = max(0, min(100, audioMixingVolume))
+        self.playbackSignalVolume = max(0, min(100, playbackSignalVolume))
+        self.recordingSignalVolume = max(0, min(100, recordingSignalVolume))
+        self.localAudioStreamActive = localAudioStreamActive
+    }
+    
+    public static let `default` = AudioSettings()
+}
+
+// 新增用户会话信息
+public struct UserSession: Codable {
+    let userId: String
+    let userName: String
+    let userRole: UserRole
+    let avatar: String?
+    let lastActiveTime: Date
+    let audioSettings: AudioSettings
+    
+    public init(
+        userId: String,
+        userName: String,
+        userRole: UserRole = .audience,
+        avatar: String? = nil,
+        audioSettings: AudioSettings = .default
+    ) {
+        self.userId = userId
+        self.userName = userName
+        self.userRole = userRole
+        self.avatar = avatar
+        self.lastActiveTime = Date()
+        self.audioSettings = audioSettings
+    }
+}
+
+// 转推流配置
 public struct StreamPushConfig {
     let pushUrl: String
     let width: Int
@@ -103,7 +204,7 @@ public struct StreamRegion {
     let alpha: Double
 }
 
-// 新增继媒体流配置
+// 跨媒体流配置
 public struct MediaRelayConfig {
     let sourceChannel: MediaRelayChannelInfo
     let destinationChannels: [MediaRelayChannelInfo]
@@ -152,7 +253,7 @@ public enum MediaRelayError: Error {
     case networkError(String)
 }
 
-// 新增音量指示器相关配置
+// 音量指示器相关配置
 public struct VolumeDetectionConfig {
     let detectionInterval: Int      // 检测间隔（毫秒）
     let speakingThreshold: Float    // 说话音量阈值 (0.0 - 1.0)
@@ -202,48 +303,386 @@ public enum VolumeEvent {
 
 ### 2. 统一管理器 (Manager)
 ```swift
-public class RealtimeManager {
+public class RealtimeManager: ObservableObject {
     public static let shared = RealtimeManager()
     
-    public func configure(provider: ProviderType, config: RealtimeConfig)
+    // MARK: - Published Properties for SwiftUI
+    @Published public private(set) var currentSession: UserSession?
+    @Published public private(set) var audioSettings: AudioSettings = .default
+    @Published public private(set) var connectionState: ConnectionState = .disconnected
+    @Published public private(set) var streamPushState: StreamPushState = .stopped
+    @Published public private(set) var mediaRelayState: MediaRelayState?
+    
+    private let settingsStorage = AudioSettingsStorage()
+    private let sessionStorage = UserSessionStorage()
+    private var rtcProvider: RTCProvider!
+    private var rtmProvider: RTMProvider!
+    
+    public func configure(provider: ProviderType, config: RealtimeConfig) async throws
     public func switchProvider(to: ProviderType) async throws
     public func getCurrentProvider() -> ProviderType
     
-    // Token 管理
-    public func setupTokenRenewal(handler: @escaping (ProviderType) async -> String)
-    public func renewAllTokens() async throws
+    // MARK: - 身份管理
+    public func loginUser(
+        userId: String, 
+        userName: String, 
+        userRole: UserRole = .audience,
+        avatar: String? = nil
+    ) async throws {
+        let session = UserSession(
+            userId: userId,
+            userName: userName,
+            userRole: userRole,
+            avatar: avatar,
+            audioSettings: settingsStorage.loadAudioSettings()
+        )
+        currentSession = session
+        sessionStorage.saveUserSession(session)
+        
+        // 恢复音频设置
+        await restoreAudioSettings()
+    }
     
-    // 转推流管理
-    public func startLiveStreaming(config: StreamPushConfig) async throws
-    public func stopLiveStreaming() async throws
-    public func updateStreamLayout(_ layout: StreamLayout) async throws
+    public func logoutUser() async throws {
+        await leaveRoom()
+        currentSession = nil
+        sessionStorage.clearUserSession()
+    }
     
-    // 继媒体流管理
-    public func startMediaRelay(config: MediaRelayConfig) async throws
-    public func stopMediaRelay() async throws
-    public func updateMediaRelayChannels(config: MediaRelayConfig) async throws
-    public func pauseMediaRelayChannel(_ channel: String) async throws
-    public func resumeMediaRelayChannel(_ channel: String) async throws
-    public func getMediaRelayState() -> MediaRelayState?
+    public func switchUserRole(_ role: UserRole) async throws {
+        guard var session = currentSession else {
+            throw RealtimeError.noActiveSession
+        }
+        
+        try await rtcProvider.switchUserRole(role)
+        
+        session = UserSession(
+            userId: session.userId,
+            userName: session.userName,
+            userRole: role,
+            avatar: session.avatar,
+            audioSettings: session.audioSettings
+        )
+        currentSession = session
+        sessionStorage.saveUserSession(session)
+    }
     
-    // 音量指示器管理
-    public func enableVolumeIndicator(config: VolumeDetectionConfig) async throws
-    public func disableVolumeIndicator() async throws
-    public func setGlobalVolumeHandler(_ handler: @escaping ([UserVolumeInfo]) -> Void)
-    public func getCurrentSpeakingUsers() -> Set<String>
-    public func getDominantSpeaker() -> String?
-    public func getVolumeLevel(for userId: String) -> Float
+    public func getCurrentUserRole() -> UserRole? {
+        return currentSession?.userRole
+    }
     
-    // 消息处理中心
-    public func setGlobalMessageHandler(_ handler: @escaping (RealtimeMessage) -> Void)
-    public func registerMessageProcessor(_ processor: MessageProcessor)
+    public func hasAudioPermission() -> Bool {
+        return currentSession?.userRole.hasAudioPermission ?? false
+    }
+    
+    public func hasVideoPermission() -> Bool {
+        return currentSession?.userRole.hasVideoPermission ?? false
+    }
+    
+    // MARK: - 音频控制与持久化
+    public func muteMicrophone(_ muted: Bool) async throws {
+        try await rtcProvider.muteMicrophone(muted)
+        await updateAudioSettings { settings in
+            AudioSettings(
+                microphoneMuted: muted,
+                audioMixingVolume: settings.audioMixingVolume,
+                playbackSignalVolume: settings.playbackSignalVolume,
+                recordingSignalVolume: settings.recordingSignalVolume,
+                localAudioStreamActive: settings.localAudioStreamActive
+            )
+        }
+    }
+    
+    public func isMicrophoneMuted() -> Bool {
+        return audioSettings.microphoneMuted
+    }
+    
+    public func stopLocalAudioStream() async throws {
+        try await rtcProvider.stopLocalAudioStream()
+        await updateAudioSettings { settings in
+            AudioSettings(
+                microphoneMuted: settings.microphoneMuted,
+                audioMixingVolume: settings.audioMixingVolume,
+                playbackSignalVolume: settings.playbackSignalVolume,
+                recordingSignalVolume: settings.recordingSignalVolume,
+                localAudioStreamActive: false
+            )
+        }
+    }
+    
+    public func resumeLocalAudioStream() async throws {
+        try await rtcProvider.resumeLocalAudioStream()
+        await updateAudioSettings { settings in
+            AudioSettings(
+                microphoneMuted: settings.microphoneMuted,
+                audioMixingVolume: settings.audioMixingVolume,
+                playbackSignalVolume: settings.playbackSignalVolume,
+                recordingSignalVolume: settings.recordingSignalVolume,
+                localAudioStreamActive: true
+            )
+        }
+    }
+    
+    public func isLocalAudioStreamActive() -> Bool {
+        return audioSettings.localAudioStreamActive
+    }
+    
+    public func setAudioMixingVolume(_ volume: Int) async throws {
+        let clampedVolume = max(0, min(100, volume))
+        try await rtcProvider.setAudioMixingVolume(clampedVolume)
+        await updateAudioSettings { settings in
+            AudioSettings(
+                microphoneMuted: settings.microphoneMuted,
+                audioMixingVolume: clampedVolume,
+                playbackSignalVolume: settings.playbackSignalVolume,
+                recordingSignalVolume: settings.recordingSignalVolume,
+                localAudioStreamActive: settings.localAudioStreamActive
+            )
+        }
+    }
+    
+    public func setPlaybackSignalVolume(_ volume: Int) async throws {
+        let clampedVolume = max(0, min(100, volume))
+        try await rtcProvider.setPlaybackSignalVolume(clampedVolume)
+        await updateAudioSettings { settings in
+            AudioSettings(
+                microphoneMuted: settings.microphoneMuted,
+                audioMixingVolume: settings.audioMixingVolume,
+                playbackSignalVolume: clampedVolume,
+                recordingSignalVolume: settings.recordingSignalVolume,
+                localAudioStreamActive: settings.localAudioStreamActive
+            )
+        }
+    }
+    
+    public func setRecordingSignalVolume(_ volume: Int) async throws {
+        let clampedVolume = max(0, min(100, volume))
+        try await rtcProvider.setRecordingSignalVolume(clampedVolume)
+        await updateAudioSettings { settings in
+            AudioSettings(
+                microphoneMuted: settings.microphoneMuted,
+                audioMixingVolume: settings.audioMixingVolume,
+                playbackSignalVolume: settings.playbackSignalVolume,
+                recordingSignalVolume: clampedVolume,
+                localAudioStreamActive: settings.localAudioStreamActive
+            )
+        }
+    }
+    
+    // MARK: - 私有方法
+    @MainActor
+    private func updateAudioSettings(_ updater: (AudioSettings) -> AudioSettings) {
+        let newSettings = updater(audioSettings)
+        audioSettings = newSettings
+        settingsStorage.saveAudioSettings(newSettings)
+        
+        // 更新当前会话
+        if let session = currentSession {
+            let updatedSession = UserSession(
+                userId: session.userId,
+                userName: session.userName,
+                userRole: session.userRole,
+                avatar: session.avatar,
+                audioSettings: newSettings
+            )
+            currentSession = updatedSession
+            sessionStorage.saveUserSession(updatedSession)
+        }
+    }
+    
+    private func restoreAudioSettings() async {
+        let settings = settingsStorage.loadAudioSettings()
+        await MainActor.run {
+            audioSettings = settings
+        }
+        
+        // 恢复到 RTC Provider
+        do {
+            try await rtcProvider.muteMicrophone(settings.microphoneMuted)
+            try await rtcProvider.setAudioMixingVolume(settings.audioMixingVolume)
+            try await rtcProvider.setPlaybackSignalVolume(settings.playbackSignalVolume)
+            try await rtcProvider.setRecordingSignalVolume(settings.recordingSignalVolume)
+            
+            if settings.localAudioStreamActive {
+                try await rtcProvider.resumeLocalAudioStream()
+            } else {
+                try await rtcProvider.stopLocalAudioStream()
+            }
+        } catch {
+            print("Failed to restore audio settings: \(error)")
+        }
+    }
+    
+    // MARK: - Token 管理
+    public func setupTokenRenewal(handler: @escaping (ProviderType) async -> String) {
+        // Token 续期实现
+    }
+    
+    public func renewAllTokens() async throws {
+        // 续期所有 Token
+    }
+    
+    // MARK: - 转推流管理
+    public func startLiveStreaming(config: StreamPushConfig) async throws {
+        try await rtcProvider.startStreamPush(config: config)
+        await MainActor.run {
+            streamPushState = .running
+        }
+    }
+    
+    public func stopLiveStreaming() async throws {
+        try await rtcProvider.stopStreamPush()
+        await MainActor.run {
+            streamPushState = .stopped
+        }
+    }
+    
+    public func updateStreamLayout(_ layout: StreamLayout) async throws {
+        try await rtcProvider.updateStreamPushLayout(layout: layout)
+    }
+    
+    // MARK: - 跨媒体流管理
+    public func startMediaRelay(config: MediaRelayConfig) async throws {
+        try await rtcProvider.startMediaRelay(config: config)
+    }
+    
+    public func stopMediaRelay() async throws {
+        try await rtcProvider.stopMediaRelay()
+    }
+    
+    public func updateMediaRelayChannels(config: MediaRelayConfig) async throws {
+        try await rtcProvider.updateMediaRelayChannels(config: config)
+    }
+    
+    public func pauseMediaRelayChannel(_ channel: String) async throws {
+        try await rtcProvider.pauseMediaRelay(toChannel: channel)
+    }
+    
+    public func resumeMediaRelayChannel(_ channel: String) async throws {
+        try await rtcProvider.resumeMediaRelay(toChannel: channel)
+    }
+    
+    public func getMediaRelayState() -> MediaRelayState? {
+        return mediaRelayState
+    }
+    
+    // MARK: - 音量指示器管理
+    public func enableVolumeIndicator(config: VolumeDetectionConfig) async throws {
+        try await rtcProvider.enableVolumeIndicator(config: config)
+    }
+    
+    public func disableVolumeIndicator() async throws {
+        try await rtcProvider.disableVolumeIndicator()
+    }
+    
+    public func setGlobalVolumeHandler(_ handler: @escaping ([UserVolumeInfo]) -> Void) {
+        rtcProvider.setVolumeIndicatorHandler(handler)
+    }
+    
+    public func getCurrentSpeakingUsers() -> Set<String> {
+        let volumeInfos = rtcProvider.getCurrentVolumeInfos()
+        return Set(volumeInfos.filter { $0.isSpeaking }.map { $0.userId })
+    }
+    
+    public func getDominantSpeaker() -> String? {
+        let volumeInfos = rtcProvider.getCurrentVolumeInfos()
+        return volumeInfos.filter { $0.isSpeaking }.max { $0.volume < $1.volume }?.userId
+    }
+    
+    public func getVolumeLevel(for userId: String) -> Float {
+        return rtcProvider.getVolumeInfo(for: userId)?.volume ?? 0.0
+    }
+    
+    // MARK: - 消息处理中心
+    public func setGlobalMessageHandler(_ handler: @escaping (RealtimeMessage) -> Void) {
+        rtmProvider.setMessageHandler(handler)
+    }
+    
+    public func registerMessageProcessor(_ processor: MessageProcessor) {
+        // 注册消息处理器
+    }
+    
+    // MARK: - 房间管理
+    public func joinRoom(roomId: String) async throws {
+        guard let session = currentSession else {
+            throw RealtimeError.noActiveSession
+        }
+        
+        try await rtcProvider.joinRoom(roomId: roomId, userId: session.userId, userRole: session.userRole)
+        await MainActor.run {
+            connectionState = .connected
+        }
+    }
+    
+    public func leaveRoom() async throws {
+        try await rtcProvider.leaveRoom()
+        await MainActor.run {
+            connectionState = .disconnected
+        }
+    }
+}
+
+// MARK: - 存储管理器
+public class AudioSettingsStorage {
+    private let userDefaults = UserDefaults.standard
+    private let audioSettingsKey = "RealtimeKit.AudioSettings"
+    
+    public func saveAudioSettings(_ settings: AudioSettings) {
+        if let data = try? JSONEncoder().encode(settings) {
+            userDefaults.set(data, forKey: audioSettingsKey)
+        }
+    }
+    
+    public func loadAudioSettings() -> AudioSettings {
+        guard let data = userDefaults.data(forKey: audioSettingsKey),
+              let settings = try? JSONDecoder().decode(AudioSettings.self, from: data) else {
+            return .default
+        }
+        return settings
+    }
+    
+    public func clearAudioSettings() {
+        userDefaults.removeObject(forKey: audioSettingsKey)
+    }
+}
+
+public class UserSessionStorage {
+    private let userDefaults = UserDefaults.standard
+    private let userSessionKey = "RealtimeKit.UserSession"
+    
+    public func saveUserSession(_ session: UserSession) {
+        if let data = try? JSONEncoder().encode(session) {
+            userDefaults.set(data, forKey: userSessionKey)
+        }
+    }
+    
+    public func loadUserSession() -> UserSession? {
+        guard let data = userDefaults.data(forKey: userSessionKey),
+              let session = try? JSONDecoder().decode(UserSession.self, from: data) else {
+            return nil
+        }
+        return session
+    }
+    
+    public func clearUserSession() {
+        userDefaults.removeObject(forKey: userSessionKey)
+    }
 }
 
 // Token 管理器
 public class TokenManager {
-    public func scheduleTokenRenewal(provider: ProviderType, expiresIn: Int)
-    public func handleTokenExpiration(provider: ProviderType) async throws
-    public func isTokenExpiring(within seconds: Int) -> Bool
+    public func scheduleTokenRenewal(provider: ProviderType, expiresIn: Int) {
+        // Token 续期调度
+    }
+    
+    public func handleTokenExpiration(provider: ProviderType) async throws {
+        // Token 过期处理
+    }
+    
+    public func isTokenExpiring(within seconds: Int) -> Bool {
+        // 检查 Token 是否即将过期
+        return false
+    }
 }
 
 // 消息处理器协议
@@ -252,13 +691,35 @@ public protocol MessageProcessor {
     func process(_ message: RealtimeMessage) async throws -> ProcessedMessage?
 }
 
-// 继媒体流管理器
+// 跨媒体流管理器
 public class MediaRelayManager {
-    public func startRelay(from source: MediaRelayChannelInfo, to destinations: [MediaRelayChannelInfo]) async throws
-    public func addDestinationChannel(_ channel: MediaRelayChannelInfo) async throws  
-    public func removeDestinationChannel(_ channelName: String) async throws
-    public func updateChannelToken(_ channelName: String, token: String) async throws
-    public func getRelayStatistics() -> MediaRelayStatistics
+    public func startRelay(from source: MediaRelayChannelInfo, to destinations: [MediaRelayChannelInfo]) async throws {
+        // 开始媒体流中继
+    }
+    
+    public func addDestinationChannel(_ channel: MediaRelayChannelInfo) async throws {
+        // 添加目标频道
+    }
+    
+    public func removeDestinationChannel(_ channelName: String) async throws {
+        // 移除目标频道
+    }
+    
+    public func updateChannelToken(_ channelName: String, token: String) async throws {
+        // 更新频道 Token
+    }
+    
+    public func getRelayStatistics() -> MediaRelayStatistics {
+        // 获取中继统计信息
+        return MediaRelayStatistics(
+            totalRelayTime: 0,
+            bytesSent: 0,
+            bytesReceived: 0,
+            packetsLost: 0,
+            averageDelay: 0,
+            channelStatistics: [:]
+        )
+    }
 }
 
 // 音量指示器管理器
@@ -274,16 +735,28 @@ public class VolumeIndicatorManager: ObservableObject {
     public var onUserStopSpeaking: ((String, UserVolumeInfo) -> Void)?
     public var onDominantSpeakerChanged: ((String?) -> Void)?
     
-    // AsyncSequence 支持
-    public var volumeEventStream: AnyPublisher<VolumeEvent, Never> { get }
+    public func configure(with config: VolumeDetectionConfig) {
+        // 配置音量检测
+    }
     
-    public func configure(with config: VolumeDetectionConfig)
-    public func processVolumeUpdate(_ volumeInfos: [UserVolumeInfo])
-    public func getVolumeLevel(for userId: String) -> Float
-    public func isSpeaking(_ userId: String) -> Bool
+    public func processVolumeUpdate(_ volumeInfos: [UserVolumeInfo]) {
+        DispatchQueue.main.async {
+            self.volumeInfos = volumeInfos
+            self.speakingUsers = Set(volumeInfos.filter { $0.isSpeaking }.map { $0.userId })
+            self.dominantSpeaker = volumeInfos.filter { $0.isSpeaking }.max { $0.volume < $1.volume }?.userId
+        }
+    }
+    
+    public func getVolumeLevel(for userId: String) -> Float {
+        return volumeInfos.first { $0.userId == userId }?.volume ?? 0.0
+    }
+    
+    public func isSpeaking(_ userId: String) -> Bool {
+        return speakingUsers.contains(userId)
+    }
 }
 
-// 继媒体流统计信息
+// 跨媒体流统计信息
 public struct MediaRelayStatistics {
     let totalRelayTime: TimeInterval
     let bytesSent: UInt64
@@ -300,7 +773,83 @@ public struct ChannelStatistics {
     let bytesReceived: UInt64
     let lastUpdateTime: Date
 }
-```
+
+// 基础枚举和状态
+public enum ProviderType {
+    case agora
+    case tencent
+    case zego
+}
+
+public enum ConnectionState {
+    case disconnected
+    case connecting
+    case connected
+    case reconnecting
+    case failed(Error)
+}
+
+public enum StreamPushState {
+    case stopped
+    case starting
+    case running
+    case stopping
+    case failed(Error)
+}
+
+public struct RealtimeMessage {
+    let id: String
+    let type: MessageType
+    let content: String
+    let senderId: String
+    let timestamp: Date
+}
+
+public enum MessageType {
+    case text
+    case image
+    case audio
+    case video
+    case custom(String)
+}
+
+public struct ProcessedMessage {
+    let originalMessage: RealtimeMessage
+    let processedContent: Any
+    let processorId: String
+    let timestamp: Date
+}
+
+public struct RealtimeConfig {
+    let appId: String
+    let appSecret: String
+    let serverUrl: String?
+    let region: String
+    let logLevel: String
+    let features: [String]
+    let audioSettings: AudioSettings?
+    let autoRestoreSettings: Bool
+    
+    public init(
+        appId: String,
+        appSecret: String,
+        serverUrl: String? = nil,
+        region: String = "CN",
+        logLevel: String = "INFO",
+        features: [String] = [],
+        audioSettings: AudioSettings? = nil,
+        autoRestoreSettings: Bool = true
+    ) {
+        self.appId = appId
+        self.appSecret = appSecret
+        self.serverUrl = serverUrl
+        self.region = region
+        self.logLevel = logLevel
+        self.features = []
+        self.audioSettings = audioSettings
+        self.autoRestoreSettings = autoRestoreSettings
+    }
+
 
 ### 3. 消息系统 (Messaging)
 - 文本消息
