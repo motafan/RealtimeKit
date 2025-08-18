@@ -1,4 +1,4 @@
-# RealtimeKit Swift Package 开发提示词
+# RealtimeKit Swift Package 统一开发提示词
 
 ## 项目概述
 开发一个名为 **RealtimeKit** 的 Swift Package，用于集成多家第三方 RTM (Real-Time Messaging) 和 RTC (Real-Time Communication) 服务提供商，为 iOS/macOS 应用提供统一的实时通信解决方案。
@@ -14,6 +14,10 @@
 - **音频设置持久化存储**
 - **身份切换功能**
 - **灵活的音频流控制**
+- **转推流功能**
+- **跨媒体流中继**
+- **Token 自动续期管理**
+- **消息处理管道**
 
 ## 技术要求
 
@@ -34,8 +38,9 @@
 ## 核心功能模块
 
 ### 1. 核心抽象层 (Core)
+
+#### 主要协议定义
 ```swift
-// 主要协议定义
 public protocol RTCProvider {
     func initialize(config: RTCConfig) async throws
     func createRoom(roomId: String) async throws -> RTCRoom
@@ -97,8 +102,11 @@ public protocol RTMProvider {
     func renewToken(_ newToken: String) async throws
     func onTokenWillExpire(_ handler: @escaping (Int) -> Void)
 }
+```
 
-// 新增用户角色枚举
+#### 核心数据模型
+```swift
+// 用户角色枚举
 public enum UserRole: String, CaseIterable, Codable {
     case broadcaster = "broadcaster"    // 主播
     case audience = "audience"         // 观众
@@ -129,7 +137,7 @@ public enum UserRole: String, CaseIterable, Codable {
     }
 }
 
-// 新增音频设置模型
+// 音频设置模型
 public struct AudioSettings: Codable {
     let microphoneMuted: Bool
     let audioMixingVolume: Int        // 0-100
@@ -154,7 +162,7 @@ public struct AudioSettings: Codable {
     public static let `default` = AudioSettings()
 }
 
-// 新增用户会话信息
+// 用户会话信息
 public struct UserSession: Codable {
     let userId: String
     let userName: String
@@ -302,6 +310,7 @@ public enum VolumeEvent {
 ```
 
 ### 2. 统一管理器 (Manager)
+
 ```swift
 public class RealtimeManager: ObservableObject {
     public static let shared = RealtimeManager()
@@ -746,7 +755,7 @@ public class VolumeIndicatorManager: ObservableObject {
         self.dominantSpeaker = volumeInfos.filter { $0.isSpeaking }.max { $0.volume < $1.volume }?.userId
         
         // 触发回调
-        onVolumeUpdate?(volumeInfos)
+        self.onVolumeUpdate?(volumeInfos)
         
         // 检测说话状态变化
         let newSpeakingUsers = Set(volumeInfos.filter { $0.isSpeaking }.map { $0.userId })
@@ -755,21 +764,20 @@ public class VolumeIndicatorManager: ObservableObject {
         
         for userId in startedSpeaking {
             if let volumeInfo = volumeInfos.first(where: { $0.userId == userId }) {
-                onUserStartSpeaking?(userId, volumeInfo)
+                self.onUserStartSpeaking?(userId, volumeInfo)
             }
         }
         
         for userId in stoppedSpeaking {
             if let volumeInfo = volumeInfos.first(where: { $0.userId == userId }) {
-                    onUserStopSpeaking?(userId, volumeInfo)
-                }
+                self.onUserStopSpeaking?(userId, volumeInfo)
             }
-            
-            // 检测主讲人变化
-            let newDominantSpeaker = volumeInfos.filter { $0.isSpeaking }.max { $0.volume < $1.volume }?.userId
-            if newDominantSpeaker != self.dominantSpeaker {
-                onDominantSpeakerChanged?(newDominantSpeaker)
-            }
+        }
+        
+        // 检测主讲人变化
+        let newDominantSpeaker = volumeInfos.filter { $0.isSpeaking }.max { $0.volume < $1.volume }?.userId
+        if newDominantSpeaker != self.dominantSpeaker {
+            self.onDominantSpeakerChanged?(newDominantSpeaker)
         }
     }
     
@@ -782,27 +790,21 @@ public class VolumeIndicatorManager: ObservableObject {
     }
     
     public func enable(with config: VolumeDetectionConfig) {
-        DispatchQueue.main.async {
-            self.isEnabled = true
-        }
+        self.isEnabled = true
         configure(with: config)
     }
     
     public func disable() {
-        DispatchQueue.main.async {
-            self.isEnabled = false
-            self.volumeInfos = []
-            self.speakingUsers = []
-            self.dominantSpeaker = nil
-        }
+        self.isEnabled = false
+        self.volumeInfos = []
+        self.speakingUsers = []
+        self.dominantSpeaker = nil
     }
     
     public func reset() {
-        DispatchQueue.main.async {
-            self.volumeInfos = []
-            self.speakingUsers = []
-            self.dominantSpeaker = nil
-        }
+        self.volumeInfos = []
+        self.speakingUsers = []
+        self.dominantSpeaker = nil
     }
     
     public func getSpeakingUsersCount() -> Int {
@@ -823,7 +825,11 @@ public class VolumeIndicatorManager: ObservableObject {
         return volumeInfos.filter { $0.volume > threshold }
     }
 }
+```
 
+### 3. 基础枚举和状态定义
+
+```swift
 // 跨媒体流统计信息
 public struct MediaRelayStatistics {
     let totalRelayTime: TimeInterval
@@ -917,9 +923,10 @@ public struct RealtimeConfig {
         self.audioSettings = audioSettings
         self.autoRestoreSettings = autoRestoreSettings
     }
+}
+```
 
-
-### 3. 消息系统 (Messaging)
+### 4. 消息系统 (Messaging)
 - 文本消息
 - 富媒体消息（图片、音频、视频）
 - 自定义消息格式
@@ -927,6 +934,7 @@ public struct RealtimeConfig {
 - 离线消息处理
 
 ### 5. UI 集成层 (UI Integration)
+
 ```swift
 // UIKit 支持
 public class RealtimeViewController: UIViewController {
@@ -981,6 +989,7 @@ public struct VolumeWaveView: View {
 - 自定义服务商接入
 
 ## 模块化项目结构
+
 ```
 RealtimeKit/
 ├── Sources/
@@ -1105,6 +1114,7 @@ RealtimeKit/
 ## Demo 应用功能要求
 
 ### UIKit Demo 应用特性
+
 ```swift
 // UIKitDemo/App/AppDelegate.swift
 import UIKit
@@ -1150,6 +1160,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 - 设置和配置界面
 
 ### SwiftUI Demo 应用特性
+
 ```swift
 // SwiftUIDemo/App/App.swift
 import SwiftUI
@@ -1320,6 +1331,7 @@ public enum RealtimeError: Error {
     case connectionFailed(String)
     case authenticationFailed
     case networkError(Error)
+    case noActiveSession
     
     // Token 相关错误
     case tokenExpired(ProviderType)
@@ -1332,7 +1344,7 @@ public enum RealtimeError: Error {
     case invalidStreamConfig(String)
     case streamLayoutUpdateFailed(String)
     
-    // 继媒体流相关错误
+    // 跨媒体流相关错误
     case mediaRelayStartFailed(String)
     case mediaRelayStopFailed(String)
     case mediaRelayUpdateFailed(String)
@@ -1352,14 +1364,6 @@ public enum RealtimeError: Error {
 }
 
 // 新增状态枚举
-public enum StreamPushState {
-    case stopped
-    case starting
-    case running
-    case stopping
-    case failed(Error)
-}
-
 public enum VolumeIndicatorState {
     case disabled
     case starting
@@ -1382,7 +1386,8 @@ public struct TokenWarning {
 }
 ```
 
-### 4. 多种回调方式支持
+### 3. 多种回调方式支持
+
 ```swift
 // UIKit - Delegate 模式
 public protocol RealtimeDelegate: AnyObject {
@@ -1398,7 +1403,7 @@ public protocol RealtimeDelegate: AnyObject {
     func streamPushDidStop()
     func streamPushDidFail(error: RealtimeError)
     
-    // 新增继媒体流状态
+    // 新增跨媒体流状态
     func mediaRelayDidStart()
     func mediaRelayDidStop()
     func mediaRelayDidFail(error: MediaRelayError)
@@ -1480,141 +1485,153 @@ public var volumeEventStream: AsyncStream<VolumeEvent> { get }
 - 覆盖率 > 80%
 
 ### 2. 单元测试
-```swift
-import Testing
-@testable import RealtimeKit
-
-@Test("RTM Provider Initialization")
-func testRTMProviderInit() async throws {
-    let config = RTMConfig(appId: "test", appSecret: "secret")
-    let provider = AgoraRTMProvider()
-    #expect(throws: Never.self) {
-        try await provider.initialize(config: config)
-    }
-}
-
-@Test("Volume Indicator Configuration", arguments: [
-    (0.1, 0.05, true),
-    (0.3, 0.1, false),
-    (0.5, 0.2, true)
-])
-func testVolumeIndicatorConfig(speakingThreshold: Float, silenceThreshold: Float, includeLocal: Bool) async throws {
-    let config = VolumeDetectionConfig(
-        speakingThreshold: speakingThreshold,
-        silenceThreshold: silenceThreshold,
-        includeLocalUser: includeLocal
-    )
-    let provider = MockRTCProvider()
-    #expect(throws: Never.self) {
-        try await provider.enableVolumeIndicator(config: config)
-    }
-}
-
-@Test("Message Sending", arguments: [
-    ("text", MessageType.text),
-    ("image", MessageType.image),
-    ("audio", MessageType.audio)
-])
-func testMessageSending(content: String, type: MessageType) async throws {
-    // 参数化测试用例
-}
-
-@Test("Volume Event Processing")
-func testVolumeEventProcessing() async throws {
-    let manager = VolumeIndicatorManager()
-    let volumeInfos = [
-        UserVolumeInfo(userId: "user1", volume: 0.8, isSpeaking: true),
-        UserVolumeInfo(userId: "user2", volume: 0.2, isSpeaking: false)
-    ]
-    
-    manager.processVolumeUpdate(volumeInfos)
-    
-    #expect(manager.speakingUsers.contains("user1"))
-    #expect(!manager.speakingUsers.contains("user2"))
-}
-```
+- 核心协议测试
+- 数据模型测试
+- 管理器功能测试
+- Token 管理测试
+- 转推流功能测试
+- 跨媒体流功能测试
+- 音量指示器测试
+- 消息处理测试
+- 错误处理测试
 
 ### 3. 集成测试
-- Mock 外部 SDK 依赖
-- 真实环境端到端测试
-- 多服务商切换测试
-- 网络异常场景测试
-- 音量检测精度测试
-- 使用 `@Test(.disabled())` 标记长时间运行的测试
+- 多服务商兼容性测试
+- 网络异常处理测试
+- 并发操作测试
+- 内存泄漏测试
+- 性能基准测试
 
-### 4. 性能测试
-- 内存泄漏检测
-- CPU 使用率监控  
-- 网络延迟测试
-- 音量处理性能测试
-- 使用 Testing 框架的性能度量工具
+### 4. UI 测试
+- UIKit 组件测试
+- SwiftUI 视图测试
+- 用户交互测试
+- 动画效果测试
+- 音量可视化测试
 
 ## 文档要求
 
 ### 1. API 文档
-- 完整的 Swift DocC 文档
-- 代码示例
-- 参数说明
-- 音量指示器使用指南
+- 完整的 API 参考文档
+- 代码示例和最佳实践
+- 迁移指南
+- 故障排除指南
 
-### 2. 使用指南
+### 2. 集成指南
 - 快速开始教程
-- 高级用法指南
-- 最佳实践
-- 音量可视化实现指南
-- 波纹动画效果教程
+- 各服务商配置指南
+- 高级功能使用指南
+- 性能优化建议
 
-### 3. 迁移指南
-- 不同服务商迁移
+### 3. Demo 应用文档
+- UIKit Demo 使用说明
+- SwiftUI Demo 使用说明
+- 功能演示视频
+- 常见问题解答
+
+## 版本管理和发布
+
+### 语义化版本控制
+- 主版本号：不兼容的 API 修改
+- 次版本号：向下兼容的功能性新增
+- 修订号：向下兼容的问题修正
+
+### 发布流程
+1. 功能开发和测试
+2. 文档更新
+3. 版本标记
+4. Swift Package Manager 发布
+5. 发布说明
+
+### 兼容性保证
+- 向下兼容承诺
+- 废弃 API 迁移期
 - 版本升级指南
 
-## 发布计划
+## 安全和隐私
 
-### Phase 1: 核心框架 (v0.1.0)
-- RealtimeCore 模块
-- 基础抽象层
-- Mock 测试工具
+### 数据安全
+- 端到端加密支持
+- 敏感信息保护
+- 安全的 Token 存储
+- 数据传输加密
 
-### Phase 2: 服务商集成 (v0.2.0)  
-- RealtimeAgora 模块
-- RealtimeTencent 模块
-- RealtimeZego 模块
+### 隐私保护
+- 最小权限原则
+- 用户数据控制
+- 隐私政策合规
+- GDPR 兼容性
 
-### Phase 3: UI 框架支持 (v0.3.0)
-- RealtimeUIKit 模块
-- RealtimeSwiftUI 模块
-- 组件库完善
+## 国际化支持
 
-### Phase 4: 高级功能 (v0.4.0)
-- **转推流功能**
-- **Token 自动续期**
-- **音量指示器功能**
-- **消息处理管道**
-- 音视频通话
+### 多语言支持
+- 中文（简体/繁体）
+- 英文
+- 日文
+- 韩文
+- 其他主要语言
 
-### Phase 5: 企业级功能 (v1.0.0)
-- **完整的音量可视化组件**
-- **高级波纹动画效果**
-- 完整测试覆盖
+### 本地化内容
+- 错误消息本地化
+- UI 文本本地化
+- 文档多语言版本
+- 示例代码本地化
+
+## 社区和支持
+
+### 开源社区
+- GitHub 仓库管理
+- Issue 跟踪和处理
+- Pull Request 审核
+- 社区贡献指南
+
+### 技术支持
+- 官方技术支持渠道
+- 社区论坛
+- 在线文档
+- 视频教程
+
+## 路线图
+
+### 第一阶段 (v1.0)
+- 核心 RTC/RTM 功能
+- 声网 Agora 集成
+- 基础 UI 组件
+- 基本音量指示器
+- 简单转推流功能
+
+### 第二阶段 (v1.1)
+- 腾讯云 TRTC 集成
+- 即构 ZEGO 集成
+- 高级音量可视化
+- 跨媒体流中继
+- Token 自动续期
+- 消息处理管道
+
+### 第三阶段 (v1.2)
+- 更多服务商支持
+- 高级 UI 组件
 - 性能优化
-- 稳定版本发布
+- 更多动画效果
+- 智能音频设置
 
-## 开发注意事项
+### 第四阶段 (v2.0)
+- 架构重构
+- 新特性支持
+- 跨平台扩展
+- AI 功能集成
 
-1. **版本兼容性** - 保持向后兼容，谨慎处理 Breaking Changes
-2. **隐私安全** - 符合 App Store 审核要求，保护用户隐私
-3. **许可证管理** - 处理第三方 SDK 的许可证问题
-4. **国际化** - 支持多语言错误信息
-5. **可观测性** - 内置日志和监控能力
-6. **音频权限** - 妥善处理麦克风权限请求
-7. **CI/CD** - 自动化测试和发布流程
+## 总结
 
-## 成功标准
+RealtimeKit 旨在成为 iOS/macOS 平台上最全面、最易用的实时通信解决方案。通过统一的 API 接口、插件化架构、完善的 UI 组件和丰富的功能特性，为开发者提供一站式的实时通信开发体验。
 
-1. **易用性** - 5 行代码内完成基本集成
-2. **稳定性** - 崩溃率 < 0.01%
-3. **性能** - 消息延迟 < 100ms，音量检测延迟 < 50ms
-4. **文档** - 完整的 API 文档和示例
-5. **社区** - GitHub Stars > 1000
-6. **音量精度** - 音量检测准确率 > 95%
-7. **动画流畅度** - 波纹动画帧率 > 60fps
+### 核心价值
+1. **统一性** - 一套 API 支持多家服务商
+2. **易用性** - 简单的集成和使用方式
+3. **灵活性** - 模块化设计，按需使用
+4. **完整性** - 从核心功能到 UI 组件的全覆盖
+5. **现代性** - 支持最新的 Swift 特性和设计模式
+6. **可靠性** - 完善的测试和错误处理
+7. **扩展性** - 易于添加新的服务商和功能
+
+通过 RealtimeKit，开发者可以快速构建高质量的实时通信应用，专注于业务逻辑而不是底层技术细节。
