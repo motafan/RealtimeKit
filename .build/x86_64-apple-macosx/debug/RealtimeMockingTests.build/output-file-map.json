@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeMockingTests.build/master.swiftdeps"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Tests/RealtimeMockingTests/MockProviderTests.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeMockingTests.build/MockProviderTests.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeMockingTests.build/MockProviderTests.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeMockingTests.build/MockProviderTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeMockingTests.build/MockProviderTests.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeMockingTests.build/MockProviderTests.dia"
+  }
+}

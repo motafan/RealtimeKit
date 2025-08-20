@@ -150,7 +150,7 @@ public class StreamPushManager: ObservableObject {
                 width: config.width,
                 height: config.height,
                 bitrate: config.bitrate,
-                frameRate: config.frameRate,
+                framerate: config.framerate,
                 layout: layout
             )
             

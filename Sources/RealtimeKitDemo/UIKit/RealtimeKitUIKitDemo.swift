@@ -19,6 +19,7 @@ class RealtimeKitUIKitDemoApp: UIResponder, UIApplicationDelegate {
                     provider: .mock // 使用 Mock 服务商进行演示
                 )
                 try await RealtimeManager.shared.configure(provider: .mock, config: config)
+                print("RealtimeKit configured successfully")
             } catch {
                 print("Failed to configure RealtimeKit: \(error)")
             }
@@ -27,6 +28,7 @@ class RealtimeKitUIKitDemoApp: UIResponder, UIApplicationDelegate {
         // 设置根视图控制器
         let mainViewController = MainDemoViewController()
         let navigationController = UINavigationController(rootViewController: mainViewController)
+        navigationController.navigationBar.prefersLargeTitles = true
         
         window?.rootViewController = navigationController
         window?.makeKeyAndVisible()

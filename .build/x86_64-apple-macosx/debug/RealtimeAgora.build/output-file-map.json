@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeAgora.build/master.swiftdeps"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeAgora/RealtimeAgora.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeAgora.build/RealtimeAgora.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeAgora.build/RealtimeAgora.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeAgora.build/RealtimeAgora~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeAgora.build/RealtimeAgora.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeAgora.build/RealtimeAgora.dia"
+  }
+}

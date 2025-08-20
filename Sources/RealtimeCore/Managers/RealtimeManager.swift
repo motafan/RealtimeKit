@@ -757,6 +757,18 @@ public final class RealtimeManager: ObservableObject, @unchecked Sendable {
     
     // MARK: - Media Relay (需求 8)
     
+    /// Update stream push layout
+    /// - Parameter layout: New stream layout
+    public func updateStreamPushLayout(layout: StreamLayout) async throws {
+        guard let rtcProvider = rtcProvider else {
+            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+        }
+        
+        try await rtcProvider.updateStreamPushLayout(layout: layout)
+    }
+    
+    // MARK: - Media Relay (需求 8)
+    
     /// Start media relay
     /// - Parameter config: Media relay configuration
     public func startMediaRelay(config: MediaRelayConfig) async throws {
@@ -766,17 +778,14 @@ public final class RealtimeManager: ObservableObject, @unchecked Sendable {
         
         try await rtcProvider.startMediaRelay(config: config)
         
-        // Create destination states for all target channels
-        var destinationStates: [String: RelayChannelState] = [:]
-        for channel in config.destinationChannels {
-            destinationStates[channel.channelName] = .connecting
+        // Create initial media relay state
+        let channelStates = config.destinationChannels.reduce(into: [String: MediaRelayChannelState]()) { result, channel in
+            result[channel.channelName] = .connecting
         }
         
         mediaRelayState = MediaRelayState(
-            overallState: .running,
-            sourceChannel: config.sourceChannel.channelName,
-            destinationStates: destinationStates,
-            startTime: Date()
+            overallState: .connecting,
+            channelStates: channelStates
         )
     }
     
@@ -788,6 +797,71 @@ public final class RealtimeManager: ObservableObject, @unchecked Sendable {
         
         try await rtcProvider.stopMediaRelay()
         mediaRelayState = nil
+    }
+    
+    /// Update media relay channels
+    /// - Parameter config: Updated media relay configuration
+    public func updateMediaRelayChannels(config: MediaRelayConfig) async throws {
+        guard let rtcProvider = rtcProvider else {
+            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+        }
+        
+        try await rtcProvider.updateMediaRelayChannels(config: config)
+    }
+    
+    /// Pause media relay to specific channel
+    /// - Parameter toChannel: Channel name to pause
+    public func pauseMediaRelay(toChannel: String) async throws {
+        guard let rtcProvider = rtcProvider else {
+            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+        }
+        
+        try await rtcProvider.pauseMediaRelay(toChannel: toChannel)
+        
+        // Update state
+        if var state = mediaRelayState {
+            state.channelStates[toChannel] = .paused
+            mediaRelayState = state
+        }
+    }
+    
+    /// Resume media relay to specific channel
+    /// - Parameter toChannel: Channel name to resume
+    public func resumeMediaRelay(toChannel: String) async throws {
+        guard let rtcProvider = rtcProvider else {
+            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+        }
+        
+        try await rtcProvider.resumeMediaRelay(toChannel: toChannel)
+        
+        // Update state
+        if var state = mediaRelayState {
+            state.channelStates[toChannel] = .running
+            mediaRelayState = state
+        }
+    }
+    
+    // MARK: - Room Management Extensions
+    
+    /// Join room with user ID and role (for demo compatibility)
+    /// - Parameters:
+    ///   - roomId: Room identifier
+    ///   - userId: User identifier
+    ///   - userRole: User role
+    public func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws {
+        guard let rtcProvider = rtcProvider else {
+            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+        }
+        
+        try await rtcProvider.joinChannel(channelName: roomId, userId: userId, userRole: userRole)
+        
+        // Update current room state
+        currentRoom = RTCRoom(
+            roomId: roomId,
+            participants: [],
+            isActive: true,
+            createdAt: Date()
+        )
     }
     
     // MARK: - Message Processing (需求 10)

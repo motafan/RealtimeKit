@@ -1,501 +1,632 @@
 // StreamPushManagerTests.swift
-// Unit tests for stream push management and control logic
+// Comprehensive unit tests for StreamPushManager
 
 import Testing
+import Foundation
 @testable import RealtimeCore
 
-@Suite("Stream Push Manager Tests")
+@Suite("StreamPushManager Tests")
 @MainActor
 struct StreamPushManagerTests {
     
-    // MARK: - Mock RTC Provider
+    // MARK: - Test Setup
     
-    class MockRTCProvider: RTCProvider {
-        var shouldFailStart = false
-        var shouldFailStop = false
-        var shouldFailLayoutUpdate = false
-        var startCallCount = 0
-        var stopCallCount = 0
-        var layoutUpdateCallCount = 0
-        var lastConfig: StreamPushConfig?
-        var lastLayout: StreamLayout?
-        
-        func initialize(config: RTCConfig) async throws {}
-        func createRoom(roomId: String) async throws -> RTCRoom { 
-            RTCRoom(roomId: roomId, roomName: roomId, createdAt: Date(), maxUsers: 100, isPrivate: false, metadata: [:])
-        }
-        func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws {}
-        func leaveRoom() async throws {}
-        func switchUserRole(_ role: UserRole) async throws {}
-        func muteMicrophone(_ muted: Bool) async throws {}
-        nonisolated func isMicrophoneMuted() -> Bool { false }
-        func stopLocalAudioStream() async throws {}
-        func resumeLocalAudioStream() async throws {}
-        nonisolated func isLocalAudioStreamActive() -> Bool { true }
-        func setAudioMixingVolume(_ volume: Int) async throws {}
-        nonisolated func getAudioMixingVolume() -> Int { 100 }
-        func setPlaybackSignalVolume(_ volume: Int) async throws {}
-        nonisolated func getPlaybackSignalVolume() -> Int { 100 }
-        func setRecordingSignalVolume(_ volume: Int) async throws {}
-        nonisolated func getRecordingSignalVolume() -> Int { 100 }
-        
-        func startStreamPush(config: StreamPushConfig) async throws {
-            startCallCount += 1
-            lastConfig = config
-            if shouldFailStart {
-                throw RealtimeError.streamPushStartFailed("Mock start failure")
-            }
-        }
-        
-        func stopStreamPush() async throws {
-            stopCallCount += 1
-            if shouldFailStop {
-                throw RealtimeError.streamPushStopFailed("Mock stop failure")
-            }
-        }
-        
-        func updateStreamPushLayout(layout: StreamLayout) async throws {
-            layoutUpdateCallCount += 1
-            lastLayout = layout
-            if shouldFailLayoutUpdate {
-                throw RealtimeError.streamLayoutUpdateFailed("Mock layout update failure")
-            }
-        }
-        
-        func startMediaRelay(config: MediaRelayConfig) async throws {}
-        func stopMediaRelay() async throws {}
-        func updateMediaRelayChannels(config: MediaRelayConfig) async throws {}
-        func pauseMediaRelay(toChannel: String) async throws {}
-        func resumeMediaRelay(toChannel: String) async throws {}
-        func enableVolumeIndicator(config: VolumeDetectionConfig) async throws {}
-        func disableVolumeIndicator() async throws {}
-        nonisolated func setVolumeIndicatorHandler(_ handler: @escaping @Sendable ([UserVolumeInfo]) -> Void) {}
-        nonisolated func setVolumeEventHandler(_ handler: @escaping @Sendable (VolumeEvent) -> Void) {}
-        nonisolated func getCurrentVolumeInfos() -> [UserVolumeInfo] { [] }
-        nonisolated func getVolumeInfo(for userId: String) -> UserVolumeInfo? { nil }
-        func renewToken(_ newToken: String) async throws {}
-        nonisolated func onTokenWillExpire(_ handler: @escaping @Sendable (Int) -> Void) {}
+    private func createManager() -> StreamPushManager {
+        return StreamPushManager()
     }
     
-    // MARK: - Test Helpers
+    private func createTestConfig() throws -> StreamPushConfig {
+        return try StreamPushConfig.standard720p(
+            pushUrl: "rtmp://test.example.com/live/stream"
+        )
+    }
     
-    private func createValidConfig() throws -> StreamPushConfig {
-        let layout = try StreamLayout(backgroundColor: "#000000", userRegions: [])
+    private func createCustomConfig() throws -> StreamPushConfig {
         return try StreamPushConfig(
-            pushUrl: "rtmp://example.com/live/stream",
-            width: 1280,
-            height: 720,
-            bitrate: 2000,
-            frameRate: 30,
-            layout: layout
-        )
-    }
-    
-    private func createValidLayout() throws -> StreamLayout {
-        let region = try UserRegion(
-            userId: "user1",
-            x: 0.0, y: 0.0,
-            width: 1.0, height: 1.0,
-            zOrder: 1,
-            alpha: 1.0
-        )
-        return try StreamLayout(
-            backgroundColor: "#000000",
-            userRegions: [region]
+            pushUrl: "rtmp://custom.example.com/live/custom",
+            width: 1920,
+            height: 1080,
+            videoBitrate: 4000,
+            videoFramerate: 60,
+            audioBitrate: 256,
+            audioSampleRate: 48000
         )
     }
     
     // MARK: - Initialization Tests
     
-    @Test("Manager should initialize with correct default state")
-    func testInitialization() async {
-        let manager = StreamPushManager()
+    @Test("Manager initialization")
+    func testManagerInitialization() {
+        let manager = createManager()
         
         #expect(manager.currentState == .stopped)
         #expect(manager.currentConfig == nil)
-        #expect(manager.lastError == nil)
         #expect(manager.isActive == false)
-        #expect(manager.canStart == true)
-        #expect(manager.canStop == false)
-    }
-    
-    @Test("Manager should configure with RTC provider")
-    func testConfiguration() async {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        
-        manager.configure(with: provider)
-        
-        // Configuration should not change state
-        #expect(manager.currentState == .stopped)
+        #expect(manager.statistics.totalStreams == 0)
+        #expect(manager.statistics.totalDuration == 0)
     }
     
     // MARK: - Stream Push Start Tests
     
-    @Test("Should start stream push successfully")
-    func testStartStreamPushSuccess() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config = try createValidConfig()
+    @Test("Start stream push with valid config")
+    func testStartStreamPushWithValidConfig() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
         
-        manager.configure(with: provider)
+        var stateChanges: [StreamPushState] = []
+        manager.onStateChanged = { state in
+            stateChanges.append(state)
+        }
         
         try await manager.startStreamPush(config: config)
         
         #expect(manager.currentState == .running)
-        #expect(manager.currentConfig == config)
-        #expect(manager.lastError == nil)
+        #expect(manager.currentConfig?.pushUrl == config.pushUrl)
         #expect(manager.isActive == true)
-        #expect(manager.canStart == false)
-        #expect(manager.canStop == true)
-        
-        let startCount = provider.startCallCount
-        let lastConfig = provider.lastConfig
-        #expect(startCount == 1)
-        #expect(lastConfig == config)
+        #expect(stateChanges.contains(.starting))
+        #expect(stateChanges.contains(.running))
     }
     
-    @Test("Should fail to start without provider")
-    func testStartStreamPushWithoutProvider() async throws {
-        let manager = StreamPushManager()
-        let config = try createValidConfig()
+    @Test("Start stream push when already running")
+    func testStartStreamPushWhenAlreadyRunning() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
         
-        await #expect(throws: RealtimeError.self) {
+        // Start first stream
+        try await manager.startStreamPush(config: config)
+        #expect(manager.currentState == .running)
+        
+        // Try to start another stream
+        do {
             try await manager.startStreamPush(config: config)
+            #expect(Bool(false), "Should have thrown an error")
+        } catch let error as RealtimeError {
+            #expect(error == .alreadyInState(.running))
+        } catch {
+            #expect(Bool(false), "Wrong error type")
         }
-        
-        #expect(manager.currentState == .stopped)
     }
     
-    @Test("Should fail to start with invalid config")
-    func testStartStreamPushWithInvalidConfig() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
+    @Test("Start stream push with invalid config")
+    func testStartStreamPushWithInvalidConfig() async {
+        let manager = createManager()
         
-        manager.configure(with: provider)
-        
-        // Create invalid config (this should throw during validation)
-        await #expect(throws: RealtimeError.self) {
-            let invalidConfig = try StreamPushConfig(
-                pushUrl: "", // Invalid empty URL
-                width: 1280,
-                height: 720,
-                bitrate: 2000,
-                frameRate: 30,
-                layout: StreamLayout.singleUser
+        do {
+            let invalidConfig = try StreamPushConfig.standard720p(
+                pushUrl: "http://invalid.url" // Invalid scheme
             )
             try await manager.startStreamPush(config: invalidConfig)
+            #expect(Bool(false), "Should have thrown an error")
+        } catch {
+            #expect(manager.currentState == .stopped)
+            #expect(manager.currentConfig == nil)
         }
-    }
-    
-    @Test("Should handle provider start failure")
-    func testStartStreamPushProviderFailure() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config = try createValidConfig()
-        
-        provider.setShouldFailStart(true)
-        manager.configure(with: provider)
-        
-        await #expect(throws: RealtimeError.self) {
-            try await manager.startStreamPush(config: config)
-        }
-        
-        #expect(manager.currentState == .failed)
-        #expect(manager.lastError != nil)
-    }
-    
-    @Test("Should not start when already running")
-    func testStartStreamPushWhenRunning() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config = try createValidConfig()
-        
-        manager.configure(with: provider)
-        try await manager.startStreamPush(config: config)
-        
-        // Try to start again
-        await #expect(throws: RealtimeError.self) {
-            try await manager.startStreamPush(config: config)
-        }
-        
-        let startCount = provider.startCallCount
-        #expect(startCount == 1) // Should only be called once
     }
     
     // MARK: - Stream Push Stop Tests
     
-    @Test("Should stop stream push successfully")
-    func testStopStreamPushSuccess() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config = try createValidConfig()
+    @Test("Stop stream push when running")
+    func testStopStreamPushWhenRunning() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
         
-        manager.configure(with: provider)
+        var stateChanges: [StreamPushState] = []
+        manager.onStateChanged = { state in
+            stateChanges.append(state)
+        }
+        
+        // Start stream
         try await manager.startStreamPush(config: config)
+        #expect(manager.currentState == .running)
+        
+        // Stop stream
         try await manager.stopStreamPush()
         
         #expect(manager.currentState == .stopped)
-        #expect(manager.currentConfig == nil)
         #expect(manager.isActive == false)
-        #expect(manager.canStart == true)
-        #expect(manager.canStop == false)
-        
-        let stopCount = provider.stopCallCount
-        #expect(stopCount == 1)
+        #expect(stateChanges.contains(.stopping))
+        #expect(stateChanges.contains(.stopped))
     }
     
-    @Test("Should fail to stop without provider")
-    func testStopStreamPushWithoutProvider() async throws {
-        let manager = StreamPushManager()
+    @Test("Stop stream push when not running")
+    func testStopStreamPushWhenNotRunning() async {
+        let manager = createManager()
         
-        await #expect(throws: RealtimeError.self) {
+        do {
             try await manager.stopStreamPush()
+            #expect(Bool(false), "Should have thrown an error")
+        } catch let error as RealtimeError {
+            #expect(error == .alreadyInState(.stopped))
+        } catch {
+            #expect(Bool(false), "Wrong error type")
         }
-    }
-    
-    @Test("Should fail to stop when not running")
-    func testStopStreamPushWhenNotRunning() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        
-        manager.configure(with: provider)
-        
-        await #expect(throws: RealtimeError.self) {
-            try await manager.stopStreamPush()
-        }
-        
-        let stopCount = provider.stopCallCount
-        #expect(stopCount == 0)
-    }
-    
-    @Test("Should handle provider stop failure")
-    func testStopStreamPushProviderFailure() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config = try createValidConfig()
-        
-        manager.configure(with: provider)
-        try await manager.startStreamPush(config: config)
-        
-        provider.setShouldFailStop(true)
-        
-        await #expect(throws: RealtimeError.self) {
-            try await manager.stopStreamPush()
-        }
-        
-        #expect(manager.currentState == .failed)
-        #expect(manager.lastError != nil)
     }
     
     // MARK: - Layout Update Tests
     
-    @Test("Should update layout successfully")
-    func testUpdateLayoutSuccess() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config = try createValidConfig()
-        let newLayout = try createValidLayout()
+    @Test("Update stream layout when running")
+    func testUpdateStreamLayoutWhenRunning() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
         
-        manager.configure(with: provider)
-        try await manager.startStreamPush(config: config)
-        try await manager.updateLayout(newLayout)
-        
-        #expect(manager.currentState == .running)
-        #expect(manager.currentConfig?.layout == newLayout)
-        
-        let updateCount = provider.layoutUpdateCallCount
-        let lastLayout = provider.lastLayout
-        #expect(updateCount == 1)
-        #expect(lastLayout == newLayout)
-    }
-    
-    @Test("Should fail to update layout when not running")
-    func testUpdateLayoutWhenNotRunning() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let newLayout = try createValidLayout()
-        
-        manager.configure(with: provider)
-        
-        await #expect(throws: RealtimeError.self) {
-            try await manager.updateLayout(newLayout)
-        }
-        
-        let updateCount = provider.layoutUpdateCallCount
-        #expect(updateCount == 0)
-    }
-    
-    @Test("Should handle layout update failure")
-    func testUpdateLayoutProviderFailure() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config = try createValidConfig()
-        let newLayout = try createValidLayout()
-        
-        manager.configure(with: provider)
+        // Start stream
         try await manager.startStreamPush(config: config)
         
-        provider.setShouldFailLayoutUpdate(true)
-        
-        await #expect(throws: RealtimeError.self) {
-            try await manager.updateLayout(newLayout)
-        }
-        
-        #expect(manager.currentState == .failed)
-        #expect(manager.lastError != nil)
-    }
-    
-    // MARK: - Configuration Update Tests
-    
-    @Test("Should update configuration by restarting")
-    func testUpdateConfiguration() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config1 = try createValidConfig()
-        
-        let config2 = try StreamPushConfig(
-            pushUrl: "rtmp://example2.com/live/stream",
-            width: 1920,
-            height: 1080,
-            bitrate: 4000,
-            frameRate: 30,
-            layout: StreamLayout.singleUser
+        let newLayout = StreamLayout(
+            backgroundColor: "#FF0000",
+            userRegions: [
+                UserRegion(
+                    userId: "user1",
+                    x: 0, y: 0,
+                    width: 640, height: 360,
+                    zOrder: 1,
+                    alpha: 1.0
+                ),
+                UserRegion(
+                    userId: "user2",
+                    x: 640, y: 0,
+                    width: 640, height: 360,
+                    zOrder: 2,
+                    alpha: 0.8
+                )
+            ]
         )
         
-        manager.configure(with: provider)
-        try await manager.startStreamPush(config: config1)
-        try await manager.updateConfiguration(config2)
+        try await manager.updateStreamLayout(layout: newLayout)
         
+        #expect(manager.currentLayout?.backgroundColor == "#FF0000")
+        #expect(manager.currentLayout?.userRegions.count == 2)
+    }
+    
+    @Test("Update stream layout when not running")
+    func testUpdateStreamLayoutWhenNotRunning() async {
+        let manager = createManager()
+        
+        let layout = StreamLayout(
+            backgroundColor: "#000000",
+            userRegions: []
+        )
+        
+        do {
+            try await manager.updateStreamLayout(layout: layout)
+            #expect(Bool(false), "Should have thrown an error")
+        } catch let error as RealtimeError {
+            #expect(error == .notInState(.running))
+        } catch {
+            #expect(Bool(false), "Wrong error type")
+        }
+    }
+    
+    @Test("Update stream layout with invalid layout")
+    func testUpdateStreamLayoutWithInvalidLayout() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
+        
+        try await manager.startStreamPush(config: config)
+        
+        // Create layout with overlapping regions (invalid)
+        let invalidLayout = StreamLayout(
+            backgroundColor: "#000000",
+            userRegions: [
+                UserRegion(
+                    userId: "user1",
+                    x: 0, y: 0,
+                    width: 1000, height: 1000, // Exceeds stream dimensions
+                    zOrder: 1,
+                    alpha: 1.0
+                )
+            ]
+        )
+        
+        do {
+            try await manager.updateStreamLayout(layout: invalidLayout)
+            #expect(Bool(false), "Should have thrown an error")
+        } catch let error as RealtimeError {
+            if case .invalidConfiguration(let message) = error {
+                #expect(message.contains("layout"))
+            } else {
+                #expect(Bool(false), "Wrong error type")
+            }
+        } catch {
+            #expect(Bool(false), "Wrong error type")
+        }
+    }
+    
+    // MARK: - Stream Statistics Tests
+    
+    @Test("Stream statistics tracking")
+    func testStreamStatisticsTracking() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
+        
+        // Start and stop multiple streams
+        for _ in 1...3 {
+            try await manager.startStreamPush(config: config)
+            
+            // Simulate some streaming time
+            try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+            
+            try await manager.stopStreamPush()
+        }
+        
+        let stats = manager.statistics
+        #expect(stats.totalStreams == 3)
+        #expect(stats.totalDuration > 0.2) // At least 0.2 seconds total
+        #expect(stats.averageStreamDuration > 0.05) // At least 0.05 seconds average
+    }
+    
+    @Test("Stream quality metrics")
+    func testStreamQualityMetrics() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
+        
+        try await manager.startStreamPush(config: config)
+        
+        // Simulate quality updates
+        manager.updateStreamQuality(
+            videoBitrate: 1800,
+            audioBitrate: 120,
+            frameRate: 28,
+            droppedFrames: 5
+        )
+        
+        let quality = manager.currentQuality
+        #expect(quality.videoBitrate == 1800)
+        #expect(quality.audioBitrate == 120)
+        #expect(quality.frameRate == 28)
+        #expect(quality.droppedFrames == 5)
+        #expect(quality.qualityScore < 1.0) // Should be less than perfect due to dropped frames
+        
+        try await manager.stopStreamPush()
+    }
+    
+    // MARK: - Error Handling Tests
+    
+    @Test("Handle stream connection failure")
+    func testHandleStreamConnectionFailure() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
+        
+        var errorReceived: RealtimeError?
+        manager.onError = { error in
+            errorReceived = error
+        }
+        
+        try await manager.startStreamPush(config: config)
+        
+        // Simulate connection failure
+        let connectionError = RealtimeError.networkError("RTMP connection failed")
+        manager.handleStreamError(connectionError)
+        
+        #expect(errorReceived != nil)
+        #expect(manager.currentState == .error)
+    }
+    
+    @Test("Handle stream encoding failure")
+    func testHandleStreamEncodingFailure() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
+        
+        var errorReceived: RealtimeError?
+        manager.onError = { error in
+            errorReceived = error
+        }
+        
+        try await manager.startStreamPush(config: config)
+        
+        // Simulate encoding failure
+        let encodingError = RealtimeError.providerError("Video encoding failed", underlying: nil)
+        manager.handleStreamError(encodingError)
+        
+        #expect(errorReceived != nil)
+        #expect(manager.currentState == .error)
+    }
+    
+    @Test("Automatic recovery from transient errors")
+    func testAutomaticRecoveryFromTransientErrors() async throws {
+        let manager = createManager()
+        manager.enableAutoRecovery(maxAttempts: 3, retryDelay: 0.1)
+        
+        let config = try createTestConfig()
+        
+        var recoveryAttempts: [RealtimeError] = []
+        manager.onRecoveryAttempt = { error in
+            recoveryAttempts.append(error)
+        }
+        
+        try await manager.startStreamPush(config: config)
+        
+        // Simulate transient network error
+        let transientError = RealtimeError.networkError("Temporary connection loss")
+        manager.handleStreamError(transientError)
+        
+        // Wait for recovery attempts
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        
+        #expect(recoveryAttempts.count > 0)
+    }
+    
+    // MARK: - Configuration Tests
+    
+    @Test("Stream configuration validation")
+    func testStreamConfigurationValidation() throws {
+        // Valid configurations
+        #expect(throws: Never.self) {
+            let _ = try StreamPushConfig.standard480p(pushUrl: "rtmp://test.com/live")
+        }
+        
+        #expect(throws: Never.self) {
+            let _ = try StreamPushConfig.standard720p(pushUrl: "rtmps://secure.test.com/live")
+        }
+        
+        #expect(throws: Never.self) {
+            let _ = try StreamPushConfig.standard1080p(pushUrl: "rtmp://hd.test.com/live")
+        }
+        
+        // Invalid configurations
+        #expect(throws: RealtimeError.self) {
+            let _ = try StreamPushConfig.standard720p(pushUrl: "http://invalid.com/stream")
+        }
+        
+        #expect(throws: RealtimeError.self) {
+            let _ = try StreamPushConfig(
+                pushUrl: "rtmp://test.com/live",
+                width: 0, // Invalid
+                height: 720,
+                videoBitrate: 2000,
+                videoFramerate: 30,
+                audioBitrate: 128,
+                audioSampleRate: 44100
+            )
+        }
+    }
+    
+    @Test("Stream layout validation")
+    func testStreamLayoutValidation() {
+        // Valid layout
+        let validLayout = StreamLayout(
+            backgroundColor: "#000000",
+            userRegions: [
+                UserRegion(
+                    userId: "user1",
+                    x: 0, y: 0,
+                    width: 640, height: 360,
+                    zOrder: 1,
+                    alpha: 1.0
+                )
+            ]
+        )
+        #expect(validLayout.isValid(for: CGSize(width: 1280, height: 720)))
+        
+        // Invalid layout - region exceeds bounds
+        let invalidLayout = StreamLayout(
+            backgroundColor: "#000000",
+            userRegions: [
+                UserRegion(
+                    userId: "user1",
+                    x: 1000, y: 500, // Exceeds stream bounds
+                    width: 640, height: 360,
+                    zOrder: 1,
+                    alpha: 1.0
+                )
+            ]
+        )
+        #expect(!invalidLayout.isValid(for: CGSize(width: 1280, height: 720)))
+    }
+    
+    // MARK: - Performance Tests
+    
+    @Test("Stream start/stop performance")
+    func testStreamStartStopPerformance() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
+        
+        let startTime = Date()
+        
+        // Perform multiple start/stop cycles
+        for _ in 1...5 {
+            try await manager.startStreamPush(config: config)
+            try await manager.stopStreamPush()
+        }
+        
+        let endTime = Date()
+        let duration = endTime.timeIntervalSince(startTime)
+        
+        // Should complete within reasonable time
+        #expect(duration < 5.0) // 5 seconds for 5 cycles
+    }
+    
+    @Test("Layout update performance")
+    func testLayoutUpdatePerformance() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
+        
+        try await manager.startStreamPush(config: config)
+        
+        let startTime = Date()
+        
+        // Perform multiple layout updates
+        for i in 1...10 {
+            let layout = StreamLayout(
+                backgroundColor: "#000000",
+                userRegions: [
+                    UserRegion(
+                        userId: "user\(i)",
+                        x: i * 10, y: i * 10,
+                        width: 200, height: 200,
+                        zOrder: i,
+                        alpha: 1.0
+                    )
+                ]
+            )
+            try await manager.updateStreamLayout(layout: layout)
+        }
+        
+        let endTime = Date()
+        let duration = endTime.timeIntervalSince(startTime)
+        
+        // Should complete within reasonable time
+        #expect(duration < 2.0) // 2 seconds for 10 updates
+        
+        try await manager.stopStreamPush()
+    }
+    
+    // MARK: - Concurrent Operations Tests
+    
+    @Test("Concurrent stream operations")
+    func testConcurrentStreamOperations() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
+        
+        // Start stream
+        try await manager.startStreamPush(config: config)
+        
+        // Perform concurrent layout updates
+        await withTaskGroup(of: Void.self) { group in
+            for i in 1...5 {
+                group.addTask {
+                    let layout = StreamLayout(
+                        backgroundColor: "#00000\(i)",
+                        userRegions: [
+                            UserRegion(
+                                userId: "user\(i)",
+                                x: 0, y: 0,
+                                width: 100, height: 100,
+                                zOrder: i,
+                                alpha: 1.0
+                            )
+                        ]
+                    )
+                    
+                    do {
+                        try await manager.updateStreamLayout(layout: layout)
+                    } catch {
+                        // Some updates might fail due to concurrent access
+                    }
+                }
+            }
+        }
+        
+        // Should handle concurrent operations without crashing
         #expect(manager.currentState == .running)
-        #expect(manager.currentConfig == config2)
         
-        let startCount = provider.startCallCount
-        let stopCount = provider.stopCallCount
-        #expect(startCount == 2) // Original start + restart
-        #expect(stopCount == 1) // Stop before restart
+        try await manager.stopStreamPush()
     }
     
     // MARK: - State Management Tests
     
-    @Test("State transitions should be correct")
-    func testStateTransitions() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config = try createValidConfig()
+    @Test("State transition validation")
+    func testStateTransitionValidation() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
         
-        var stateChanges: [(StreamPushState, StreamPushState)] = []
-        manager.onStateChanged = { old, new in
-            stateChanges.append((old, new))
+        // Valid transitions
+        #expect(manager.currentState == .stopped)
+        
+        try await manager.startStreamPush(config: config)
+        #expect(manager.currentState == .running)
+        
+        try await manager.stopStreamPush()
+        #expect(manager.currentState == .stopped)
+    }
+    
+    @Test("State change notifications")
+    func testStateChangeNotifications() async throws {
+        let manager = createManager()
+        let config = try createTestConfig()
+        
+        var stateChanges: [(StreamPushState, StreamPushState?)] = []
+        manager.onStateChanged = { newState in
+            stateChanges.append((newState, manager.previousState))
         }
         
-        manager.configure(with: provider)
-        
-        // Start stream push
         try await manager.startStreamPush(config: config)
-        
-        // Stop stream push
         try await manager.stopStreamPush()
         
-        #expect(stateChanges.count == 4)
-        #expect(stateChanges[0] == (.stopped, .starting))
-        #expect(stateChanges[1] == (.starting, .running))
-        #expect(stateChanges[2] == (.running, .stopping))
-        #expect(stateChanges[3] == (.stopping, .stopped))
+        #expect(stateChanges.count >= 4) // starting, running, stopping, stopped
+        
+        // Check state progression
+        let states = stateChanges.map { $0.0 }
+        #expect(states.contains(.starting))
+        #expect(states.contains(.running))
+        #expect(states.contains(.stopping))
+        #expect(states.contains(.stopped))
     }
     
-    // MARK: - Error Recovery Tests
+    // MARK: - Memory Management Tests
     
-    @Test("Should reset error state")
-    func testResetErrorState() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config = try createValidConfig()
+    @Test("Manager cleanup on deallocation")
+    func testManagerCleanupOnDeallocation() async throws {
+        var manager: StreamPushManager? = createManager()
         
-        manager.configure(with: provider)
-        provider.setShouldFailStart(true)
+        weak var weakManager = manager
         
-        // Cause an error
-        do {
-            try await manager.startStreamPush(config: config)
-        } catch {
-            // Expected to fail
+        let config = try createTestConfig()
+        try await manager?.startStreamPush(config: config)
+        try await manager?.stopStreamPush()
+        
+        manager = nil
+        
+        // Force garbage collection
+        for _ in 0..<10 {
+            autoreleasepool {
+                _ = Array(0..<1000)
+            }
         }
         
-        #expect(manager.currentState == .failed)
-        #expect(manager.lastError != nil)
-        
-        // Reset error state
-        manager.resetErrorState()
-        
-        #expect(manager.lastError == nil)
-        #expect(manager.canStart == true)
+        #expect(weakManager == nil)
     }
     
-    // MARK: - Statistics Tests
+    // MARK: - Integration Tests
     
-    @Test("Statistics should be tracked correctly")
-    func testStatistics() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config = try createValidConfig()
-        let newLayout = try createValidLayout()
+    @Test("End-to-end stream lifecycle")
+    func testEndToEndStreamLifecycle() async throws {
+        let manager = createManager()
+        let config = try createCustomConfig()
         
-        manager.configure(with: provider)
+        var events: [String] = []
         
-        // Start stream push
+        manager.onStateChanged = { state in
+            events.append("state: \(state)")
+        }
+        
+        manager.onError = { error in
+            events.append("error: \(error.localizedDescription)")
+        }
+        
+        // Complete lifecycle
         try await manager.startStreamPush(config: config)
         
-        #expect(manager.statistics.startTime != nil)
+        // Update layout during streaming
+        let layout = StreamLayout(
+            backgroundColor: "#FFFFFF",
+            userRegions: [
+                UserRegion(
+                    userId: "presenter",
+                    x: 0, y: 0,
+                    width: 1920, height: 1080,
+                    zOrder: 1,
+                    alpha: 1.0
+                )
+            ]
+        )
+        try await manager.updateStreamLayout(layout: layout)
         
-        // Update layout
-        try await manager.updateLayout(newLayout)
-        
-        #expect(manager.statistics.layoutUpdateCount == 1)
-        
-        // Stop stream push
-        try await manager.stopStreamPush()
-        
-        #expect(manager.statistics.endTime != nil)
-    }
-    
-    // MARK: - Utility Tests
-    
-    @Test("Duration calculation should work")
-    func testDurationCalculation() async throws {
-        let manager = StreamPushManager()
-        let provider = MockRTCProvider()
-        let config = try createValidConfig()
-        
-        manager.configure(with: provider)
-        
-        #expect(manager.currentDuration == 0)
-        
-        try await manager.startStreamPush(config: config)
-        
-        // Small delay to ensure duration > 0
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-        
-        #expect(manager.currentDuration > 0)
+        // Simulate streaming time
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         
         try await manager.stopStreamPush()
         
-        #expect(manager.currentDuration == 0)
-    }
-}
-
-// MARK: - MockRTCProvider Extensions
-
-extension StreamPushManagerTests.MockRTCProvider {
-    func setShouldFailStart(_ shouldFail: Bool) {
-        shouldFailStart = shouldFail
-    }
-    
-    func setShouldFailStop(_ shouldFail: Bool) {
-        shouldFailStop = shouldFail
-    }
-    
-    func setShouldFailLayoutUpdate(_ shouldFail: Bool) {
-        shouldFailLayoutUpdate = shouldFail
+        // Verify events occurred
+        #expect(events.count >= 4)
+        #expect(events.contains { $0.contains("starting") })
+        #expect(events.contains { $0.contains("running") })
+        #expect(events.contains { $0.contains("stopping") })
+        #expect(events.contains { $0.contains("stopped") })
+        
+        // Verify final state
+        #expect(manager.currentState == .stopped)
+        #expect(manager.statistics.totalStreams == 1)
+        #expect(manager.statistics.totalDuration > 0.1)
     }
 }

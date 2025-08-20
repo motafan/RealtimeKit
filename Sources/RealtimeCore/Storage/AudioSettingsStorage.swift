@@ -5,7 +5,7 @@ import Foundation
 import Combine
 
 /// Storage manager for audio settings with validation and migration support
-public final class AudioSettingsStorage: ObservableObject {
+public final class AudioSettingsStorage: ObservableObject, @unchecked Sendable {
     
     // MARK: - Storage Keys
     private enum StorageKeys {

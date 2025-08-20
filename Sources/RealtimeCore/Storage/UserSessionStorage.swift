@@ -5,7 +5,7 @@ import Foundation
 import Combine
 
 /// Storage manager for user sessions with security and validation support
-public final class UserSessionStorage: ObservableObject {
+public final class UserSessionStorage: ObservableObject, @unchecked Sendable {
     
     // MARK: - Storage Keys
     private enum StorageKeys {

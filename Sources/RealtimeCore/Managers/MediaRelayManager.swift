@@ -355,7 +355,7 @@ public class MediaRelayManager: ObservableObject {
     /// Reset statistics for a new relay configuration
     /// - Parameter config: Relay configuration
     private func resetStatistics(for config: MediaRelayConfig) {
-        let destinationStats = Dictionary(
+        let destinationStats: [String: RelayChannelStatistics] = Dictionary(
             uniqueKeysWithValues: config.destinationChannels.map { channel in
                 (channel.channelName, RelayChannelStatistics(channelName: channel.channelName))
             }

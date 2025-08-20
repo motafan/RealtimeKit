@@ -115,8 +115,8 @@ public final class ThreadSafetyManager: ObservableObject {
     private func registerTask(_ taskId: UUID) async {
         await withCheckedContinuation { continuation in
             taskQueue.async(flags: .barrier) {
-                self.activeTasks.insert(taskId)
                 Task { @MainActor in
+                    self.activeTasks.insert(taskId)
                     self.activeOperations += 1
                 }
                 continuation.resume()
@@ -127,8 +127,8 @@ public final class ThreadSafetyManager: ObservableObject {
     private func unregisterTask(_ taskId: UUID) async {
         await withCheckedContinuation { continuation in
             taskQueue.async(flags: .barrier) {
-                self.activeTasks.remove(taskId)
                 Task { @MainActor in
+                    self.activeTasks.remove(taskId)
                     self.activeOperations -= 1
                     self.completedOperations += 1
                 }
@@ -140,8 +140,8 @@ public final class ThreadSafetyManager: ObservableObject {
     private func cancelTask(_ taskId: UUID) async {
         await withCheckedContinuation { continuation in
             taskQueue.async(flags: .barrier) {
-                self.activeTasks.remove(taskId)
                 Task { @MainActor in
+                    self.activeTasks.remove(taskId)
                     self.activeOperations -= 1
                 }
                 continuation.resume()

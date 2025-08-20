@@ -1,343 +1,634 @@
 // MessageProcessorManagerTests.swift
-// Unit tests for MessageProcessorManager
+// Comprehensive unit tests for MessageProcessorManager
 
 import Testing
+import Foundation
 @testable import RealtimeCore
 
 @Suite("MessageProcessorManager Tests")
 @MainActor
 struct MessageProcessorManagerTests {
     
-    // MARK: - Test Processors
+    // MARK: - Test Message Processors
     
-    @MainActor
-    class TestTextProcessor: MessageProcessor {
-        nonisolated let identifier = "test_text_processor"
-        nonisolated let priority = 100
-        var processCallCount = 0
-        var shouldThrowError = false
-        var shouldFilterMessage = false
+    class TestTextMessageProcessor: MessageProcessor {
+        let identifier = "test_text_processor"
+        let priority = 100
+        var processedMessages: [RealtimeMessage] = []
+        var shouldFail = false
+        var processingDelay: TimeInterval = 0
         
-        nonisolated func canProcess(_ message: RealtimeMessage) -> Bool {
-            return message.messageType == .text
+        func canProcess(_ message: RealtimeMessage) -> Bool {
+            return message.type == .text
         }
         
         func processMessage(_ message: RealtimeMessage) async throws -> RealtimeMessage? {
-            processCallCount += 1
-            
-            if shouldThrowError {
-                throw TestError.processingFailed
+            if processingDelay > 0 {
+                try await Task.sleep(nanoseconds: UInt64(processingDelay * 1_000_000_000))
             }
             
-            if shouldFilterMessage {
-                return nil
+            if shouldFail {
+                throw RealtimeError.processingFailed("Test processor failure")
             }
             
-            // Add processed metadata
-            return message.withMetadata(["processed_by": identifier])
+            processedMessages.append(message)
+            
+            // Add processing metadata
+            return message.withMetadata([
+                "processed_by": identifier,
+                "processed_at": Date().timeIntervalSince1970
+            ])
         }
     }
     
-    @MainActor
-    class TestSystemProcessor: MessageProcessor {
-        nonisolated let identifier = "test_system_processor"
-        nonisolated let priority = 50
-        var processCallCount = 0
+    class TestSystemMessageProcessor: MessageProcessor {
+        let identifier = "test_system_processor"
+        let priority = 50
+        var processedMessages: [RealtimeMessage] = []
         
-        nonisolated func canProcess(_ message: RealtimeMessage) -> Bool {
-            return message.messageType == .system
-        }
-        
-        func processMessage(_ message: RealtimeMessage) async throws -> RealtimeMessage? {
-            processCallCount += 1
-            return message.withMetadata(["system_processed": "true"])
-        }
-    }
-    
-    @MainActor
-    class TestUniversalProcessor: MessageProcessor {
-        nonisolated let identifier = "test_universal_processor"
-        nonisolated let priority = 10
-        var processCallCount = 0
-        
-        nonisolated func canProcess(_ message: RealtimeMessage) -> Bool {
-            return true
+        func canProcess(_ message: RealtimeMessage) -> Bool {
+            return message.type == .system
         }
         
         func processMessage(_ message: RealtimeMessage) async throws -> RealtimeMessage? {
-            processCallCount += 1
-            return message.withMetadata(["universal_processed": "true"])
+            processedMessages.append(message)
+            return message.withMetadata(["system_processed": true])
         }
     }
     
-    enum TestError: Error {
-        case processingFailed
+    class TestFilterProcessor: MessageProcessor {
+        let identifier = "test_filter_processor"
+        let priority = 200
+        let blockedUserIds: Set<String>
+        
+        init(blockedUserIds: Set<String> = []) {
+            self.blockedUserIds = blockedUserIds
+        }
+        
+        func canProcess(_ message: RealtimeMessage) -> Bool {
+            return true // Process all messages
+        }
+        
+        func processMessage(_ message: RealtimeMessage) async throws -> RealtimeMessage? {
+            // Filter out messages from blocked users
+            if blockedUserIds.contains(message.senderId) {
+                return nil // Block the message
+            }
+            
+            return message.withMetadata(["filter_checked": true])
+        }
     }
     
-    // MARK: - Test Cases
+    // MARK: - Test Setup
+    
+    private func createManager() -> MessageProcessorManager {
+        return MessageProcessorManager()
+    }
+    
+    private func createTextMessage(content: String = "Hello", from userId: String = "user1") -> RealtimeMessage {
+        return RealtimeMessage.text(content, from: userId)
+    }
+    
+    private func createSystemMessage(data: [String: Any] = ["action": "test"]) -> RealtimeMessage {
+        return RealtimeMessage.system(data)
+    }
+    
+    // MARK: - Initialization Tests
     
     @Test("Manager initialization")
-    func testManagerInitialization() async {
-        let manager = RealtimeMessageProcessorManager()
+    func testManagerInitialization() {
+        let manager = createManager()
         
-        #expect(manager.getRegisteredProcessors().isEmpty)
+        #expect(manager.registeredProcessors.isEmpty)
         #expect(manager.processingQueue.isEmpty)
         #expect(manager.processingStats.totalReceived == 0)
-        #expect(!manager.isProcessing)
+        #expect(manager.processingStats.totalProcessed == 0)
+        #expect(manager.processingStats.totalFailed == 0)
+        #expect(manager.isProcessing == false)
     }
     
-    @Test("Processor registration")
-    func testProcessorRegistration() async {
-        let manager = RealtimeMessageProcessorManager()
-        let textProcessor = TestTextProcessor()
-        let systemProcessor = TestSystemProcessor()
+    // MARK: - Processor Registration Tests
+    
+    @Test("Register single processor")
+    func testRegisterSingleProcessor() throws {
+        let manager = createManager()
+        let processor = TestTextMessageProcessor()
         
-        manager.registerProcessor(textProcessor)
-        manager.registerProcessor(systemProcessor)
+        try manager.registerProcessor(processor)
         
-        let processors = manager.getRegisteredProcessors()
-        #expect(processors.count == 2)
-        
-        // Should be sorted by priority (higher first)
-        #expect(processors[0].identifier == "test_text_processor")
-        #expect(processors[1].identifier == "test_system_processor")
-        
-        #expect(manager.isProcessorRegistered(withIdentifier: "test_text_processor"))
-        #expect(manager.isProcessorRegistered(withIdentifier: "test_system_processor"))
+        #expect(manager.registeredProcessors.count == 1)
+        #expect(manager.registeredProcessors.contains(where: { $0.identifier == processor.identifier }))
     }
     
-    @Test("Processor unregistration")
-    func testProcessorUnregistration() async {
-        let manager = RealtimeMessageProcessorManager()
-        let textProcessor = TestTextProcessor()
+    @Test("Register multiple processors")
+    func testRegisterMultipleProcessors() throws {
+        let manager = createManager()
+        let textProcessor = TestTextMessageProcessor()
+        let systemProcessor = TestSystemMessageProcessor()
         
-        manager.registerProcessor(textProcessor)
-        #expect(manager.isProcessorRegistered(withIdentifier: "test_text_processor"))
+        try manager.registerProcessor(textProcessor)
+        try manager.registerProcessor(systemProcessor)
         
-        manager.unregisterProcessor(withIdentifier: "test_text_processor")
-        #expect(!manager.isProcessorRegistered(withIdentifier: "test_text_processor"))
-        #expect(manager.getRegisteredProcessors().isEmpty)
+        #expect(manager.registeredProcessors.count == 2)
+        #expect(manager.registeredProcessors.contains(where: { $0.identifier == textProcessor.identifier }))
+        #expect(manager.registeredProcessors.contains(where: { $0.identifier == systemProcessor.identifier }))
     }
     
-    @Test("Message processing with single processor")
-    func testMessageProcessingWithSingleProcessor() async throws {
-        let manager = RealtimeMessageProcessorManager()
-        let textProcessor = TestTextProcessor()
+    @Test("Register duplicate processor")
+    func testRegisterDuplicateProcessor() throws {
+        let manager = createManager()
+        let processor1 = TestTextMessageProcessor()
+        let processor2 = TestTextMessageProcessor()
         
-        manager.registerProcessor(textProcessor)
+        try manager.registerProcessor(processor1)
         
-        let message = RealtimeMessage.text("Hello", from: "user1")
-        let processedMessage = try await manager.processMessage(message)
+        #expect(throws: RealtimeError.self) {
+            try manager.registerProcessor(processor2)
+        }
+    }
+    
+    @Test("Unregister processor")
+    func testUnregisterProcessor() throws {
+        let manager = createManager()
+        let processor = TestTextMessageProcessor()
         
-        #expect(processedMessage != nil)
-        #expect(processedMessage?.getMetadata(for: "processed_by") == "test_text_processor")
-        #expect(textProcessor.processCallCount == 1)
+        try manager.registerProcessor(processor)
+        #expect(manager.registeredProcessors.count == 1)
+        
+        manager.unregisterProcessor(identifier: processor.identifier)
+        #expect(manager.registeredProcessors.isEmpty)
+    }
+    
+    @Test("Unregister non-existent processor")
+    func testUnregisterNonExistentProcessor() {
+        let manager = createManager()
+        
+        // Should not throw or crash
+        manager.unregisterProcessor(identifier: "non_existent")
+        
+        #expect(manager.registeredProcessors.isEmpty)
+    }
+    
+    // MARK: - Message Processing Tests
+    
+    @Test("Process single message")
+    func testProcessSingleMessage() async throws {
+        let manager = createManager()
+        let processor = TestTextMessageProcessor()
+        
+        try manager.registerProcessor(processor)
+        
+        let message = createTextMessage(content: "Test message")
+        await manager.processMessage(message)
+        
+        #expect(processor.processedMessages.count == 1)
+        #expect(processor.processedMessages.first?.content.textContent == "Test message")
         #expect(manager.processingStats.totalReceived == 1)
         #expect(manager.processingStats.totalProcessed == 1)
     }
     
-    @Test("Message processing with multiple processors")
-    func testMessageProcessingWithMultipleProcessors() async throws {
-        let manager = RealtimeMessageProcessorManager()
-        let textProcessor = TestTextProcessor()
-        let universalProcessor = TestUniversalProcessor()
+    @Test("Process message with no matching processor")
+    func testProcessMessageWithNoMatchingProcessor() async throws {
+        let manager = createManager()
+        let processor = TestTextMessageProcessor()
         
-        manager.registerProcessor(textProcessor)
-        manager.registerProcessor(universalProcessor)
+        try manager.registerProcessor(processor)
         
-        let message = RealtimeMessage.text("Hello", from: "user1")
-        let processedMessage = try await manager.processMessage(message)
+        // Send system message to text processor
+        let systemMessage = createSystemMessage()
+        await manager.processMessage(systemMessage)
         
-        #expect(processedMessage != nil)
-        #expect(processedMessage?.getMetadata(for: "processed_by") == "test_text_processor")
-        #expect(processedMessage?.getMetadata(for: "universal_processed") == "true")
-        #expect(textProcessor.processCallCount == 1)
-        #expect(universalProcessor.processCallCount == 1)
-    }
-    
-    @Test("Message filtering")
-    func testMessageFiltering() async throws {
-        let manager = RealtimeMessageProcessorManager()
-        let textProcessor = TestTextProcessor()
-        textProcessor.shouldFilterMessage = true
-        
-        manager.registerProcessor(textProcessor)
-        
-        let message = RealtimeMessage.text("Hello", from: "user1")
-        let processedMessage = try await manager.processMessage(message)
-        
-        #expect(processedMessage == nil)
-        #expect(textProcessor.processCallCount == 1)
+        #expect(processor.processedMessages.isEmpty)
         #expect(manager.processingStats.totalReceived == 1)
         #expect(manager.processingStats.totalSkipped == 1)
     }
     
-    @Test("Processor priority ordering")
-    func testProcessorPriorityOrdering() async {
-        let manager = RealtimeMessageProcessorManager()
-        let lowPriorityProcessor = TestUniversalProcessor() // priority 10
-        let highPriorityProcessor = TestTextProcessor() // priority 100
+    @Test("Process message with multiple processors")
+    func testProcessMessageWithMultipleProcessors() async throws {
+        let manager = createManager()
+        let textProcessor = TestTextMessageProcessor()
+        let filterProcessor = TestFilterProcessor()
         
-        // Register in reverse priority order
-        manager.registerProcessor(lowPriorityProcessor)
-        manager.registerProcessor(highPriorityProcessor)
+        try manager.registerProcessor(filterProcessor) // Higher priority
+        try manager.registerProcessor(textProcessor)
         
-        let processors = manager.getRegisteredProcessors()
-        #expect(processors.count == 2)
-        #expect(processors[0].priority > processors[1].priority)
-        #expect(processors[0].identifier == "test_text_processor")
-        #expect(processors[1].identifier == "test_universal_processor")
+        let message = createTextMessage(content: "Test message")
+        await manager.processMessage(message)
+        
+        // Both processors should process the message
+        #expect(textProcessor.processedMessages.count == 1)
+        #expect(manager.processingStats.totalProcessed == 1)
+        
+        // Check that filter processor ran first (higher priority)
+        let processedMessage = textProcessor.processedMessages.first
+        #expect(processedMessage?.metadata["filter_checked"] as? Bool == true)
     }
     
-    @Test("Message type filtering")
-    func testMessageTypeFiltering() async throws {
-        let manager = RealtimeMessageProcessorManager()
-        let textProcessor = TestTextProcessor()
-        let systemProcessor = TestSystemProcessor()
+    @Test("Process message with processor priority ordering")
+    func testProcessMessageWithProcessorPriorityOrdering() async throws {
+        let manager = createManager()
         
-        manager.registerProcessor(textProcessor)
-        manager.registerProcessor(systemProcessor)
+        // Create processors with different priorities
+        let lowPriorityProcessor = TestTextMessageProcessor()
+        lowPriorityProcessor.priority = 10
         
-        // Process text message
-        let textMessage = RealtimeMessage.text("Hello", from: "user1")
-        let processedTextMessage = try await manager.processMessage(textMessage)
+        let highPriorityProcessor = TestFilterProcessor()
+        // highPriorityProcessor.priority = 200 (default)
         
-        #expect(processedTextMessage?.getMetadata(for: "processed_by") == "test_text_processor")
-        #expect(processedTextMessage?.getMetadata(for: "system_processed") == nil)
-        #expect(textProcessor.processCallCount == 1)
-        #expect(systemProcessor.processCallCount == 0)
+        try manager.registerProcessor(lowPriorityProcessor)
+        try manager.registerProcessor(highPriorityProcessor)
         
-        // Process system message
-        let systemMessage = RealtimeMessage.system("System notification")
-        let processedSystemMessage = try await manager.processMessage(systemMessage)
+        let message = createTextMessage()
+        await manager.processMessage(message)
         
-        #expect(processedSystemMessage?.getMetadata(for: "processed_by") == nil)
-        #expect(processedSystemMessage?.getMetadata(for: "system_processed") == "true")
-        #expect(textProcessor.processCallCount == 1)
-        #expect(systemProcessor.processCallCount == 1)
+        // High priority processor should run first
+        let processedMessage = lowPriorityProcessor.processedMessages.first
+        #expect(processedMessage?.metadata["filter_checked"] as? Bool == true)
     }
     
-    @Test("Error handling")
-    func testErrorHandling() async {
-        let manager = RealtimeMessageProcessorManager(maxRetries: 0, retryDelay: 0.1) // No retries
-        let textProcessor = TestTextProcessor()
-        textProcessor.shouldThrowError = true
+    // MARK: - Message Filtering Tests
+    
+    @Test("Filter blocked messages")
+    func testFilterBlockedMessages() async throws {
+        let manager = createManager()
+        let filterProcessor = TestFilterProcessor(blockedUserIds: ["blocked_user"])
+        let textProcessor = TestTextMessageProcessor()
         
-        manager.registerProcessor(textProcessor)
+        try manager.registerProcessor(filterProcessor)
+        try manager.registerProcessor(textProcessor)
         
-        let message = RealtimeMessage.text("Hello", from: "user1")
+        // Send message from blocked user
+        let blockedMessage = createTextMessage(content: "Blocked message", from: "blocked_user")
+        await manager.processMessage(blockedMessage)
         
-        do {
-            _ = try await manager.processMessage(message)
-            #expect(Bool(false), "Should have thrown an error")
-        } catch {
-            #expect(error is MessageProcessingError)
-            #expect(manager.processingStats.totalReceived == 1)
-            #expect(manager.processingStats.totalFailed == 1)
+        // Message should be filtered out
+        #expect(textProcessor.processedMessages.isEmpty)
+        #expect(manager.processingStats.totalFiltered == 1)
+        
+        // Send message from allowed user
+        let allowedMessage = createTextMessage(content: "Allowed message", from: "allowed_user")
+        await manager.processMessage(allowedMessage)
+        
+        // Message should be processed
+        #expect(textProcessor.processedMessages.count == 1)
+        #expect(manager.processingStats.totalProcessed == 1)
+    }
+    
+    // MARK: - Error Handling Tests
+    
+    @Test("Handle processor failure")
+    func testHandleProcessorFailure() async throws {
+        let manager = createManager()
+        let processor = TestTextMessageProcessor()
+        processor.shouldFail = true
+        
+        try manager.registerProcessor(processor)
+        
+        var errorReceived: Error?
+        manager.onProcessingError = { error in
+            errorReceived = error
         }
+        
+        let message = createTextMessage()
+        await manager.processMessage(message)
+        
+        #expect(errorReceived != nil)
+        #expect(manager.processingStats.totalFailed == 1)
     }
     
-    @Test("Retry logic")
-    func testRetryLogic() async {
-        let manager = RealtimeMessageProcessorManager(maxRetries: 2, retryDelay: 0.1)
-        let message = RealtimeMessage.text("Hello", from: "user1")
+    @Test("Continue processing after processor failure")
+    func testContinueProcessingAfterProcessorFailure() async throws {
+        let manager = createManager()
+        let failingProcessor = TestTextMessageProcessor()
+        failingProcessor.shouldFail = true
+        failingProcessor.priority = 100
         
-        let result = await manager.processMessageWithRetry(message)
+        let workingProcessor = TestTextMessageProcessor()
+        workingProcessor.priority = 50
         
-        switch result {
-        case .processed:
-            #expect(Bool(true), "Message should be processed when no processors are registered")
-        case .failed, .skipped, .retry:
-            #expect(Bool(false), "Unexpected result type")
+        try manager.registerProcessor(failingProcessor)
+        try manager.registerProcessor(workingProcessor)
+        
+        let message = createTextMessage()
+        await manager.processMessage(message)
+        
+        // Working processor should still process the message
+        #expect(workingProcessor.processedMessages.count == 1)
+        #expect(manager.processingStats.totalFailed == 1)
+        #expect(manager.processingStats.totalProcessed == 1)
+    }
+    
+    @Test("Retry failed processing")
+    func testRetryFailedProcessing() async throws {
+        let manager = createManager()
+        manager.enableRetry(maxAttempts: 3, retryDelay: 0.05)
+        
+        let processor = TestTextMessageProcessor()
+        var attemptCount = 0
+        
+        // Processor that fails first two times, then succeeds
+        processor.processMessage = { message in
+            attemptCount += 1
+            if attemptCount < 3 {
+                throw RealtimeError.processingFailed("Temporary failure")
+            }
+            processor.processedMessages.append(message)
+            return message
         }
+        
+        try manager.registerProcessor(processor)
+        
+        let message = createTextMessage()
+        await manager.processMessage(message)
+        
+        // Wait for retries
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        
+        #expect(attemptCount == 3)
+        #expect(processor.processedMessages.count == 1)
+        #expect(manager.processingStats.totalProcessed == 1)
     }
     
-    @Test("Statistics tracking")
-    func testStatisticsTracking() async throws {
-        let manager = RealtimeMessageProcessorManager()
-        let textProcessor = TestTextProcessor()
-        let filteringProcessor = TestTextProcessor()
-        filteringProcessor.shouldFilterMessage = true
-        
-        manager.registerProcessor(textProcessor)
-        
-        // Process successful message
-        let message1 = RealtimeMessage.text("Hello", from: "user1")
-        _ = try await manager.processMessage(message1)
-        
-        // Process filtered message
-        manager.clearAllProcessors()
-        manager.registerProcessor(filteringProcessor)
-        let message2 = RealtimeMessage.text("Filtered", from: "user2")
-        _ = try await manager.processMessage(message2)
-        
-        let stats = manager.processingStats
-        #expect(stats.totalReceived == 2)
-        #expect(stats.totalProcessed == 1) // One successful
-        #expect(stats.totalSkipped == 1) // One filtered
-    }
+    // MARK: - Concurrent Processing Tests
     
-    @Test("Clear all processors")
-    func testClearAllProcessors() async {
-        let manager = RealtimeMessageProcessorManager()
-        let textProcessor = TestTextProcessor()
-        let systemProcessor = TestSystemProcessor()
+    @Test("Concurrent message processing")
+    func testConcurrentMessageProcessing() async throws {
+        let manager = createManager()
+        let processor = TestTextMessageProcessor()
+        processor.processingDelay = 0.05 // 50ms delay
         
-        manager.registerProcessor(textProcessor)
-        manager.registerProcessor(systemProcessor)
+        try manager.registerProcessor(processor)
         
-        #expect(manager.getRegisteredProcessors().count == 2)
+        // Process multiple messages concurrently
+        await withTaskGroup(of: Void.self) { group in
+            for i in 1...10 {
+                group.addTask {
+                    let message = createTextMessage(content: "Message \(i)")
+                    await manager.processMessage(message)
+                }
+            }
+        }
         
-        manager.clearAllProcessors()
-        
-        #expect(manager.getRegisteredProcessors().isEmpty)
-        #expect(!manager.isProcessorRegistered(withIdentifier: "test_text_processor"))
-        #expect(!manager.isProcessorRegistered(withIdentifier: "test_system_processor"))
-    }
-    
-    @Test("Get processor by identifier")
-    func testGetProcessorByIdentifier() async {
-        let manager = RealtimeMessageProcessorManager()
-        let textProcessor = TestTextProcessor()
-        
-        manager.registerProcessor(textProcessor)
-        
-        let retrievedProcessor = manager.getProcessor(withIdentifier: "test_text_processor")
-        #expect(retrievedProcessor != nil)
-        #expect(retrievedProcessor?.identifier == "test_text_processor")
-        
-        let nonExistentProcessor = manager.getProcessor(withIdentifier: "non_existent")
-        #expect(nonExistentProcessor == nil)
-    }
-    
-    @Test("Duplicate processor registration")
-    func testDuplicateProcessorRegistration() async {
-        let manager = RealtimeMessageProcessorManager()
-        let textProcessor1 = TestTextProcessor()
-        let textProcessor2 = TestTextProcessor()
-        
-        manager.registerProcessor(textProcessor1)
-        manager.registerProcessor(textProcessor2) // Should not replace the first one
-        
-        #expect(manager.getRegisteredProcessors().count == 1)
-        #expect(manager.isProcessorRegistered(withIdentifier: "test_text_processor"))
+        #expect(processor.processedMessages.count == 10)
+        #expect(manager.processingStats.totalProcessed == 10)
     }
     
     @Test("Processing queue management")
     func testProcessingQueueManagement() async throws {
-        let manager = RealtimeMessageProcessorManager()
-        let textProcessor = TestTextProcessor()
+        let manager = createManager()
+        manager.setMaxQueueSize(5)
         
-        manager.registerProcessor(textProcessor)
+        let processor = TestTextMessageProcessor()
+        processor.processingDelay = 0.1 // 100ms delay
         
-        #expect(manager.processingQueue.isEmpty)
-        #expect(!manager.isProcessing)
+        try manager.registerProcessor(processor)
         
-        let message = RealtimeMessage.text("Hello", from: "user1")
-        _ = try await manager.processMessage(message)
+        // Add more messages than queue capacity
+        for i in 1...10 {
+            let message = createTextMessage(content: "Message \(i)")
+            await manager.processMessage(message)
+        }
         
-        // After processing, queue should be empty
-        #expect(manager.processingQueue.isEmpty)
-        #expect(!manager.isProcessing)
+        // Queue should be limited to max size
+        #expect(manager.processingQueue.count <= 5)
+        #expect(manager.processingStats.totalDropped > 0)
+    }
+    
+    // MARK: - Performance Tests
+    
+    @Test("Processing performance")
+    func testProcessingPerformance() async throws {
+        let manager = createManager()
+        let processor = TestTextMessageProcessor()
+        
+        try manager.registerProcessor(processor)
+        
+        let startTime = Date()
+        
+        // Process many messages
+        for i in 1...1000 {
+            let message = createTextMessage(content: "Message \(i)")
+            await manager.processMessage(message)
+        }
+        
+        let endTime = Date()
+        let duration = endTime.timeIntervalSince(startTime)
+        
+        #expect(duration < 2.0) // Should complete within 2 seconds
+        #expect(processor.processedMessages.count == 1000)
+        #expect(manager.processingStats.totalProcessed == 1000)
+    }
+    
+    @Test("Memory usage during processing")
+    func testMemoryUsageDuringProcessing() async throws {
+        let manager = createManager()
+        let processor = TestTextMessageProcessor()
+        
+        try manager.registerProcessor(processor)
+        
+        // Process many messages and verify memory doesn't grow unbounded
+        for i in 1...10000 {
+            let message = createTextMessage(content: "Message \(i)")
+            await manager.processMessage(message)
+            
+            // Periodically check queue size
+            if i % 1000 == 0 {
+                #expect(manager.processingQueue.count < 100) // Should not accumulate
+            }
+        }
+        
+        #expect(processor.processedMessages.count == 10000)
+    }
+    
+    // MARK: - Statistics Tests
+    
+    @Test("Processing statistics tracking")
+    func testProcessingStatisticsTracking() async throws {
+        let manager = createManager()
+        let textProcessor = TestTextMessageProcessor()
+        let filterProcessor = TestFilterProcessor(blockedUserIds: ["blocked"])
+        
+        try manager.registerProcessor(filterProcessor)
+        try manager.registerProcessor(textProcessor)
+        
+        // Process various types of messages
+        await manager.processMessage(createTextMessage(content: "Normal message"))
+        await manager.processMessage(createTextMessage(content: "Blocked message", from: "blocked"))
+        await manager.processMessage(createSystemMessage()) // No processor
+        
+        let stats = manager.processingStats
+        #expect(stats.totalReceived == 3)
+        #expect(stats.totalProcessed == 1) // Only normal message
+        #expect(stats.totalFiltered == 1)  // Blocked message
+        #expect(stats.totalSkipped == 1)   // System message
+    }
+    
+    @Test("Processing rate calculation")
+    func testProcessingRateCalculation() async throws {
+        let manager = createManager()
+        let processor = TestTextMessageProcessor()
+        
+        try manager.registerProcessor(processor)
+        
+        let startTime = Date()
+        
+        // Process messages over time
+        for i in 1...50 {
+            let message = createTextMessage(content: "Message \(i)")
+            await manager.processMessage(message)
+            
+            if i % 10 == 0 {
+                try await Task.sleep(nanoseconds: 50_000_000) // 50ms pause
+            }
+        }
+        
+        let endTime = Date()
+        let duration = endTime.timeIntervalSince(startTime)
+        let rate = manager.processingStats.processingRate
+        
+        #expect(rate > 0)
+        #expect(rate < 1000) // Reasonable rate
+    }
+    
+    // MARK: - Configuration Tests
+    
+    @Test("Manager configuration")
+    func testManagerConfiguration() throws {
+        let manager = createManager()
+        
+        let config = MessageProcessorConfig(
+            maxQueueSize: 1000,
+            enableRetry: true,
+            maxRetryAttempts: 5,
+            retryDelay: 0.1,
+            enableStatistics: true,
+            processingTimeout: 30.0
+        )
+        
+        manager.configure(with: config)
+        
+        #expect(manager.configuration.maxQueueSize == 1000)
+        #expect(manager.configuration.enableRetry == true)
+        #expect(manager.configuration.maxRetryAttempts == 5)
+        #expect(manager.configuration.retryDelay == 0.1)
+        #expect(manager.configuration.enableStatistics == true)
+        #expect(manager.configuration.processingTimeout == 30.0)
+    }
+    
+    // MARK: - Lifecycle Tests
+    
+    @Test("Manager start and stop")
+    func testManagerStartAndStop() async throws {
+        let manager = createManager()
+        let processor = TestTextMessageProcessor()
+        
+        try manager.registerProcessor(processor)
+        
+        #expect(manager.isProcessing == false)
+        
+        manager.start()
+        #expect(manager.isProcessing == true)
+        
+        // Process a message while running
+        let message = createTextMessage()
+        await manager.processMessage(message)
+        
+        #expect(processor.processedMessages.count == 1)
+        
+        manager.stop()
+        #expect(manager.isProcessing == false)
+        
+        // Messages should not be processed when stopped
+        await manager.processMessage(createTextMessage())
+        #expect(processor.processedMessages.count == 1) // Still 1
+    }
+    
+    @Test("Graceful shutdown")
+    func testGracefulShutdown() async throws {
+        let manager = createManager()
+        let processor = TestTextMessageProcessor()
+        processor.processingDelay = 0.1 // 100ms delay
+        
+        try manager.registerProcessor(processor)
+        manager.start()
+        
+        // Start processing messages
+        for i in 1...5 {
+            let message = createTextMessage(content: "Message \(i)")
+            await manager.processMessage(message)
+        }
+        
+        // Initiate graceful shutdown
+        await manager.gracefulShutdown(timeout: 1.0)
+        
+        #expect(manager.isProcessing == false)
+        #expect(processor.processedMessages.count == 5)
+    }
+    
+    // MARK: - Memory Management Tests
+    
+    @Test("Manager cleanup on deallocation")
+    func testManagerCleanupOnDeallocation() async throws {
+        var manager: MessageProcessorManager? = createManager()
+        
+        weak var weakManager = manager
+        
+        let processor = TestTextMessageProcessor()
+        try manager?.registerProcessor(processor)
+        
+        manager = nil
+        
+        // Force garbage collection
+        for _ in 0..<10 {
+            autoreleasepool {
+                _ = Array(0..<1000)
+            }
+        }
+        
+        #expect(weakManager == nil)
+    }
+    
+    // MARK: - Integration Tests
+    
+    @Test("End-to-end message processing pipeline")
+    func testEndToEndMessageProcessingPipeline() async throws {
+        let manager = createManager()
+        
+        // Set up processing pipeline
+        let filterProcessor = TestFilterProcessor(blockedUserIds: ["spammer"])
+        let textProcessor = TestTextMessageProcessor()
+        let systemProcessor = TestSystemMessageProcessor()
+        
+        try manager.registerProcessor(filterProcessor)
+        try manager.registerProcessor(textProcessor)
+        try manager.registerProcessor(systemProcessor)
+        
+        manager.start()
+        
+        var processedMessages: [RealtimeMessage] = []
+        manager.onMessageProcessed = { message in
+            processedMessages.append(message)
+        }
+        
+        // Process various messages
+        await manager.processMessage(createTextMessage(content: "Hello world", from: "user1"))
+        await manager.processMessage(createTextMessage(content: "Spam message", from: "spammer"))
+        await manager.processMessage(createSystemMessage(data: ["action": "user_joined", "userId": "user2"]))
+        await manager.processMessage(createTextMessage(content: "Another message", from: "user3"))
+        
+        // Wait for processing to complete
+        try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+        
+        // Verify results
+        #expect(textProcessor.processedMessages.count == 2) // 2 text messages (spam filtered)
+        #expect(systemProcessor.processedMessages.count == 1) // 1 system message
+        #expect(processedMessages.count == 3) // 3 total processed (spam filtered out)
+        
+        let stats = manager.processingStats
+        #expect(stats.totalReceived == 4)
+        #expect(stats.totalProcessed == 3)
+        #expect(stats.totalFiltered == 1)
+        
+        manager.stop()
     }
 }

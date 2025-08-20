@@ -1,0 +1,264 @@
+{
+  "": {
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/master.swiftdeps"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ConnectionStateManager.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConnectionStateManager.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConnectionStateManager.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConnectionStateManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConnectionStateManager.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConnectionStateManager.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ErrorHandler.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ErrorHandler.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ErrorHandler.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ErrorHandler~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ErrorHandler.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ErrorHandler.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MediaRelayManager.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MediaRelayManager.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MediaRelayManager.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MediaRelayManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MediaRelayManager.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MediaRelayManager.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MessageProcessorManager.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessorManager.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessorManager.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessorManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessorManager.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessorManager.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MessageProcessors.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessors.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessors.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessors~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessors.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessors.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ProviderFactory.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ProviderFactory.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ProviderFactory.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ProviderFactory~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ProviderFactory.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ProviderFactory.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/RealtimeManager.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeManager.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeManager.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeManager.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeManager.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/StreamPushManager.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StreamPushManager.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StreamPushManager.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StreamPushManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StreamPushManager.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StreamPushManager.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/TokenManager.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/TokenManager.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/TokenManager.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/TokenManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/TokenManager.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/TokenManager.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeEventProcessor.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeEventProcessor.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeEventProcessor.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeEventProcessor~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeEventProcessor.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeEventProcessor.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeIndicatorManager.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeIndicatorManager.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeIndicatorManager.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeIndicatorManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeIndicatorManager.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeIndicatorManager.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/AudioSettings.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/AudioSettings.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/AudioSettings.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/AudioSettings~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/AudioSettings.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/AudioSettings.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ConfigModels.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConfigModels.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConfigModels.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConfigModels~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConfigModels.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConfigModels.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/Enums.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/Enums.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/Enums.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/Enums~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/Enums.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/Enums.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ErrorRecovery.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ErrorRecovery.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ErrorRecovery.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ErrorRecovery~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ErrorRecovery.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ErrorRecovery.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/MediaRelayModels.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MediaRelayModels.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MediaRelayModels.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MediaRelayModels~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MediaRelayModels.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MediaRelayModels.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/MessageModels.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageModels.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageModels.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageModels~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageModels.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageModels.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTCRoom.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTCRoom.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTCRoom.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTCRoom~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTCRoom.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTCRoom.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RealtimeError.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeError.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeError.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeError~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeError.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeError.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RelayChannelInfo.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RelayChannelInfo.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RelayChannelInfo.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RelayChannelInfo~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RelayChannelInfo.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RelayChannelInfo.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/StreamPushModels.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StreamPushModels.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StreamPushModels.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StreamPushModels~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StreamPushModels.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StreamPushModels.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/UserSession.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSession.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSession.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSession~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSession.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSession.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/VolumeModels.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeModels.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeModels.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeModels~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeModels.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeModels.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ConnectionPool.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConnectionPool.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConnectionPool.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConnectionPool~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConnectionPool.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ConnectionPool.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/DataCompression.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/DataCompression.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/DataCompression.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/DataCompression~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/DataCompression.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/DataCompression.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/MemoryManager.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MemoryManager.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MemoryManager.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MemoryManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MemoryManager.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MemoryManager.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ObjectPool.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ObjectPool.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ObjectPool.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ObjectPool~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ObjectPool.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ObjectPool.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ThreadSafetyManager.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ThreadSafetyManager.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ThreadSafetyManager.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ThreadSafetyManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ThreadSafetyManager.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/ThreadSafetyManager.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/MessageProcessor.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessor.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessor.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessor~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessor.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/MessageProcessor.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/RTCProvider.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTCProvider.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTCProvider.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTCProvider~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTCProvider.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTCProvider.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/RTMProvider.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTMProvider.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTMProvider.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTMProvider~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTMProvider.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RTMProvider.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/RealtimeCore.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeCore.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeCore.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeCore~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeCore.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeCore.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/AudioSettingsStorage.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/AudioSettingsStorage.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/AudioSettingsStorage.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/AudioSettingsStorage~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/AudioSettingsStorage.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/AudioSettingsStorage.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/RealtimeStorage.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeStorage.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeStorage.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeStorage~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeStorage.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeStorage.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageExample.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageExample.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageExample.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageExample~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageExample.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageExample.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageProtocol.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageProtocol.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageProtocol.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageProtocol~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageProtocol.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageProtocol.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/UserSessionStorage.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage.dia"
+  }
+}
