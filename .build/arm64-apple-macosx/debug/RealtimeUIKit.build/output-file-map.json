@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeUIKit.build/master.swiftdeps"
+  },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeUIKit/RealtimeUIKit.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeUIKit.build/RealtimeUIKit.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeUIKit.build/RealtimeUIKit.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeUIKit.build/RealtimeUIKit~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeUIKit.build/RealtimeUIKit.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeUIKit.build/RealtimeUIKit.dia"
+  }
+}

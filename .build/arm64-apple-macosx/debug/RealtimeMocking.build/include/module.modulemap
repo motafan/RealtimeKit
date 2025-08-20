@@ -1,0 +1,3 @@
+module RealtimeMocking {
+    header "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMocking.build/include/RealtimeMocking-Swift.h"
+}

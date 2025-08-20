@@ -1,0 +1,3 @@
+module RealtimeKit {
+    header "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeKit.build/include/RealtimeKit-Swift.h"
+}
