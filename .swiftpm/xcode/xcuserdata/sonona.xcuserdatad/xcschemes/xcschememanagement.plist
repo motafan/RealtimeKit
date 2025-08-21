@@ -40,5 +40,48 @@
 			<integer>6</integer>
 		</dict>
 	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>RealtimeAgora</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>RealtimeCore</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>RealtimeCoreTests</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>RealtimeKit</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>RealtimeMocking</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>RealtimeMockingTests</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>RealtimeSwiftUI</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>RealtimeUIKit</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+	</dict>
 </dict>
 </plist>

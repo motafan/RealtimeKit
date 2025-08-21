@@ -24,6 +24,13 @@ public protocol RTCProvider: AnyObject, Sendable {
     ///   - userRole: User role in the room
     func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws
     
+    /// Join a channel (alias for joinRoom for compatibility)
+    /// - Parameters:
+    ///   - channelName: Channel name to join
+    ///   - userId: User identifier
+    ///   - userRole: User role in the channel
+    func joinChannel(channelName: String, userId: String, userRole: UserRole) async throws
+    
     /// Leave the current room
     func leaveRoom() async throws
     

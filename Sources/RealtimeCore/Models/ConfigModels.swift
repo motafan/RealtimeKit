@@ -11,6 +11,7 @@ public struct RealtimeConfig: Codable, Sendable {
     public let logLevel: LogLevel
     public let enableEncryption: Bool
     public let encryptionKey: String?
+    public let customSettings: [String: String]
     
     /// Initialize RealtimeKit configuration
     /// - Parameters:
@@ -20,13 +21,15 @@ public struct RealtimeConfig: Codable, Sendable {
     ///   - logLevel: Logging level
     ///   - enableEncryption: Whether to enable encryption
     ///   - encryptionKey: Optional encryption key
+    ///   - customSettings: Custom provider-specific settings
     public init(
         appId: String,
         appKey: String? = nil,
         serverUrl: String? = nil,
         logLevel: LogLevel = .info,
         enableEncryption: Bool = false,
-        encryptionKey: String? = nil
+        encryptionKey: String? = nil,
+        customSettings: [String: String] = [:]
     ) {
         self.appId = appId
         self.appKey = appKey
@@ -34,6 +37,7 @@ public struct RealtimeConfig: Codable, Sendable {
         self.logLevel = logLevel
         self.enableEncryption = enableEncryption
         self.encryptionKey = encryptionKey
+        self.customSettings = customSettings
     }
 }
 

@@ -20,6 +20,11 @@ public final class AudioSettingsStorage: ObservableObject, @unchecked Sendable {
     /// Current audio settings as a published property
     @Published public private(set) var currentSettings: AudioSettings
     
+    // History tracking
+    private var historyEnabled = false
+    private var maxHistorySize = 10
+    private var settingsHistory: [AudioSettings] = []
+    
     // MARK: - Initialization
     
     /// Initialize audio settings storage
@@ -51,6 +56,14 @@ public final class AudioSettingsStorage: ObservableObject, @unchecked Sendable {
     public func updateSettings(_ settings: AudioSettings) throws {
         // Validate settings
         try validateSettings(settings)
+        
+        // Add to history if enabled
+        if historyEnabled {
+            settingsHistory.append(currentSettings)
+            if settingsHistory.count > maxHistorySize {
+                settingsHistory.removeFirst()
+            }
+        }
         
         // Save to storage
         try storage.setValue(settings, forKey: StorageKeys.audioSettings)
@@ -256,5 +269,53 @@ public extension AudioSettingsStorage {
     /// - Returns: Current audio settings
     func loadAudioSettings() -> AudioSettings {
         return currentSettings
+    }
+    
+    /// Clear audio settings (legacy method)
+    func clearAudioSettings() {
+        try? clearAll()
+    }
+    
+
+    
+    // MARK: - History Tracking Methods
+    
+    /// Enable history tracking
+    func enableHistoryTracking(maxHistorySize: Int = 10) {
+        self.historyEnabled = true
+        self.maxHistorySize = maxHistorySize
+    }
+    
+    /// Get settings history
+    func getSettingsHistory() -> [AudioSettings] {
+        return settingsHistory
+    }
+    
+    /// Clear settings history
+    func clearSettingsHistory() {
+        settingsHistory.removeAll()
+    }
+    
+    // MARK: - Backup and Restore Methods
+    
+    /// Create backup of current settings
+    func createBackup() throws -> Data {
+        return try JSONEncoder().encode(currentSettings)
+    }
+    
+    /// Restore from backup
+    func restoreFromBackup(_ backup: Data) throws {
+        let settings = try JSONDecoder().decode(AudioSettings.self, from: backup)
+        try updateSettings(settings)
+    }
+    
+    /// Export settings to data
+    func exportSettings() throws -> Data {
+        return try createBackup()
+    }
+    
+    /// Import settings from data
+    func importSettings(from data: Data) throws {
+        try restoreFromBackup(data)
     }
 }

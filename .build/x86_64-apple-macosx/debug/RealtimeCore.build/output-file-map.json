@@ -260,5 +260,12 @@
     "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage~partial.swiftmodule",
     "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage.swiftdeps",
     "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage.dia"
+  },
+  "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/DerivedSources/resource_bundle_accessor.swift": {
+    "dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/resource_bundle_accessor.d",
+    "object": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/resource_bundle_accessor.swift.o",
+    "swiftmodule": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/resource_bundle_accessor~partial.swiftmodule",
+    "swift-dependencies": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/resource_bundle_accessor.swiftdeps",
+    "diagnostics": "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/resource_bundle_accessor.dia"
   }
 }

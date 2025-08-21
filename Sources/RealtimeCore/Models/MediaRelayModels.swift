@@ -5,6 +5,8 @@ public struct MediaRelayState: Equatable, Sendable {
     public let overallState: MediaRelayOverallState
     public var channelStates: [String: MediaRelayChannelState]
     public let startTime: Date?
+    public let sourceChannel: String
+    public let destinationStates: [String: RelayChannelState]
     
     public init(
         overallState: MediaRelayOverallState,
@@ -14,6 +16,21 @@ public struct MediaRelayState: Equatable, Sendable {
         self.overallState = overallState
         self.channelStates = channelStates
         self.startTime = startTime
+        self.sourceChannel = ""
+        self.destinationStates = [:]
+    }
+    
+    public init(
+        overallState: MediaRelayOverallState,
+        sourceChannel: String,
+        destinationStates: [String: RelayChannelState],
+        startTime: Date? = nil
+    ) {
+        self.overallState = overallState
+        self.channelStates = [:]
+        self.startTime = startTime
+        self.sourceChannel = sourceChannel
+        self.destinationStates = destinationStates
     }
     
     public var activeChannelCount: Int {
@@ -35,6 +52,18 @@ public struct MediaRelayState: Equatable, Sendable {
             }
         }
     }
+    
+    public func updatingDestination(_ channelName: String, state: RelayChannelState) -> MediaRelayState {
+        var newDestinationStates = destinationStates
+        newDestinationStates[channelName] = state
+        
+        return MediaRelayState(
+            overallState: overallState,
+            sourceChannel: sourceChannel,
+            destinationStates: newDestinationStates,
+            startTime: startTime
+        )
+    }
 }
 
 // MARK: - Media Relay Overall State
@@ -43,12 +72,16 @@ public enum MediaRelayOverallState: Equatable, Sendable {
     case connecting
     case running
     case paused
+    case stopped
+    case failure(MediaRelayError)
     case error(Error)
     
     public static func == (lhs: MediaRelayOverallState, rhs: MediaRelayOverallState) -> Bool {
         switch (lhs, rhs) {
-        case (.idle, .idle), (.connecting, .connecting), (.running, .running), (.paused, .paused):
+        case (.idle, .idle), (.connecting, .connecting), (.running, .running), (.paused, .paused), (.stopped, .stopped):
             return true
+        case (.failure(let lhsError), .failure(let rhsError)):
+            return lhsError.localizedDescription == rhsError.localizedDescription
         case (.error(let lhsError), .error(let rhsError)):
             return lhsError.localizedDescription == rhsError.localizedDescription
         default:
@@ -396,13 +429,15 @@ public enum MediaRelayEvent {
 }
 
 // MARK: - Media Relay Error
-public enum MediaRelayError: Error, LocalizedError {
+public enum MediaRelayError: Error, LocalizedError, Equatable {
     case channelNotFound(String)
     case invalidConfiguration
     case connectionFailed(String)
     case tokenExpired(String)
     case networkError(String)
     case providerError(String)
+    case sourceChannelConnectionFailed
+    case destinationConnectionFailed
     
     public var errorDescription: String? {
         switch self {
@@ -418,6 +453,10 @@ public enum MediaRelayError: Error, LocalizedError {
             return "网络错误: \(message)"
         case .providerError(let message):
             return "服务商错误: \(message)"
+        case .sourceChannelConnectionFailed:
+            return "源频道连接失败"
+        case .destinationConnectionFailed:
+            return "目标频道连接失败"
         }
     }
 }
@@ -478,9 +517,11 @@ public enum RelayChannelState: String, Codable, CaseIterable, Sendable {
     case running = "running"
     case paused = "paused"
     case error = "error"
+    case connected = "connected"
+    case failure = "failure"
     
     public var isActive: Bool {
-        return self == .running
+        return self == .running || self == .connected
     }
     
     public var displayName: String {
@@ -490,6 +531,12 @@ public enum RelayChannelState: String, Codable, CaseIterable, Sendable {
         case .running: return "运行中"
         case .paused: return "已暂停"
         case .error: return "错误"
+        case .connected: return "已连接"
+        case .failure: return "失败"
         }
+    }
+    
+    public static func failure(_ error: MediaRelayError) -> RelayChannelState {
+        return .failure
     }
 }

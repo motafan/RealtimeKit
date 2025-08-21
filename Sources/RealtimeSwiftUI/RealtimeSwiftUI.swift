@@ -3,7 +3,7 @@
 
 import SwiftUI
 import Combine
-import RealtimeCore
+@preconcurrency import RealtimeCore
 
 /// RealtimeSwiftUI version information
 public struct RealtimeSwiftUIVersion {
@@ -15,7 +15,7 @@ public struct RealtimeSwiftUIVersion {
 
 /// Environment key for RealtimeManager
 @available(iOS 13.0, macOS 10.15, *)
-public struct RealtimeManagerKey: EnvironmentKey {
+public struct RealtimeManagerKey: @preconcurrency EnvironmentKey {
     @MainActor
     public static var defaultValue: RealtimeManager {
         RealtimeManager.shared
@@ -182,9 +182,11 @@ public struct VolumeWaveformView: View {
     
     private func startAnimation() {
         Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
-            animationPhase += 0.2
-            if animationPhase > .pi * 2 {
-                animationPhase = 0
+            Task { @MainActor in
+                animationPhase += 0.2
+                if animationPhase > .pi * 2 {
+                    animationPhase = 0
+                }
             }
         }
     }
@@ -313,7 +315,7 @@ public struct VolumeLevelView: View {
 // MARK: - Audio Control Components
 
 /// Audio control panel with SwiftUI reactive bindings
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 14.0, macOS 11.0, *)
 public struct AudioControlPanel: View {
     @EnvironmentObject private var realtimeManager: RealtimeManager
     @State private var showVolumeSliders = false
@@ -580,7 +582,7 @@ public struct UserSessionView: View {
 // MARK: - User List Components
 
 /// User list view with volume indicators
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 14.0, macOS 11.0, *)
 public struct UserListView: View {
     @EnvironmentObject private var realtimeManager: RealtimeManager
     @State private var users: [UserVolumeInfo] = []
@@ -596,7 +598,7 @@ public struct UserListView: View {
         .onReceive(realtimeManager.$volumeInfos) { volumeInfos in
             users = volumeInfos.sorted { $0.volume > $1.volume }
         }
-        .navigationBarTitle("用户列表")
+        .navigationTitle("用户列表")
     }
 }
 
@@ -645,7 +647,7 @@ private struct UserRowView: View {
 // MARK: - Utility Views
 
 /// Loading view with animation
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 14.0, macOS 11.0, *)
 public struct RealtimeLoadingView: View {
     @State private var isAnimating = false
     
@@ -671,7 +673,7 @@ public struct RealtimeLoadingView: View {
 }
 
 /// Error view with retry option
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 14.0, macOS 11.0, *)
 public struct RealtimeErrorView: View {
     let error: Error
     let onRetry: (() -> Void)?
@@ -697,8 +699,13 @@ public struct RealtimeErrorView: View {
                 .padding(.horizontal)
             
             if let onRetry = onRetry {
-                Button("重试", action: onRetry)
-                    .buttonStyle(.borderedProminent)
+                if #available(iOS 15.0, macOS 12.0, *) {
+                    Button("重试", action: onRetry)
+                        .buttonStyle(.borderedProminent)
+                } else {
+                    Button("重试", action: onRetry)
+                        .buttonStyle(DefaultButtonStyle())
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -709,7 +716,7 @@ public struct RealtimeErrorView: View {
 // MARK: - Preview Helpers
 
 #if DEBUG
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 14.0, macOS 11.0, *)
 struct RealtimeSwiftUI_Previews: PreviewProvider {
     static var previews: some View {
         Group {
@@ -1121,7 +1128,7 @@ public struct AdaptiveLayoutConfiguration {
 }
 
 /// Adaptive RealtimeKit main view
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 14.0, macOS 11.0, *)
 public struct AdaptiveRealtimeView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -1164,7 +1171,7 @@ public struct AdaptiveRealtimeView: View {
 }
 
 /// Sidebar layout for iPad and Mac
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 14.0, macOS 11.0, *)
 private struct SidebarLayoutView: View {
     @ObservedObject var mainViewModel: RealtimeMainViewModel
     @ObservedObject var audioViewModel: AudioControlViewModel
@@ -1200,7 +1207,7 @@ private struct SidebarLayoutView: View {
                     NavigationLink("所有用户", destination: UserListDetailView().environmentObject(userViewModel))
                 }
             }
-            .navigationBarTitle("RealtimeKit")
+            .navigationTitle("RealtimeKit")
             
             // Main content
             VStack {
@@ -1220,13 +1227,13 @@ private struct SidebarLayoutView: View {
                 
                 Spacer()
             }
-            .navigationBarTitle("音量可视化")
+            .navigationTitle("音量可视化")
         }
     }
 }
 
 /// Compact layout for iPhone
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 14.0, macOS 11.0, *)
 private struct CompactLayoutView: View {
     @ObservedObject var mainViewModel: RealtimeMainViewModel
     @ObservedObject var audioViewModel: AudioControlViewModel
@@ -1271,7 +1278,7 @@ private struct CompactLayoutView: View {
 }
 
 /// Audio control detail view for sidebar navigation
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 14.0, macOS 11.0, *)
 private struct AudioControlDetailView: View {
     @EnvironmentObject private var audioViewModel: AudioControlViewModel
     
@@ -1284,12 +1291,12 @@ private struct AudioControlDetailView: View {
             Spacer()
         }
         .padding()
-        .navigationBarTitle("音频控制")
+        .navigationTitle("音频控制")
     }
 }
 
 /// User list detail view for sidebar navigation
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 14.0, macOS 11.0, *)
 private struct UserListDetailView: View {
     @EnvironmentObject private var userViewModel: UserManagementViewModel
     
@@ -1301,19 +1308,21 @@ private struct UserListDetailView: View {
                 UserListView()
             }
         }
-        .navigationBarTitle("用户列表")
-        .navigationBarItems(trailing: 
-            Button("刷新") {
-                Task {
-                    await userViewModel.refreshUserList()
+        .navigationTitle("用户列表")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("刷新") {
+                    Task {
+                        await userViewModel.refreshUserList()
+                    }
                 }
             }
-        )
+        }
     }
 }
 
 /// Settings view
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 14.0, macOS 11.0, *)
 private struct SettingsView: View {
     @EnvironmentObject private var mainViewModel: RealtimeMainViewModel
     
@@ -1345,7 +1354,7 @@ private struct SettingsView: View {
                     }
                 }
             }
-            .navigationBarTitle("设置")
+            .navigationTitle("设置")
         }
     }
 }
@@ -1737,6 +1746,7 @@ public class RealtimeReactiveCoordinator: ObservableObject {
     private let operationManager: AsyncOperationManager
     private var cancellables = Set<AnyCancellable>()
     
+    @MainActor
     public init(
         dataStore: RealtimeDataStore? = nil,
         operationManager: AsyncOperationManager? = nil
@@ -1746,6 +1756,7 @@ public class RealtimeReactiveCoordinator: ObservableObject {
         setupReactiveCoordination()
     }
     
+    @MainActor
     private func setupReactiveCoordination() {
         // Monitor system initialization
         Publishers.CombineLatest3(
@@ -1767,13 +1778,8 @@ public class RealtimeReactiveCoordinator: ObservableObject {
             operationManager.$audioOperationState,
             operationManager.$volumeDetectionState
         )
-        .map { connectionState, loginState, audioState, volumeState in
-            self.calculateSystemHealth(
-                connectionState: connectionState,
-                loginState: loginState,
-                audioState: audioState,
-                volumeState: volumeState
-            )
+        .compactMap { [weak self] connectionState, loginState, audioState, volumeState in
+            self?.calculateSystemHealth()
         }
         .receive(on: DispatchQueue.main)
         .assign(to: \.systemHealth, on: self)
@@ -1781,7 +1787,7 @@ public class RealtimeReactiveCoordinator: ObservableObject {
         
         // Auto-recovery mechanisms
         dataStore.$connectionState
-            .filter { $0 == .failed(RealtimeError.networkError("Connection lost")) }
+            .filter { $0 == .failed }
             .debounce(for: .seconds(2), scheduler: DispatchQueue.main)
             .sink { [weak self] _ in
                 Task {

@@ -78,6 +78,11 @@ public final class MockRTCProvider: RTCProvider, @unchecked Sendable {
         print("Mock: Joined room \(roomId) as \(userId) with role \(userRole)")
     }
     
+    public func joinChannel(channelName: String, userId: String, userRole: UserRole) async throws {
+        // Delegate to joinRoom for compatibility
+        try await joinRoom(roomId: channelName, userId: userId, userRole: userRole)
+    }
+    
     public func leaveRoom() async throws {
         guard isInitialized else {
             throw RealtimeError.providerNotInitialized(.mock)

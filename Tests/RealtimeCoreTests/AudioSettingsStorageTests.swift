@@ -10,6 +10,36 @@ struct AudioSettingsStorageTests {
     
     // MARK: - Mock Storage Provider
     
+    final class MockStorageProvider: StorageProvider {
+        private var storage: [String: Data] = [:]
+        
+        func setValue<T: Codable>(_ value: T, forKey key: String) throws {
+            let data = try JSONEncoder().encode(value)
+            storage[key] = data
+        }
+        
+        func getValue<T: Codable>(_ type: T.Type, forKey key: String) throws -> T? {
+            guard let data = storage[key] else { return nil }
+            return try JSONDecoder().decode(type, from: data)
+        }
+        
+        func removeValue(forKey key: String) {
+            storage.removeValue(forKey: key)
+        }
+        
+        func hasValue(forKey key: String) -> Bool {
+            return storage[key] != nil
+        }
+        
+        func getAllKeys() -> [String] {
+            return Array(storage.keys)
+        }
+        
+        func clear() {
+            storage.removeAll()
+        }
+    }
+    
     final class MockUserDefaults: UserDefaults {
         private var storage: [String: Any] = [:]
         
@@ -38,7 +68,7 @@ struct AudioSettingsStorageTests {
     
     private func createStorage() -> AudioSettingsStorage {
         let mockDefaults = MockUserDefaults()
-        return AudioSettingsStorage(userDefaults: mockDefaults)
+        return AudioSettingsStorage(storage: MockStorageProvider())
     }
     
     private func createTestSettings() -> AudioSettings {

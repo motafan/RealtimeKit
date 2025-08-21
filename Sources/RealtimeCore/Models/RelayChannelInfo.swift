@@ -115,15 +115,15 @@ public struct RelayChannelInfo: Codable, Equatable, Sendable {
     /// - Throws: RealtimeError.invalidToken if token is invalid
     private static func validateToken(_ token: String) throws {
         guard !token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw RealtimeError.invalidToken("Token cannot be empty or whitespace")
+            throw RealtimeError.invalidTokenString("Token cannot be empty or whitespace")
         }
         
         guard token.count >= 10 else {
-            throw RealtimeError.invalidToken("Token must be at least 10 characters long")
+            throw RealtimeError.invalidTokenString("Token must be at least 10 characters long")
         }
         
         guard token.count <= 2048 else {
-            throw RealtimeError.invalidToken("Token cannot exceed 2048 characters")
+            throw RealtimeError.invalidTokenString("Token cannot exceed 2048 characters")
         }
     }
     

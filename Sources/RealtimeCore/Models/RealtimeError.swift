@@ -15,6 +15,7 @@ public enum RealtimeError: Error, LocalizedError, Equatable {
     case connectionFailed(String)
     case connectionTimeout
     case networkError(String)
+    case networkTimeout
     case authenticationFailed
     case noActiveSession
     
@@ -93,6 +94,9 @@ public enum RealtimeError: Error, LocalizedError, Equatable {
     case invalidParameter(String)
     case parameterOutOfRange(String, String)
     case requiredParameterMissing(String)
+    case invalidChannelName(String)
+    case invalidUserId(String)
+    case invalidTokenString(String)
     
     // MARK: - LocalizedError Implementation
     public var errorDescription: String? {
@@ -110,6 +114,8 @@ public enum RealtimeError: Error, LocalizedError, Equatable {
             return "连接失败: \(message)"
         case .connectionTimeout:
             return "连接超时"
+        case .networkTimeout:
+            return "网络超时"
         case .networkError(let message):
             return "网络错误: \(message)"
         case .authenticationFailed:
@@ -248,6 +254,12 @@ public enum RealtimeError: Error, LocalizedError, Equatable {
             return "参数超出范围: \(parameter) (\(range))"
         case .requiredParameterMissing(let parameter):
             return "缺少必需参数: \(parameter)"
+        case .invalidChannelName(let message):
+            return "无效的频道名称: \(message)"
+        case .invalidUserId(let message):
+            return "无效的用户ID: \(message)"
+        case .invalidTokenString(let message):
+            return "无效的Token: \(message)"
         }
     }
     
@@ -259,6 +271,7 @@ public enum RealtimeError: Error, LocalizedError, Equatable {
         case .missingConfiguration: return "MISSING_CONFIG"
         case .connectionFailed: return "CONNECTION_FAILED"
         case .connectionTimeout: return "CONNECTION_TIMEOUT"
+        case .networkTimeout: return "NETWORK_TIMEOUT"
         case .networkError: return "NETWORK_ERROR"
         case .authenticationFailed: return "AUTH_FAILED"
         case .noActiveSession: return "NO_ACTIVE_SESSION"
@@ -318,6 +331,9 @@ public enum RealtimeError: Error, LocalizedError, Equatable {
         case .invalidParameter: return "INVALID_PARAMETER"
         case .parameterOutOfRange: return "PARAMETER_OUT_OF_RANGE"
         case .requiredParameterMissing: return "REQUIRED_PARAMETER_MISSING"
+        case .invalidChannelName: return "INVALID_CHANNEL_NAME"
+        case .invalidUserId: return "INVALID_USER_ID"
+        case .invalidTokenString: return "INVALID_TOKEN_STRING"
         }
     }
     

@@ -57,7 +57,46 @@ public struct StreamPushConfig: Codable, Equatable, Sendable {
         }
     }
     
-
+    // MARK: - Convenience Initializers
+    
+    /// Create a standard 720p stream configuration
+    public static func standard720p(pushUrl: String) throws -> StreamPushConfig {
+        return StreamPushConfig(
+            pushUrl: pushUrl,
+            width: 1280,
+            height: 720,
+            bitrate: 1000,
+            framerate: 30,
+            layout: .single,
+            backgroundColor: "#000000"
+        )
+    }
+    
+    /// Create a standard 1080p stream configuration
+    public static func standard1080p(pushUrl: String) throws -> StreamPushConfig {
+        return StreamPushConfig(
+            pushUrl: pushUrl,
+            width: 1920,
+            height: 1080,
+            bitrate: 2000,
+            framerate: 30,
+            layout: .single,
+            backgroundColor: "#000000"
+        )
+    }
+    
+    /// Create a standard 480p stream configuration
+    public static func standard480p(pushUrl: String) throws -> StreamPushConfig {
+        return StreamPushConfig(
+            pushUrl: pushUrl,
+            width: 854,
+            height: 480,
+            bitrate: 500,
+            framerate: 30,
+            layout: .single,
+            backgroundColor: "#000000"
+        )
+    }
 }
 
 // MARK: - Stream Layout
@@ -66,6 +105,11 @@ public enum StreamLayout: Codable, Equatable, Sendable {
     case dual
     case quad
     case custom([StreamLayoutRegion])
+    
+    /// Create a custom layout with background color and user regions
+    public static func customLayout(backgroundColor: String, userRegions: [StreamLayoutRegion]) -> StreamLayout {
+        return .custom(userRegions)
+    }
     
     public var displayName: String {
         switch self {
@@ -190,3 +234,6 @@ public enum NetworkQuality: String, Codable, CaseIterable, Sendable {
         }
     }
 }
+
+// MARK: - Type Aliases for Backward Compatibility
+public typealias UserRegion = StreamLayoutRegion

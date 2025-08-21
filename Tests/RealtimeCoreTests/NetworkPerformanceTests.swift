@@ -210,6 +210,7 @@ struct ThreadSafetyTests {
     }
     
     @Test("ThreadSafetyManager executes tasks correctly")
+    @MainActor
     func testThreadSafetyManagerExecution() async throws {
         let manager = ThreadSafetyManager.shared
         
@@ -237,6 +238,7 @@ struct ThreadSafetyTests {
     }
     
     @Test("Background execution works correctly")
+    @MainActor
     func testBackgroundExecution() async throws {
         let manager = ThreadSafetyManager.shared
         
@@ -254,6 +256,7 @@ struct ThreadSafetyTests {
     }
     
     @Test("Serial execution maintains order")
+    @MainActor
     func testSerialExecution() async throws {
         let manager = ThreadSafetyManager.shared
         var executionOrder: [Int] = []
@@ -283,6 +286,7 @@ struct ThreadSafetyTests {
     }
     
     @Test("Volume indicator optimized processing")
+    @MainActor
     func testVolumeIndicatorOptimizedProcessing() async throws {
         let manager = VolumeIndicatorManager()
         let config = VolumeDetectionConfig(detectionInterval: 100)
@@ -308,6 +312,7 @@ struct ThreadSafetyTests {
     }
     
     @Test("Concurrent volume processing doesn't cause race conditions")
+    @MainActor
     func testConcurrentVolumeProcessing() async throws {
         let manager = VolumeIndicatorManager()
         let config = VolumeDetectionConfig(detectionInterval: 50)

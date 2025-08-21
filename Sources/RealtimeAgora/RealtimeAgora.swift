@@ -504,6 +504,11 @@ public final class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
         print("Joining Agora room: \(roomId) as user: \(userId) with role: \(userRole)")
     }
     
+    public func joinChannel(channelName: String, userId: String, userRole: UserRole) async throws {
+        // Delegate to joinRoom for compatibility
+        try await joinRoom(roomId: channelName, userId: userId, userRole: userRole)
+    }
+    
     public func leaveRoom() async throws {
         guard isInitialized, let engine = rtcEngine else {
             throw RealtimeError.providerNotInitialized(.agora)
@@ -707,12 +712,12 @@ public final class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
             throw RealtimeError.operationFailed(.agora, "No active stream push")
         }
         
-        let updatedConfig = try StreamPushConfig(
+        let updatedConfig = StreamPushConfig(
             pushUrl: config.pushUrl,
             width: config.width,
             height: config.height,
             bitrate: config.bitrate,
-            frameRate: config.frameRate,
+            framerate: config.framerate,
             layout: layout
         )
         let transcoding = createAgoraTranscoding(from: updatedConfig)
@@ -731,17 +736,23 @@ public final class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
         transcoding.width = config.width
         transcoding.height = config.height
         transcoding.videoBitrate = config.bitrate
-        transcoding.videoFramerate = config.frameRate
+        transcoding.videoFramerate = config.framerate
         
         // Convert layout users to Agora transcoding users
-        transcoding.transcodingUsers = config.layout.userRegions.map { region in
-            let agoraUser = AgoraLiveTranscodingUser()
-            agoraUser.uid = UInt(region.userId.hash)
-            agoraUser.x = Int(region.x * Float(config.width))
-            agoraUser.y = Int(region.y * Float(config.height))
-            agoraUser.width = Int(region.width * Float(config.width))
-            agoraUser.height = Int(region.height * Float(config.height))
-            return agoraUser
+        switch config.layout {
+        case .custom(let regions):
+            transcoding.transcodingUsers = regions.map { region in
+                let agoraUser = AgoraLiveTranscodingUser()
+                agoraUser.uid = UInt(region.userId.hash)
+                agoraUser.x = Int(region.x * Float(config.width))
+                agoraUser.y = Int(region.y * Float(config.height))
+                agoraUser.width = Int(region.width * Float(config.width))
+                agoraUser.height = Int(region.height * Float(config.height))
+                return agoraUser
+            }
+        default:
+            // For predefined layouts, use default transcoding users
+            transcoding.transcodingUsers = []
         }
         
         return transcoding
@@ -851,14 +862,14 @@ public final class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
         // Set source channel
         let sourceInfo = AgoraChannelMediaRelayInfo(token: config.sourceChannel.token)
         sourceInfo.channelName = config.sourceChannel.channelName
-        sourceInfo.uid = config.sourceChannel.uid ?? UInt(config.sourceChannel.userId.hashValue)
+        sourceInfo.uid = config.sourceChannel.uid
         relayConfig.setSourceInfo(sourceInfo)
         
         // Set destination channels
         for destChannel in config.destinationChannels {
             let destInfo = AgoraChannelMediaRelayInfo(token: destChannel.token)
             destInfo.channelName = destChannel.channelName
-            destInfo.uid = destChannel.uid ?? UInt(destChannel.userId.hashValue)
+            destInfo.uid = destChannel.uid
             relayConfig.setDestinationInfo(destInfo, forChannelName: destChannel.channelName)
         }
         

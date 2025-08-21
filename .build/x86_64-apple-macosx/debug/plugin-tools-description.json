@@ -7,7 +7,20 @@
     }
   ],
   "copyCommands" : {
-
+    "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeKit_RealtimeCore.bundle/PerformanceOptimizationSummary.md" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/PerformanceOptimizationSummary.md"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeKit_RealtimeCore.bundle/PerformanceOptimizationSummary.md"
+        }
+      ]
+    }
   },
   "explicitTargetDependencyImportCheckingMode" : {
     "none" : {
@@ -278,7 +291,15 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/DerivedSources/resource_bundle_accessor.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/swift-version-39B54973F684ADAB.txt"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<RealtimeCore-x86_64-apple-macosx15.0-debug.module-resources>"
         },
         {
           "kind" : "file",
@@ -325,7 +346,8 @@
         "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/RealtimeStorage.swift.o",
         "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageExample.swift.o",
         "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/StorageProtocol.swift.o",
-        "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage.swift.o"
+        "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage.swift.o",
+        "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/resource_bundle_accessor.swift.o"
       ],
       "otherArguments" : [
         "-target",
@@ -340,7 +362,7 @@
         "-j8",
         "-DSWIFT_PACKAGE",
         "-DDEBUG",
-        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
         "-module-cache-path",
         "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/ModuleCache",
         "-parseable-output",
@@ -535,6 +557,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/resource_bundle_accessor.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/Modules/RealtimeCore.swiftmodule"
         }
       ],
@@ -576,7 +602,8 @@
         "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/RealtimeStorage.swift",
         "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageExample.swift",
         "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageProtocol.swift",
-        "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/UserSessionStorage.swift"
+        "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/UserSessionStorage.swift",
+        "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/DerivedSources/resource_bundle_accessor.swift"
       ],
       "tempsPath" : "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build",
       "wholeModuleOptimization" : false
@@ -1883,6 +1910,7 @@
       "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageExample.swift",
       "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageProtocol.swift",
       "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/UserSessionStorage.swift",
+      "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/DerivedSources/resource_bundle_accessor.swift",
       "-I",
       "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/Modules",
       "-target",
@@ -1897,7 +1925,7 @@
       "-j8",
       "-DSWIFT_PACKAGE",
       "-DDEBUG",
-      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
       "-module-cache-path",
       "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/ModuleCache",
       "-parseable-output",
@@ -2682,6 +2710,10 @@
         {
           "kind" : "file",
           "name" : "/Users/sonona/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/UserSessionStorage.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/DerivedSources/resource_bundle_accessor.swift"
         }
       ],
       "outputFilePath" : "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/sources"
@@ -3062,6 +3094,10 @@
         {
           "kind" : "file",
           "name" : "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/VolumeModels.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sonona/Documents/GitHub/RealtimeKit/.build/x86_64-apple-macosx/debug/RealtimeCore.build/resource_bundle_accessor.swift.o"
         },
         {
           "kind" : "file",

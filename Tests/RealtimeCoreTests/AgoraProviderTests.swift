@@ -402,9 +402,9 @@ struct AgoraProviderTests {
         
         @Test("Factory creates correct provider instances")
         func testFactoryCreatesProviders() {
-            let factory = AgoraProviderFactory()
+            let factory = RealtimeAgora.AgoraProviderFactory()
             
-            #expect(factory.providerType == .agora)
+            #expect(factory.providerType == ProviderType.agora)
             
             let rtcProvider = factory.createRTCProvider()
             #expect(rtcProvider is AgoraRTCProvider)
@@ -415,7 +415,7 @@ struct AgoraProviderTests {
         
         @Test("Factory reports correct supported features")
         func testFactorySupportedFeatures() {
-            let factory = AgoraProviderFactory()
+            let factory = RealtimeAgora.AgoraProviderFactory()
             let features = factory.supportedFeatures()
             
             let expectedFeatures: Set<ProviderFeature> = [
@@ -440,7 +440,7 @@ struct AgoraProviderTests {
         
         @Test("Full RTC workflow integration")
         func testFullRTCWorkflow() async throws {
-            let factory = AgoraProviderFactory()
+            let factory = RealtimeAgora.AgoraProviderFactory()
             let rtcProvider = factory.createRTCProvider()
             
             // Initialize
@@ -478,7 +478,7 @@ struct AgoraProviderTests {
         
         @Test("Full RTM workflow integration")
         func testFullRTMWorkflow() async throws {
-            let factory = AgoraProviderFactory()
+            let factory = RealtimeAgora.AgoraProviderFactory()
             let rtmProvider = factory.createRTMProvider()
             
             // Initialize and login
@@ -508,21 +508,22 @@ struct AgoraProviderTests {
         }
         
         @Test("Provider factory registration and usage")
+        @MainActor
         func testProviderFactoryRegistration() async throws {
             let registry = ProviderFactoryRegistry()
-            let factory = AgoraProviderFactory()
+            let factory = RealtimeAgora.AgoraProviderFactory()
             
             // Register factory
             registry.registerFactory(factory)
             
-            #expect(registry.isProviderAvailable(.agora))
-            #expect(registry.getAvailableProviders().contains(.agora))
+            #expect(registry.isProviderAvailable(ProviderType.agora))
+            #expect(registry.getAvailableProviders().contains(ProviderType.agora))
             
-            let retrievedFactory = registry.getFactory(for: .agora)
+            let retrievedFactory = registry.getFactory(for: ProviderType.agora)
             #expect(retrievedFactory != nil)
-            #expect(retrievedFactory?.providerType == .agora)
+            #expect(retrievedFactory?.providerType == ProviderType.agora)
             
-            let features = registry.getSupportedFeatures(for: .agora)
+            let features = registry.getSupportedFeatures(for: ProviderType.agora)
             #expect(features.contains(.audioStreaming))
             #expect(features.contains(.messageProcessing))
         }

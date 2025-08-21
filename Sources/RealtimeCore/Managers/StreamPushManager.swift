@@ -145,7 +145,7 @@ public class StreamPushManager: ObservableObject {
         
         do {
             // Create updated configuration
-            let updatedConfig = try StreamPushConfig(
+            let updatedConfig = StreamPushConfig(
                 pushUrl: config.pushUrl,
                 width: config.width,
                 height: config.height,

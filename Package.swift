@@ -61,7 +61,10 @@ let package = Package(
         // Core module containing protocols, models, and managers
         .target(
             name: "RealtimeCore",
-            dependencies: []
+            dependencies: [],
+            resources: [
+                .copy("Performance/PerformanceOptimizationSummary.md")
+            ]
         ),
         
         // UIKit integration module

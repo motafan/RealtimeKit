@@ -391,8 +391,8 @@ public class MediaRelayManager: ObservableObject {
             totalRelayTime: totalRelayTime,
             audioBytesSent: statistics.audioBytesSent,
             videoBytesSent: statistics.videoBytesSent,
-            audioPacketsSent: statistics.audioPacketsSent,
-            videoPacketsSent: statistics.videoPacketsSent,
+            packetsLost: statistics.packetsLost,
+            averageLatency: statistics.averageLatency,
             destinationStats: statistics.destinationStats
         )
         
