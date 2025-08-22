@@ -1,17 +1,19 @@
-// RealtimeManager.swift
-// Core RealtimeManager class - Central coordinator for all RealtimeKit functionality
-
 import Foundation
 import Combine
 
-/// Main manager class for RealtimeKit
+/// RealtimeManager 核心管理器
+/// 统一管理所有实时通信功能
+/// 需求: 3.1, 3.2, 3.3, 3.5
+
 @MainActor
-public final class RealtimeManager: ObservableObject, @unchecked Sendable {
+public class RealtimeManager: ObservableObject {
     
-    /// Shared singleton instance
+    // MARK: - Singleton
+    
     public static let shared = RealtimeManager()
     
-    // MARK: - Published Properties for SwiftUI (需求 3.2, 11.3)
+    // MARK: - Published Properties for SwiftUI
+    
     @Published public private(set) var currentSession: UserSession?
     @Published public private(set) var audioSettings: AudioSettings = .default
     @Published public private(set) var connectionState: ConnectionState = .disconnected
@@ -20,530 +22,159 @@ public final class RealtimeManager: ObservableObject, @unchecked Sendable {
     @Published public private(set) var volumeInfos: [UserVolumeInfo] = []
     @Published public private(set) var speakingUsers: Set<String> = []
     @Published public private(set) var dominantSpeaker: String? = nil
-    @Published public private(set) var isInitialized: Bool = false
-    @Published public private(set) var currentProvider: ProviderType?
-    @Published public private(set) var availableProviders: Set<ProviderType> = []
-    @Published public private(set) var supportedFeatures: Set<ProviderFeature> = []
-    @Published public private(set) var providerSwitchInProgress: Bool = false
-    @Published public private(set) var lastError: RealtimeError?
-    @Published public private(set) var currentRoom: RTCRoom?
     
-    // MARK: - Sub-managers (需求 3.1)
-    private let factoryRegistry = ProviderFactoryRegistry()
-    private var providerSwitchManager: ProviderSwitchManager!
-    private let tokenManager = TokenManager()
-    private let volumeIndicatorManager = VolumeIndicatorManager()
-    private let mediaRelayManager = MediaRelayManager()
-    private let streamPushManager = StreamPushManager()
-    private let messageProcessorManager = RealtimeMessageProcessorManager()
-    private let connectionStateManager = ConnectionStateManager()
-    private let errorHandler = ErrorHandler.shared
+    // MARK: - Private Properties
     
-    // MARK: - Testing Event Handlers (for testing purposes)
-    #if DEBUG
-    /// Connection state change handler
-    public var onConnectionStateChanged: ((ConnectionState) -> Void)?
+    private let settingsStorage = AudioSettingsStorage()
+    private let sessionStorage = UserSessionStorage()
     
-    /// Token renewal request handler
-    public var onTokenRenewalRequest: ((ProviderType, Int) -> Void)?
-    
-    /// Network event handler
-    public var onNetworkEvent: ((NetworkResilienceEvent) -> Void)?
-    
-    /// Reconnection attempt handler
-    public var onReconnectionAttempt: ((Int, TimeInterval) -> Void)?
-    
-    /// Network recovery event handler
-    public var onNetworkRecoveryEvent: ((NetworkRecoveryEvent) -> Void)?
-    
-    /// Quality adaptation handler
-    public var onQualityAdaptation: ((QualityAdaptation) -> Void)?
-    
-    /// Quality change handler
-    public var onQualityChanged: ((String, StreamQuality) -> Void)?
-    
-    /// Network quality report handler
-    public var onNetworkQualityReport: ((NetworkQualityReport) -> Void)?
-    #endif
-    
-    // MARK: - Storage managers (需求 3.5)
-    private let audioSettingsStorage = AudioSettingsStorage()
-    private let userSessionStorage = UserSessionStorage()
-    
-    // MARK: - Provider instances
     private var rtcProvider: RTCProvider?
     private var rtmProvider: RTMProvider?
     internal var currentConfig: RealtimeConfig?
     
-    // MARK: - Cancellables for Combine subscriptions
-    private var cancellables = Set<AnyCancellable>()
-    
-    // MARK: - Combine Publishers for Advanced Reactive Support (需求 3.3, 11.3)
-    
-    /// Publisher for connection state changes
-    public var connectionStatePublisher: AnyPublisher<ConnectionState, Never> {
-        $connectionState.eraseToAnyPublisher()
-    }
-    
-    /// Publisher for audio settings changes
-    public var audioSettingsPublisher: AnyPublisher<AudioSettings, Never> {
-        $audioSettings.eraseToAnyPublisher()
-    }
-    
-    /// Publisher for user session changes
-    public var currentSessionPublisher: AnyPublisher<UserSession?, Never> {
-        $currentSession.eraseToAnyPublisher()
-    }
-    
-    /// Publisher for volume information updates
-    public var volumeInfosPublisher: AnyPublisher<[UserVolumeInfo], Never> {
-        $volumeInfos.eraseToAnyPublisher()
-    }
-    
-    /// Publisher for speaking users changes
-    public var speakingUsersPublisher: AnyPublisher<Set<String>, Never> {
-        $speakingUsers.eraseToAnyPublisher()
-    }
-    
-    /// Publisher for dominant speaker changes
-    public var dominantSpeakerPublisher: AnyPublisher<String?, Never> {
-        $dominantSpeaker.eraseToAnyPublisher()
-    }
-    
-    /// Publisher for provider changes
-    public var currentProviderPublisher: AnyPublisher<ProviderType?, Never> {
-        $currentProvider.eraseToAnyPublisher()
-    }
-    
-    /// Publisher for error state changes
-    public var lastErrorPublisher: AnyPublisher<RealtimeError?, Never> {
-        $lastError.eraseToAnyPublisher()
-    }
-    
-    /// Combined publisher for system readiness state
-    public var systemReadinessPublisher: AnyPublisher<Bool, Never> {
-        Publishers.CombineLatest3(
-            $isInitialized,
-            $connectionState,
-            $providerSwitchInProgress
-        )
-        .map { isInitialized, connectionState, switchInProgress in
-            return isInitialized && connectionState.isActive && !switchInProgress
-        }
-        .eraseToAnyPublisher()
-    }
-    
-    /// Publisher for audio state summary
-    public var audioStateSummaryPublisher: AnyPublisher<AudioStateSummary, Never> {
-        $audioSettings
-            .map { settings in
-                AudioStateSummary(
-                    isMuted: settings.microphoneMuted,
-                    isStreamActive: settings.localAudioStreamActive,
-                    mixingVolume: settings.audioMixingVolume,
-                    playbackVolume: settings.playbackSignalVolume,
-                    recordingVolume: settings.recordingSignalVolume
-                )
-            }
-            .eraseToAnyPublisher()
-    }
+    // MARK: - Initialization
     
     private init() {
-        self.providerSwitchManager = ProviderSwitchManager(factoryRegistry: self.factoryRegistry)
-        self.setupBindings()
-        self.setupDefaultProviders()
-        Task {
-            await self.restorePersistedSettings()
-        }
-        print("RealtimeManager initialized")
+        // 恢复持久化设置
+        restorePersistedSettings()
     }
     
-    // MARK: - Configuration (需求 3.1, 2.3)
+    // MARK: - Configuration
     
-    /// Configure RealtimeManager with provider and configuration
-    /// - Parameters:
-    ///   - provider: Provider type to use
-    ///   - config: RealtimeKit configuration
     public func configure(provider: ProviderType, config: RealtimeConfig) async throws {
-        lastError = nil
-        
-        guard factoryRegistry.isProviderAvailable(provider) else {
-            let error = RealtimeError.providerNotAvailable(provider)
-            lastError = error
-            throw error
-        }
-        
         currentConfig = config
         
-        do {
-            // Create provider instances using factory pattern (需求 2.2)
-            guard let factory = factoryRegistry.getFactory(for: provider) else {
-                let error = RealtimeError.providerNotAvailable(provider)
-                lastError = error
-                throw error
-            }
-            
-            rtcProvider = factory.createRTCProvider()
-            rtmProvider = factory.createRTMProvider()
-            
-            // Initialize providers with proper error handling
-            try await rtcProvider?.initialize(config: RTCConfig(from: config))
-            try await rtmProvider?.initialize(config: RTMConfig(from: config))
-            
-            // Setup integrations
-            setupTokenManagement()
-            setupVolumeIndicator()
-            setupMessageProcessing()
-            setupConnectionStateHandling()
-            
-            // Update state
-            currentProvider = provider
-            supportedFeatures = factory.supportedFeatures()
-            isInitialized = true
-            connectionState = .connected
-            
-            // Update provider switch manager
-            factoryRegistry.setCurrentProvider(provider)
-            
-            // Sync audio settings with the new provider (需求 5.6)
-            try await syncAudioSettingsWithProvider()
-            
-            print("RealtimeManager configured with provider: \(provider)")
-            
-        } catch {
-            let realtimeError = error as? RealtimeError ?? RealtimeError.providerInitializationFailed(provider, error.localizedDescription)
-            lastError = realtimeError
-            
-            // Cleanup on failure
-            await cleanupCurrentProvider()
-            throw realtimeError
-        }
+        // 创建服务商实例
+        let factory = createProviderFactory(for: provider)
+        rtcProvider = factory.createRTCProvider()
+        rtmProvider = factory.createRTMProvider()
+        
+        // 初始化服务商
+        try await rtcProvider?.initialize(config: RTCConfig(from: config))
+        try await rtmProvider?.initialize(config: RTMConfig(from: config))
+        
+        // 设置事件处理
+        setupEventHandlers()
+        
+        // 应用持久化设置
+        try await applyPersistedSettings()
+        
+        connectionState = .connected
+        print("RealtimeManager 配置完成，使用服务商: \(provider.displayName)")
     }
     
-    /// Switch to a different provider while preserving session state (需求 2.3)
-    /// - Parameters:
-    ///   - newProvider: Target provider type
-    ///   - preserveSession: Whether to preserve current session
-    public func switchProvider(to newProvider: ProviderType, preserveSession: Bool = true) async throws {
-        guard newProvider != currentProvider else { return }
-        
-        guard !providerSwitchInProgress else {
-            throw RealtimeError.operationInProgress("Provider switch already in progress")
+    // MARK: - Session Management
+    
+    public func loginUser(userId: String, userName: String, userRole: UserRole) async throws {
+        guard rtcProvider != nil, rtmProvider != nil else {
+            throw RealtimeError.configurationError("RealtimeManager 未配置")
         }
         
-        providerSwitchInProgress = true
-        lastError = nil
-        
-        defer {
-            providerSwitchInProgress = false
-        }
-        
-        do {
-            // Use provider switch manager for coordinated switching
-            let success = await providerSwitchManager.switchProvider(to: newProvider, preserveSession: preserveSession)
-            
-            if !success {
-                if let error = providerSwitchManager.lastSwitchError {
-                    lastError = error as? RealtimeError ?? RealtimeError.providerSwitchFailed(error.localizedDescription)
-                    throw lastError!
-                } else {
-                    let error = RealtimeError.providerSwitchFailed("Unknown error during provider switch")
-                    lastError = error
-                    throw error
-                }
-            }
-            
-            // Update our state to match the switch manager
-            currentProvider = providerSwitchManager.currentProvider
-            if let provider = currentProvider {
-                supportedFeatures = factoryRegistry.getSupportedFeatures(for: provider)
-            }
-            
-            print("Successfully switched to provider: \(newProvider)")
-            
-        } catch {
-            let realtimeError = error as? RealtimeError ?? RealtimeError.providerSwitchFailed(error.localizedDescription)
-            lastError = realtimeError
-            throw realtimeError
-        }
-    }
-    
-    // MARK: - Provider Registration (需求 2.2)
-    
-    /// Register a custom provider factory
-    /// - Parameter factory: Provider factory to register
-    public func registerProviderFactory(_ factory: ProviderFactory) {
-        factoryRegistry.registerFactory(factory)
-        updateAvailableProviders()
-        
-        // Set fallback chain for provider switch manager
-        let providers = Array(factoryRegistry.getAvailableProviders())
-        providerSwitchManager.setFallbackChain(providers)
-    }
-    
-    /// Unregister a provider factory
-    /// - Parameter providerType: Provider type to unregister
-    public func unregisterProviderFactory(_ providerType: ProviderType) {
-        factoryRegistry.unregisterFactory(providerType)
-        updateAvailableProviders()
-        
-        // Update fallback chain
-        let providers = Array(factoryRegistry.getAvailableProviders())
-        providerSwitchManager.setFallbackChain(providers)
-    }
-    
-    /// Get available providers
-    /// - Returns: Set of available provider types
-    public func getAvailableProviders() -> Set<ProviderType> {
-        return factoryRegistry.getAvailableProviders()
-    }
-    
-    /// Get supported features for a provider
-    /// - Parameter provider: Provider type
-    /// - Returns: Set of supported features
-    public func getSupportedFeatures(for provider: ProviderType) -> Set<ProviderFeature> {
-        return factoryRegistry.getSupportedFeatures(for: provider)
-    }
-    
-    /// Check if a feature is supported by current provider
-    /// - Parameter feature: Feature to check
-    /// - Returns: True if feature is supported
-    public func isFeatureSupported(_ feature: ProviderFeature) -> Bool {
-        return supportedFeatures.contains(feature)
-    }
-    
-    /// Get current provider information
-    /// - Returns: Current provider info including type and features
-    public func getCurrentProviderInfo() -> (type: ProviderType, features: Set<ProviderFeature>)? {
-        guard let provider = currentProvider else { return nil }
-        return (type: provider, features: supportedFeatures)
-    }
-    
-    // MARK: - User Identity and Session Management (需求 4)
-    
-    /// Login user and create session (需求 4.1, 4.4)
-    /// - Parameters:
-    ///   - userId: Unique user identifier
-    ///   - userName: Display name for the user
-    ///   - userRole: Initial user role
-    ///   - additionalInfo: Optional additional user information
-    public func loginUser(
-        userId: String,
-        userName: String,
-        userRole: UserRole,
-        additionalInfo: [String: Any] = [:]
-    ) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
-        
-        // Validate user credentials
-        guard !userId.isEmpty && !userName.isEmpty else {
-            throw RealtimeError.invalidParameter("User ID and name cannot be empty")
-        }
-        
-        // Create new session (需求 4.4)
-        let session = UserSession(
-            userId: userId,
-            userName: userName,
-            userRole: userRole
-        )
-        
-        // Store session
+        let session = UserSession(userId: userId, userName: userName, userRole: userRole)
         currentSession = session
-        userSessionStorage.saveUserSession(session)
+        sessionStorage.saveUserSession(session)
         
-        // Configure initial permissions based on role (需求 4.2)
-        try await configureRolePermissions(userRole)
-        
-        print("User logged in: \(userName) (\(userId)) with role \(userRole)")
+        print("用户登录: \(userName) (\(userRole.displayName))")
     }
     
-    /// Logout current user and clear session (需求 4.5)
     public func logoutUser() async throws {
-        guard let session = currentSession else {
-            throw RealtimeError.noActiveSession
-        }
-        
-        // Leave room if currently in one
-        if session.isInRoom {
+        if currentSession?.roomId != nil {
             try await leaveRoom()
         }
         
-        // Clear session data
         currentSession = nil
-        userSessionStorage.clearUserSession()
+        sessionStorage.clearUserSession()
+        connectionState = .disconnected
         
-        // Reset audio settings to default
-        audioSettings = .default
-        audioSettingsStorage.saveAudioSettings(audioSettings)
-        
-        print("User logged out: \(session.userName)")
+        print("用户登出")
     }
     
-    /// Update user session activity (需求 4.5)
-    public func updateSessionActivity() {
-        guard let session = currentSession else { return }
+    public func switchUserRole(_ newRole: UserRole) async throws {
+        guard let currentSession = currentSession else {
+            throw RealtimeError.noActiveSession
+        }
         
-        let updatedSession = session.updateLastActive()
-        currentSession = updatedSession
-        userSessionStorage.saveUserSession(updatedSession)
-    }
-    
-    /// Get current user permissions (需求 4.2)
-    /// - Returns: Set of permissions for current user
-    public func getCurrentUserPermissions() -> UserPermissions? {
-        guard let session = currentSession else { return nil }
-        return UserPermissions(role: session.userRole)
-    }
-    
-    /// Validate user permission for specific action (需求 4.2)
-    /// - Parameter permission: Permission to check
-    /// - Returns: True if user has permission
-    public func hasPermission(_ permission: UserPermission) -> Bool {
-        guard let permissions = getCurrentUserPermissions() else { return false }
-        return permissions.hasPermission(permission)
+        try await rtcProvider?.switchUserRole(newRole)
+        
+        let updatedSession = UserSession(
+            userId: currentSession.userId,
+            userName: currentSession.userName,
+            userRole: newRole,
+            roomId: currentSession.roomId
+        )
+        
+        self.currentSession = updatedSession
+        sessionStorage.saveUserSession(updatedSession)
+        
+        print("用户角色切换到: \(newRole.displayName)")
     }
     
     // MARK: - Room Management
     
-    /// Create a new room
-    /// - Parameter roomId: Room identifier
-    /// - Returns: Created room
     public func createRoom(roomId: String) async throws -> RTCRoom {
         guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+            throw RealtimeError.configurationError("RTC Provider 未配置")
         }
         
-        // Check if user has room management permission
-        guard hasPermission(.manageRoom) else {
-            throw RealtimeError.insufficientPermissions(currentSession?.userRole ?? .audience)
-        }
-        
-        return try await rtcProvider.createRoom(roomId: roomId)
+        let room = try await rtcProvider.createRoom(roomId: roomId)
+        print("创建房间: \(roomId)")
+        return room
     }
     
-    /// Join a room with current user session
-    /// - Parameters:
-    ///   - roomId: Room identifier
-    ///   - userRole: Optional role override for this room
-    public func joinRoom(roomId: String, userRole: UserRole? = nil) async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
-        
-        guard let session = currentSession else {
+    public func joinRoom(roomId: String) async throws {
+        guard let rtcProvider = rtcProvider,
+              let currentSession = currentSession else {
             throw RealtimeError.noActiveSession
         }
         
-        let effectiveRole = userRole ?? session.userRole
+        try await rtcProvider.joinRoom(
+            roomId: roomId,
+            userId: currentSession.userId,
+            userRole: currentSession.userRole
+        )
         
-        // Validate role permissions (需求 4.2)
-        guard effectiveRole.hasAudioPermission || effectiveRole == .audience else {
-            throw RealtimeError.insufficientPermissions(effectiveRole)
-        }
+        // 更新会话信息
+        let updatedSession = UserSession(
+            userId: currentSession.userId,
+            userName: currentSession.userName,
+            userRole: currentSession.userRole,
+            roomId: roomId
+        )
         
-        try await rtcProvider.joinRoom(roomId: roomId, userId: session.userId, userRole: effectiveRole)
+        self.currentSession = updatedSession
+        sessionStorage.saveUserSession(updatedSession)
         
-        // Update session with room information (需求 4.4)
-        let updatedSession = session.withRoom(roomId).withRole(effectiveRole)
-        currentSession = updatedSession
-        userSessionStorage.saveUserSession(updatedSession)
-        
-        // Configure audio based on role
-        try await configureRolePermissions(effectiveRole)
-        
-        print("Joined room \(roomId) as \(session.userName) with role \(effectiveRole)")
+        print("加入房间: \(roomId)")
     }
     
-    /// Leave the current room
     public func leaveRoom() async throws {
         guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
-        
-        guard let session = currentSession else {
-            throw RealtimeError.noActiveSession
+            throw RealtimeError.configurationError("RTC Provider 未配置")
         }
         
         try await rtcProvider.leaveRoom()
         
-        // Update session to remove room information
-        let updatedSession = session.withRoom(nil)
-        currentSession = updatedSession
-        userSessionStorage.saveUserSession(updatedSession)
-        
-        print("Left room")
-    }
-    
-    /// Switch user role in current room (需求 4.3)
-    /// - Parameter newRole: New user role
-    public func switchUserRole(_ newRole: UserRole) async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
-        
-        guard let session = currentSession else {
-            throw RealtimeError.noActiveSession
-        }
-        
-        // Validate role transition (需求 4.2)
-        guard session.userRole.canSwitchToRole.contains(newRole) else {
-            throw RealtimeError.invalidRoleTransition(from: session.userRole, to: newRole)
-        }
-        
-        try await rtcProvider.switchUserRole(newRole)
-        
-        // Update session with new role
-        let updatedSession = session.withRole(newRole)
-        currentSession = updatedSession
-        userSessionStorage.saveUserSession(updatedSession)
-        
-        // Reconfigure permissions for new role
-        try await configureRolePermissions(newRole)
-        
-        print("Switched to role: \(newRole)")
-    }
-    
-    /// Get available role transitions for current user (需求 4.3)
-    /// - Returns: Set of roles the user can switch to
-    public func getAvailableRoleTransitions() -> Set<UserRole> {
-        guard let session = currentSession else { return [] }
-        return session.userRole.canSwitchToRole
-    }
-    
-    // MARK: - Private Session Management Helpers
-    
-    private func configureRolePermissions(_ role: UserRole) async throws {
-        guard let rtcProvider = rtcProvider else { return }
-        
-        // Configure audio permissions based on role
-        if role.hasAudioPermission {
-            try await rtcProvider.resumeLocalAudioStream()
-        } else {
-            try await rtcProvider.stopLocalAudioStream()
-        }
-        
-        // Update audio settings to reflect role permissions
-        if !role.hasAudioPermission {
-            audioSettings = AudioSettings(
-                microphoneMuted: true,
-                audioMixingVolume: audioSettings.audioMixingVolume,
-                playbackSignalVolume: audioSettings.playbackSignalVolume,
-                recordingSignalVolume: audioSettings.recordingSignalVolume,
-                localAudioStreamActive: false
+        // 清除房间信息
+        if let currentSession = currentSession {
+            let updatedSession = UserSession(
+                userId: currentSession.userId,
+                userName: currentSession.userName,
+                userRole: currentSession.userRole,
+                roomId: nil
             )
-            audioSettingsStorage.saveAudioSettings(audioSettings)
+            
+            self.currentSession = updatedSession
+            sessionStorage.saveUserSession(updatedSession)
         }
+        
+        print("离开房间")
     }
     
-    // MARK: - Audio Control (需求 5)
+    // MARK: - Audio Control
     
-    /// Mute or unmute microphone (需求 5.1)
-    /// - Parameter muted: True to mute, false to unmute
     public func muteMicrophone(_ muted: Bool) async throws {
         guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+            throw RealtimeError.configurationError("RTC Provider 未配置")
         }
         
         try await rtcProvider.muteMicrophone(muted)
@@ -556,384 +187,164 @@ public final class RealtimeManager: ObservableObject, @unchecked Sendable {
             localAudioStreamActive: audioSettings.localAudioStreamActive
         )
         
-        audioSettingsStorage.saveAudioSettings(audioSettings)
+        settingsStorage.saveAudioSettings(audioSettings)
+        print("麦克风 \(muted ? "静音" : "取消静音")")
     }
     
-    /// Set audio mixing volume (需求 5.2)
-    /// - Parameter volume: Volume level (0-100)
     public func setAudioMixingVolume(_ volume: Int) async throws {
         guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+            throw RealtimeError.configurationError("RTC Provider 未配置")
         }
         
         let clampedVolume = max(0, min(100, volume))
         try await rtcProvider.setAudioMixingVolume(clampedVolume)
         
         audioSettings = audioSettings.withUpdatedVolume(audioMixing: clampedVolume)
-        audioSettingsStorage.saveAudioSettings(audioSettings)
+        settingsStorage.saveAudioSettings(audioSettings)
+        
+        print("设置混音音量: \(clampedVolume)")
     }
     
-    /// Set playback signal volume (需求 5.2)
-    /// - Parameter volume: Volume level (0-100)
     public func setPlaybackSignalVolume(_ volume: Int) async throws {
         guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+            throw RealtimeError.configurationError("RTC Provider 未配置")
         }
         
         let clampedVolume = max(0, min(100, volume))
         try await rtcProvider.setPlaybackSignalVolume(clampedVolume)
         
         audioSettings = audioSettings.withUpdatedVolume(playbackSignal: clampedVolume)
-        audioSettingsStorage.saveAudioSettings(audioSettings)
+        settingsStorage.saveAudioSettings(audioSettings)
+        
+        print("设置播放音量: \(clampedVolume)")
     }
     
-    /// Set recording signal volume (需求 5.2)
-    /// - Parameter volume: Volume level (0-100)
     public func setRecordingSignalVolume(_ volume: Int) async throws {
         guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+            throw RealtimeError.configurationError("RTC Provider 未配置")
         }
         
         let clampedVolume = max(0, min(100, volume))
         try await rtcProvider.setRecordingSignalVolume(clampedVolume)
         
         audioSettings = audioSettings.withUpdatedVolume(recordingSignal: clampedVolume)
-        audioSettingsStorage.saveAudioSettings(audioSettings)
-    }
-    
-    /// Stop local audio stream (需求 5.3)
-    public func stopLocalAudioStream() async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
+        settingsStorage.saveAudioSettings(audioSettings)
         
-        try await rtcProvider.stopLocalAudioStream()
-        
-        audioSettings = AudioSettings(
-            microphoneMuted: audioSettings.microphoneMuted,
-            audioMixingVolume: audioSettings.audioMixingVolume,
-            playbackSignalVolume: audioSettings.playbackSignalVolume,
-            recordingSignalVolume: audioSettings.recordingSignalVolume,
-            localAudioStreamActive: false
-        )
-        
-        audioSettingsStorage.saveAudioSettings(audioSettings)
+        print("设置录音音量: \(clampedVolume)")
     }
     
-    /// Resume local audio stream (需求 5.3)
-    public func resumeLocalAudioStream() async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
-        
-        try await rtcProvider.resumeLocalAudioStream()
-        
-        audioSettings = AudioSettings(
-            microphoneMuted: audioSettings.microphoneMuted,
-            audioMixingVolume: audioSettings.audioMixingVolume,
-            playbackSignalVolume: audioSettings.playbackSignalVolume,
-            recordingSignalVolume: audioSettings.recordingSignalVolume,
-            localAudioStreamActive: true
-        )
-        
-        audioSettingsStorage.saveAudioSettings(audioSettings)
-    }
+    // MARK: - Volume Indicator
     
-    // MARK: - Additional Audio Control Methods (需求 5)
-    
-    /// Get current microphone mute state
-    /// - Returns: True if microphone is muted
-    public func isMicrophoneMuted() -> Bool {
-        return audioSettings.microphoneMuted
-    }
-    
-    /// Get current audio mixing volume
-    /// - Returns: Audio mixing volume (0-100)
-    public func getAudioMixingVolume() -> Int {
-        return audioSettings.audioMixingVolume
-    }
-    
-    /// Get current playback signal volume
-    /// - Returns: Playback signal volume (0-100)
-    public func getPlaybackSignalVolume() -> Int {
-        return audioSettings.playbackSignalVolume
-    }
-    
-    /// Get current recording signal volume
-    /// - Returns: Recording signal volume (0-100)
-    public func getRecordingSignalVolume() -> Int {
-        return audioSettings.recordingSignalVolume
-    }
-    
-    /// Check if local audio stream is active
-    /// - Returns: True if local audio stream is active
-    public func isLocalAudioStreamActive() -> Bool {
-        return audioSettings.localAudioStreamActive
-    }
-    
-    /// Reset audio settings to default values (需求 5.5)
-    public func resetAudioSettings() async throws {
-        let defaultSettings = AudioSettings.default
-        try await applyAudioSettings(defaultSettings)
-        print("Audio settings reset to default")
-    }
-    
-    /// Update multiple audio settings at once (需求 5.6)
-    /// - Parameters:
-    ///   - microphoneMuted: Optional microphone mute state
-    ///   - audioMixingVolume: Optional audio mixing volume (0-100)
-    ///   - playbackSignalVolume: Optional playback signal volume (0-100)
-    ///   - recordingSignalVolume: Optional recording signal volume (0-100)
-    ///   - localAudioStreamActive: Optional local audio stream state
-    public func updateAudioSettings(
-        microphoneMuted: Bool? = nil,
-        audioMixingVolume: Int? = nil,
-        playbackSignalVolume: Int? = nil,
-        recordingSignalVolume: Int? = nil,
-        localAudioStreamActive: Bool? = nil
-    ) async throws {
-        let newSettings = AudioSettings(
-            microphoneMuted: microphoneMuted ?? audioSettings.microphoneMuted,
-            audioMixingVolume: audioMixingVolume ?? audioSettings.audioMixingVolume,
-            playbackSignalVolume: playbackSignalVolume ?? audioSettings.playbackSignalVolume,
-            recordingSignalVolume: recordingSignalVolume ?? audioSettings.recordingSignalVolume,
-            localAudioStreamActive: localAudioStreamActive ?? audioSettings.localAudioStreamActive
-        )
-        
-        try await applyAudioSettings(newSettings)
-    }
-    
-    /// Validate audio settings before applying (需求 5.4)
-    /// - Parameter settings: Audio settings to validate
-    /// - Returns: True if settings are valid
-    public func validateAudioSettings(_ settings: AudioSettings) -> Bool {
-        // Volume levels should be between 0 and 100
-        guard settings.audioMixingVolume >= 0 && settings.audioMixingVolume <= 100 else {
-            return false
-        }
-        
-        guard settings.playbackSignalVolume >= 0 && settings.playbackSignalVolume <= 100 else {
-            return false
-        }
-        
-        guard settings.recordingSignalVolume >= 0 && settings.recordingSignalVolume <= 100 else {
-            return false
-        }
-        
-        return true
-    }
-    
-    /// Get audio settings summary for debugging
-    /// - Returns: Dictionary with current audio settings
-    public func getAudioSettingsSummary() -> [String: Any] {
-        return [
-            "microphoneMuted": audioSettings.microphoneMuted,
-            "audioMixingVolume": audioSettings.audioMixingVolume,
-            "playbackSignalVolume": audioSettings.playbackSignalVolume,
-            "recordingSignalVolume": audioSettings.recordingSignalVolume,
-            "localAudioStreamActive": audioSettings.localAudioStreamActive,
-            "lastModified": audioSettings.lastModified
-        ]
-    }
-    
-    // MARK: - Volume Indicator (需求 6)
-    
-    /// Enable volume indicator with configuration
-    /// - Parameter config: Volume detection configuration
     public func enableVolumeIndicator(config: VolumeDetectionConfig = .default) async throws {
         guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+            throw RealtimeError.configurationError("RTC Provider 未配置")
         }
         
         try await rtcProvider.enableVolumeIndicator(config: config)
+        print("启用音量指示器")
     }
     
-    /// Disable volume indicator
     public func disableVolumeIndicator() async throws {
         guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+            throw RealtimeError.configurationError("RTC Provider 未配置")
         }
         
         try await rtcProvider.disableVolumeIndicator()
         volumeInfos = []
         speakingUsers = []
         dominantSpeaker = nil
+        
+        print("禁用音量指示器")
     }
     
-    // MARK: - Stream Push (需求 7)
+    // MARK: - Private Methods
     
-    /// Start stream push
-    /// - Parameter config: Stream push configuration
-    public func startStreamPush(config: StreamPushConfig) async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+    private func createProviderFactory(for type: ProviderType) -> ProviderFactory {
+        switch type {
+        case .agora:
+            // 这里需要导入 RealtimeAgora 模块
+            fatalError("Agora provider factory not implemented yet")
+        case .mock:
+            // 这里需要导入 RealtimeMocking 模块
+            fatalError("Mock provider factory not implemented yet")
+        default:
+            fatalError("Unsupported provider type: \(type)")
         }
-        
-        try await rtcProvider.startStreamPush(config: config)
-        streamPushState = .running
     }
     
-    /// Stop stream push
-    public func stopStreamPush() async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
+    private func setupEventHandlers() {
+        // 设置音量指示器处理器
+        rtcProvider?.setVolumeIndicatorHandler { [weak self] volumeInfos in
+            Task { @MainActor in
+                self?.handleVolumeUpdate(volumeInfos)
+            }
         }
         
-        try await rtcProvider.stopStreamPush()
-        streamPushState = .stopped
+        // 设置音量事件处理器
+        rtcProvider?.setVolumeEventHandler { [weak self] (event: VolumeEvent) in
+            Task { @MainActor in
+                self?.handleVolumeEvent(event)
+            }
+        }
     }
     
-    // MARK: - Media Relay (需求 8)
-    
-    /// Update stream push layout
-    /// - Parameter layout: New stream layout
-    public func updateStreamPushLayout(layout: StreamLayout) async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
+    private func handleVolumeUpdate(_ volumeInfos: [UserVolumeInfo]) {
+        self.volumeInfos = volumeInfos
         
-        try await rtcProvider.updateStreamPushLayout(layout: layout)
-    }
-    
-    // MARK: - Media Relay (需求 8)
-    
-    /// Start media relay
-    /// - Parameter config: Media relay configuration
-    public func startMediaRelay(config: MediaRelayConfig) async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
+        let newSpeakingUsers = Set(volumeInfos.filter { $0.isSpeaking }.map { $0.userId })
+        speakingUsers = newSpeakingUsers
         
-        try await rtcProvider.startMediaRelay(config: config)
+        let newDominantSpeaker = volumeInfos
+            .filter { $0.isSpeaking }
+            .max { $0.volume < $1.volume }?.userId
+        dominantSpeaker = newDominantSpeaker
         
-        // Create initial media relay state
-        let channelStates = config.destinationChannels.reduce(into: [String: MediaRelayChannelState]()) { result, channel in
-            result[channel.channelName] = .connecting
-        }
-        
-        mediaRelayState = MediaRelayState(
-            overallState: .connecting,
-            channelStates: channelStates
+        // 发送通知给 UIKit 组件
+        NotificationCenter.default.post(
+            name: .realtimeVolumeInfoUpdated,
+            object: nil,
+            userInfo: ["volumeInfos": volumeInfos]
         )
     }
     
-    /// Stop media relay
-    public func stopMediaRelay() async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
-        
-        try await rtcProvider.stopMediaRelay()
-        mediaRelayState = nil
-    }
-    
-    /// Update media relay channels
-    /// - Parameter config: Updated media relay configuration
-    public func updateMediaRelayChannels(config: MediaRelayConfig) async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
-        
-        try await rtcProvider.updateMediaRelayChannels(config: config)
-    }
-    
-    /// Pause media relay to specific channel
-    /// - Parameter toChannel: Channel name to pause
-    public func pauseMediaRelay(toChannel: String) async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
-        
-        try await rtcProvider.pauseMediaRelay(toChannel: toChannel)
-        
-        // Update state
-        if var state = mediaRelayState {
-            state.channelStates[toChannel] = .paused
-            mediaRelayState = state
+    private func handleVolumeEvent(_ event: VolumeEvent) {
+        // 处理音量事件
+        switch event {
+        case .userStartedSpeaking(let userId, _):
+            print("用户 \(userId) 开始说话")
+        case .userStoppedSpeaking(let userId, _):
+            print("用户 \(userId) 停止说话")
+        case .dominantSpeakerChanged(let userId):
+            print("主讲人变更: \(userId ?? "无")")
+        case .volumeUpdate:
+            break // 已在 handleVolumeUpdate 中处理
         }
     }
     
-    /// Resume media relay to specific channel
-    /// - Parameter toChannel: Channel name to resume
-    public func resumeMediaRelay(toChannel: String) async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
+    private func restorePersistedSettings() {
+        audioSettings = settingsStorage.loadAudioSettings()
         
-        try await rtcProvider.resumeMediaRelay(toChannel: toChannel)
-        
-        // Update state
-        if var state = mediaRelayState {
-            state.channelStates[toChannel] = .running
-            mediaRelayState = state
+        if let session = sessionStorage.loadUserSession() {
+            currentSession = session
         }
     }
     
-    // MARK: - Room Management Extensions
-    
-    /// Join room with user ID and role (for demo compatibility)
-    /// - Parameters:
-    ///   - roomId: Room identifier
-    ///   - userId: User identifier
-    ///   - userName: User display name
-    ///   - userRole: User role
-    public func joinRoom(roomId: String, userId: String, userName: String, userRole: UserRole) async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
+    private func applyPersistedSettings() async throws {
+        guard let rtcProvider = rtcProvider else { return }
         
-        try await rtcProvider.joinChannel(channelName: roomId, userId: userId, userRole: userRole)
+        try await rtcProvider.muteMicrophone(audioSettings.microphoneMuted)
+        try await rtcProvider.setAudioMixingVolume(audioSettings.audioMixingVolume)
+        try await rtcProvider.setPlaybackSignalVolume(audioSettings.playbackSignalVolume)
+        try await rtcProvider.setRecordingSignalVolume(audioSettings.recordingSignalVolume)
         
-        // Update current room state
-        currentRoom = RTCRoom(
-            roomId: roomId,
-            roomName: nil,
-            createdAt: Date(),
-            maxUsers: 100,
-            isPrivate: false,
-            metadata: [:]
-        )
-    }
-    
-    // MARK: - Message Processing (需求 10)
-    
-    /// Send a message
-    /// - Parameter message: Message to send
-    public func sendMessage(_ message: RealtimeMessage) async throws {
-        guard let rtmProvider = rtmProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
-        
-        // Process message through pipeline first
-        let processedMessage = try await messageProcessorManager.processMessage(message)
-        
-        if let finalMessage = processedMessage {
-            try await rtmProvider.sendMessage(finalMessage)
+        if audioSettings.localAudioStreamActive {
+            try await rtcProvider.resumeLocalAudioStream()
+        } else {
+            try await rtcProvider.stopLocalAudioStream()
         }
     }
     
-    /// Register a message processor
-    /// - Parameter processor: Message processor to register
-    public func registerMessageProcessor(_ processor: MessageProcessor) {
-        messageProcessorManager.registerProcessor(processor)
-    }
-    
-    /// Subscribe to a channel
-    /// - Parameter channel: Channel name
-    public func subscribe(to channel: String) async throws {
-        guard let rtmProvider = rtmProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
-        
-        try await rtmProvider.subscribe(to: channel)
-    }
-    
-    // MARK: - Internal Methods
-    
-    internal func restoreSession(_ session: UserSession) async throws {
-        currentSession = session
-        userSessionStorage.saveUserSession(session)
-    }
+    // MARK: - Internal Methods (for testing and provider switching)
     
     internal func applyAudioSettings(_ settings: AudioSettings) async throws {
         guard let rtcProvider = rtcProvider else { return }
@@ -948,821 +359,578 @@ public final class RealtimeManager: ObservableObject, @unchecked Sendable {
         } else {
             try await rtcProvider.stopLocalAudioStream()
         }
+    }
+    
+    internal func restoreSession(_ session: UserSession) async throws {
+        currentSession = session
+        sessionStorage.saveUserSession(session)
+    }
+}
+
+// MARK: - Storage Classes
+
+/// 音频设置存储管理器
+/// 需求: 5.4, 5.5 - 音频设置的持久化存储和恢复
+public class AudioSettingsStorage {
+    
+    // MARK: - Constants
+    
+    private static let audioSettingsKey = "RealtimeKit.AudioSettings"
+    private static let audioSettingsBackupKey = "RealtimeKit.AudioSettings.Backup"
+    private static let migrationVersionKey = "RealtimeKit.AudioSettings.MigrationVersion"
+    private static let currentMigrationVersion = 1
+    
+    // MARK: - Properties
+    
+    private let userDefaults: UserDefaults
+    private let encoder: JSONEncoder
+    private let decoder: JSONDecoder
+    
+    // MARK: - Initialization
+    
+    public init(userDefaults: UserDefaults = .standard) {
+        self.userDefaults = userDefaults
+        self.encoder = JSONEncoder()
+        self.decoder = JSONDecoder()
         
-        audioSettings = settings
-        audioSettingsStorage.saveAudioSettings(settings)
-    }
-    
-    // MARK: - Connection Management (需求 13.2, 13.3)
-    
-    /// Get current connection state
-    /// - Returns: Current overall connection state
-    public func getConnectionState() -> ConnectionState {
-        return connectionStateManager.overallConnectionState
-    }
-    
-    /// Get detailed connection states
-    /// - Returns: Tuple with RTC and RTM connection states
-    public func getDetailedConnectionStates() -> (rtc: ConnectionState, rtm: ConnectionState) {
-        return (
-            rtc: connectionStateManager.rtcConnectionState,
-            rtm: connectionStateManager.rtmConnectionState
-        )
-    }
-    
-    /// Check if currently connected
-    /// - Returns: True if both RTC and RTM are connected
-    public var isConnected: Bool {
-        return connectionStateManager.isConnected
-    }
-    
-    /// Check if currently reconnecting
-    /// - Returns: True if reconnection is in progress
-    public var isReconnecting: Bool {
-        return connectionStateManager.isReconnecting
-    }
-    
-    /// Get reconnection attempts count
-    /// - Returns: Number of reconnection attempts made
-    public var reconnectionAttempts: Int {
-        return connectionStateManager.reconnectionAttempts
-    }
-    
-    /// Manually trigger reconnection
-    public func reconnect() async {
-        await connectionStateManager.reconnect()
-    }
-    
-    /// Cancel ongoing reconnection attempts
-    public func cancelReconnection() {
-        connectionStateManager.cancelReconnection()
-    }
-    
-    /// Configure auto-reconnection settings
-    /// - Parameters:
-    ///   - enabled: Whether auto-reconnection is enabled
-    ///   - maxAttempts: Maximum number of reconnection attempts
-    ///   - baseDelay: Base delay between attempts
-    ///   - maxDelay: Maximum delay between attempts
-    public func configureAutoReconnection(
-        enabled: Bool = true,
-        maxAttempts: Int = 5,
-        baseDelay: TimeInterval = 2.0,
-        maxDelay: TimeInterval = 30.0
-    ) {
-        connectionStateManager.isAutoReconnectionEnabled = enabled
-        connectionStateManager.maxReconnectionAttempts = maxAttempts
-        connectionStateManager.baseReconnectionDelay = baseDelay
-        connectionStateManager.maxReconnectionDelay = maxDelay
-    }
-    
-    /// Get connection statistics
-    /// - Returns: Connection statistics including uptime and reconnection info
-    public func getConnectionStatistics() -> ConnectionStatistics {
-        return connectionStateManager.connectionStats
-    }
-    
-    /// Get connection history
-    /// - Returns: Array of recent connection events
-    public func getConnectionHistory() -> [ConnectionEvent] {
-        return connectionStateManager.connectionHistory
-    }
-    
-    /// Reset connection state and history
-    public func resetConnectionState() {
-        connectionStateManager.reset()
-    }
-    
-    // MARK: - Error Management (需求 13.1, 13.4)
-    
-    /// Get recent errors
-    /// - Returns: Array of recent error records
-    public func getRecentErrors() -> [ErrorRecord] {
-        return errorHandler.recentErrors
-    }
-    
-    /// Get errors by category
-    /// - Parameter category: Error category to filter by
-    /// - Returns: Array of errors in the specified category
-    public func getErrors(by category: ErrorCategory) -> [ErrorRecord] {
-        return errorHandler.getErrors(by: category)
-    }
-    
-    /// Get errors by severity
-    /// - Parameter severity: Error severity to filter by
-    /// - Returns: Array of errors with the specified severity
-    public func getErrors(by severity: ErrorSeverity) -> [ErrorRecord] {
-        return errorHandler.getErrors(by: severity)
-    }
-    
-    /// Get error statistics
-    /// - Returns: Error statistics including counts and recovery rates
-    public func getErrorStatistics() -> ErrorStatistics {
-        return errorHandler.errorStats
-    }
-    
-    /// Clear error history
-    public func clearErrorHistory() {
-        errorHandler.clearErrorHistory()
-    }
-    
-    /// Handle a custom error
-    /// - Parameters:
-    ///   - error: Error to handle
-    ///   - context: Optional context information
-    ///   - enableRecovery: Whether to attempt automatic recovery
-    public func handleError(
-        _ error: Error,
-        context: String? = nil,
-        enableRecovery: Bool = true
-    ) async {
-        await errorHandler.handleError(error, context: context, enableRecovery: enableRecovery)
-    }
-    
-    // MARK: - Private Setup Methods
-    
-    private func setupBindings() {
-        // Bind provider switch manager state
-        providerSwitchManager.$currentProvider
-            .assign(to: \.currentProvider, on: self)
-            .store(in: &cancellables)
+        // 配置编码器
+        encoder.dateEncodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .iso8601
         
-        providerSwitchManager.$switchingInProgress
-            .assign(to: \.providerSwitchInProgress, on: self)
-            .store(in: &cancellables)
-        
-        // Bind factory registry state
-        factoryRegistry.$registeredFactories
-            .map { Set($0.keys) }
-            .assign(to: \.availableProviders, on: self)
-            .store(in: &cancellables)
-        
-        // Update supported features when current provider changes
-        $currentProvider
-            .compactMap { [weak self] provider in
-                guard let provider = provider else { return nil }
-                return self?.factoryRegistry.getSupportedFeatures(for: provider)
+        // 执行数据迁移检查
+        performMigrationIfNeeded()
+    }
+    
+    // MARK: - Public Methods
+    
+    /// 保存音频设置 (需求 5.4)
+    public func saveAudioSettings(_ settings: AudioSettings) {
+        do {
+            // 验证设置有效性
+            guard settings.isValid else {
+                throw AudioSettingsStorageError.invalidSettings("音频设置包含无效的音量值")
             }
-            .assign(to: \.supportedFeatures, on: self)
-            .store(in: &cancellables)
-        
-        // Bind connection state manager
-        connectionStateManager.$overallConnectionState
-            .assign(to: \.connectionState, on: self)
-            .store(in: &cancellables)
-        
-        // Handle connection state changes
-        connectionStateManager.onConnectionStateChanged = { [weak self] oldState, newState in
-            Task { @MainActor in
-                await self?.handleConnectionStateChange(from: oldState, to: newState)
-            }
-        }
-        
-        // Handle reconnection events
-        connectionStateManager.onReconnectionAttempt = { attempt in
-            Task { @MainActor in
-                print("Reconnection attempt \(attempt)")
-            }
-        }
-        
-        connectionStateManager.onReconnectionSuccess = { [weak self] in
-            Task { @MainActor in
-                print("Reconnection successful")
-                self?.lastError = nil
-            }
-        }
-        
-        connectionStateManager.onReconnectionFailed = { [weak self] error in
-            Task { @MainActor in
-                print("Reconnection failed: \(error)")
-                await self?.errorHandler.handleError(error, context: "Reconnection")
-            }
+            
+            // 创建备份
+            createBackup()
+            
+            // 编码并保存
+            let data = try encoder.encode(settings)
+            userDefaults.set(data, forKey: Self.audioSettingsKey)
+            
+            // 强制同步到磁盘
+            userDefaults.synchronize()
+            
+        } catch {
+            handleSaveError(error, settings: settings)
         }
     }
     
-    private func setupDefaultProviders() {
-        // Register default Agora provider factory
-        let agoraFactory = AgoraProviderFactory()
-        registerProviderFactory(agoraFactory)
-        
-        print("Default providers registered")
-    }
-    
-    private func updateAvailableProviders() {
-        availableProviders = factoryRegistry.getAvailableProviders()
-    }
-    
-    private func setupTokenManagement() {
-        rtcProvider?.onTokenWillExpire { [weak self] expiresIn in
-            Task { @MainActor in
-                await self?.tokenManager.handleTokenExpiration(
-                    provider: self?.currentProvider ?? .mock,
-                    expiresIn: expiresIn
-                )
+    /// 加载音频设置 (需求 5.5)
+    public func loadAudioSettings() -> AudioSettings {
+        do {
+            guard let data = userDefaults.data(forKey: Self.audioSettingsKey) else {
+                // 没有保存的设置，返回默认值
+                return .default
             }
+            
+            let settings = try decoder.decode(AudioSettings.self, from: data)
+            
+            // 验证加载的设置
+            guard settings.isValid else {
+                throw AudioSettingsStorageError.corruptedData("加载的音频设置数据已损坏")
+            }
+            
+            return settings
+            
+        } catch {
+            return handleLoadError(error)
+        }
+    }
+    
+    /// 清除音频设置
+    public func clearAudioSettings() {
+        userDefaults.removeObject(forKey: Self.audioSettingsKey)
+        userDefaults.removeObject(forKey: Self.audioSettingsBackupKey)
+        userDefaults.synchronize()
+    }
+    
+    /// 检查是否存在保存的设置
+    public func hasStoredSettings() -> Bool {
+        return userDefaults.data(forKey: Self.audioSettingsKey) != nil
+    }
+    
+    /// 获取设置的最后修改时间
+    public func getLastModifiedTime() -> Date? {
+        let settings = loadAudioSettings()
+        return settings.lastModified
+    }
+    
+    /// 恢复备份设置
+    public func restoreFromBackup() -> AudioSettings? {
+        guard let backupData = userDefaults.data(forKey: Self.audioSettingsBackupKey) else {
+            return nil
         }
         
-        rtmProvider?.onTokenWillExpire { [weak self] expiresIn in
-            Task { @MainActor in
-                await self?.tokenManager.handleTokenExpiration(
-                    provider: self?.currentProvider ?? .mock,
-                    expiresIn: expiresIn
-                )
+        do {
+            let backupSettings = try decoder.decode(AudioSettings.self, from: backupData)
+            
+            // 验证备份设置
+            guard backupSettings.isValid else {
+                return nil
             }
+            
+            // 恢复备份设置
+            saveAudioSettings(backupSettings)
+            return backupSettings
+            
+        } catch {
+            print("Failed to restore backup settings: \(error)")
+            return nil
         }
     }
     
-    private func setupVolumeIndicator() {
-        rtcProvider?.setVolumeIndicatorHandler { [weak self] volumeInfos in
-            Task { @MainActor in
-                self?.volumeIndicatorManager.processVolumeUpdate(volumeInfos)
-                self?.volumeInfos = volumeInfos
-                self?.speakingUsers = Set(volumeInfos.filter { $0.isSpeaking }.map { $0.userId })
-                self?.dominantSpeaker = volumeInfos.filter { $0.isSpeaking }.max { $0.volume < $1.volume }?.userId
-            }
+    // MARK: - Private Methods
+    
+    /// 创建设置备份
+    private func createBackup() {
+        guard let currentData = userDefaults.data(forKey: Self.audioSettingsKey) else {
+            return
+        }
+        
+        userDefaults.set(currentData, forKey: Self.audioSettingsBackupKey)
+    }
+    
+    /// 处理保存错误
+    private func handleSaveError(_ error: Error, settings: AudioSettings) {
+        print("Failed to save audio settings: \(error)")
+        
+        // 尝试保存到备份位置
+        do {
+            let data = try encoder.encode(settings)
+            userDefaults.set(data, forKey: Self.audioSettingsBackupKey)
+            print("Audio settings saved to backup location")
+        } catch {
+            print("Failed to save audio settings to backup: \(error)")
         }
     }
     
-    private func setupMessageProcessing() {
-        rtmProvider?.setMessageHandler { [weak self] message in
-            Task { @MainActor in
-                do {
-                    _ = try await self?.messageProcessorManager.processMessage(message)
-                } catch {
-                    print("Message processing failed: \(error)")
+    /// 处理加载错误
+    private func handleLoadError(_ error: Error) -> AudioSettings {
+        print("Failed to load audio settings: \(error)")
+        
+        // 尝试从备份恢复
+        if let backupSettings = restoreFromBackup() {
+            print("Audio settings restored from backup")
+            return backupSettings
+        }
+        
+        // 返回默认设置
+        print("Using default audio settings")
+        return .default
+    }
+    
+    /// 执行数据迁移
+    private func performMigrationIfNeeded() {
+        let currentVersion = userDefaults.integer(forKey: Self.migrationVersionKey)
+        
+        if currentVersion < Self.currentMigrationVersion {
+            performMigration(from: currentVersion, to: Self.currentMigrationVersion)
+            userDefaults.set(Self.currentMigrationVersion, forKey: Self.migrationVersionKey)
+        }
+    }
+    
+    /// 执行具体的数据迁移
+    private func performMigration(from oldVersion: Int, to newVersion: Int) {
+        print("Migrating audio settings from version \(oldVersion) to \(newVersion)")
+        
+        switch oldVersion {
+        case 0:
+            // 从版本0迁移到版本1
+            migrateFromVersion0()
+        default:
+            break
+        }
+    }
+    
+    /// 从版本0迁移（添加settingsVersion字段）
+    private func migrateFromVersion0() {
+        guard let data = userDefaults.data(forKey: Self.audioSettingsKey) else {
+            return
+        }
+        
+        do {
+            // 尝试解码旧格式的设置
+            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                var mutableJson = json
+                
+                // 添加缺失的字段
+                if mutableJson["settingsVersion"] == nil {
+                    mutableJson["settingsVersion"] = 1
                 }
+                
+                // 重新编码并保存
+                let migratedData = try JSONSerialization.data(withJSONObject: mutableJson)
+                userDefaults.set(migratedData, forKey: Self.audioSettingsKey)
+                
+                print("Successfully migrated audio settings from version 0")
             }
-        }
-    }
-    
-    private func setupConnectionStateHandling() {
-        // Set up RTM connection state handling
-        rtmProvider?.setConnectionStateHandler { [weak self] state in
-            Task { @MainActor in
-                self?.connectionStateManager.updateRTMConnectionState(state)
-            }
-        }
-        
-        // Set up RTC connection state handling (if provider supports it)
-        // Note: This would need to be implemented in the RTCProvider protocol
-        // For now, we'll simulate RTC connection state based on RTM state
-        rtmProvider?.setConnectionStateHandler { [weak self] state in
-            Task { @MainActor in
-                // Simulate RTC state following RTM state
-                self?.connectionStateManager.updateRTCConnectionState(state)
-            }
-        }
-    }
-    
-    /// Handle connection state changes
-    private func handleConnectionStateChange(from oldState: ConnectionState, to newState: ConnectionState) async {
-        print("Connection state changed from \(oldState.displayName) to \(newState.displayName)")
-        
-        switch newState {
-        case .connected:
-            // Connection established
-            lastError = nil
-            
-        case .disconnected:
-            // Connection lost
-            if oldState == .connected {
-                let error = RealtimeError.connectionFailed("Connection lost")
-                await errorHandler.handleError(error, context: "Connection State Change")
-            }
-            
-        case .failed:
-            // Connection failed
-            let error = RealtimeError.connectionFailed("Connection failed")
-            await errorHandler.handleError(error, context: "Connection State Change")
-            
-        case .connecting:
-            // Connecting
-            lastError = nil
-            
-        case .reconnecting:
-            // Reconnecting
-            print("Attempting to reconnect...")
-        }
-    }
-    
-    private func restorePersistedSettings() async {
-        // Restore audio settings (需求 5.5)
-        let restoredSettings = audioSettingsStorage.loadAudioSettings()
-        audioSettings = restoredSettings
-        
-        // Restore user session (需求 3.5)
-        if let session = userSessionStorage.loadUserSession() {
-            currentSession = session
-        }
-        
-        print("Restored persisted settings - Audio: \(restoredSettings), Session: \(currentSession?.userId ?? "none")")
-    }
-    
-    /// Force save current audio settings (需求 5.4)
-    public func saveAudioSettings() {
-        audioSettingsStorage.saveAudioSettings(audioSettings)
-    }
-    
-    /// Check if audio settings have been modified since last save
-    /// - Returns: True if settings have been modified
-    public func hasUnsavedAudioSettings() -> Bool {
-        let savedSettings = audioSettingsStorage.loadAudioSettings()
-        return savedSettings != audioSettings
-    }
-    
-    /// Sync audio settings with provider after restoration (需求 5.6)
-    private func syncAudioSettingsWithProvider() async throws {
-        guard isInitialized else { return }
-        
-        do {
-            try await applyAudioSettings(audioSettings)
-            print("Audio settings synced with provider")
         } catch {
-            print("Failed to sync audio settings with provider: \(error)")
-            // Don't throw error here as this is a background sync operation
+            print("Failed to migrate audio settings: \(error)")
+            // 迁移失败，清除旧数据
+            clearAudioSettings()
         }
-    }
-    
-    private func cleanupCurrentProvider() async {
-        do {
-            try await rtcProvider?.leaveRoom()
-        } catch {
-            print("Error leaving room during provider cleanup: \(error)")
-        }
-        
-        do {
-            try await rtmProvider?.disconnect()
-        } catch {
-            print("Error disconnecting RTM during provider cleanup: \(error)")
-        }
-        
-        rtcProvider = nil
-        rtmProvider = nil
-        isInitialized = false
-        connectionState = .disconnected
-        streamPushState = .stopped
-        mediaRelayState = nil
-        volumeInfos = []
-        speakingUsers = []
-        dominantSpeaker = nil
-    }
-    
-    // MARK: - Error Handling and Recovery (需求 13)
-    
-    /// Clear the last error
-    public func clearLastError() {
-        lastError = nil
-    }
-    
-    /// Retry the last failed operation
-    public func retryLastOperation() async throws {
-        guard let error = lastError else {
-            throw RealtimeError.operationInProgress("No failed operation to retry")
-        }
-        
-        guard error.isRecoverable else {
-            throw RealtimeError.operationInProgress("Last error is not recoverable")
-        }
-        
-        // Clear error and attempt to reconnect if needed
-        lastError = nil
-        
-        if connectionState == .failed || connectionState == .disconnected {
-            await reconnect()
-        }
-    }
-    
-
-    
-    /// Get detailed system status
-    public func getSystemStatus() -> RealtimeSystemStatus {
-        return RealtimeSystemStatus(
-            isInitialized: isInitialized,
-            currentProvider: currentProvider,
-            connectionState: connectionState,
-            hasActiveSession: currentSession != nil,
-            availableProviders: availableProviders,
-            supportedFeatures: supportedFeatures,
-            lastError: lastError,
-            providerSwitchInProgress: providerSwitchInProgress
-        )
-    }
-    
-    // MARK: - SwiftUI Reactive Helpers (需求 11.3)
-    
-    /// Observe connection state changes with a callback
-    /// - Parameter callback: Callback to execute when connection state changes
-    /// - Returns: AnyCancellable for managing the subscription
-    public func observeConnectionState(_ callback: @escaping (ConnectionState) -> Void) -> AnyCancellable {
-        return connectionStatePublisher
-            .sink(receiveValue: callback)
-    }
-    
-    /// Observe audio settings changes with a callback
-    /// - Parameter callback: Callback to execute when audio settings change
-    /// - Returns: AnyCancellable for managing the subscription
-    public func observeAudioSettings(_ callback: @escaping (AudioSettings) -> Void) -> AnyCancellable {
-        return audioSettingsPublisher
-            .sink(receiveValue: callback)
-    }
-    
-    /// Observe speaking state changes with a callback
-    /// - Parameter callback: Callback to execute when speaking users change
-    /// - Returns: AnyCancellable for managing the subscription
-    public func observeSpeakingUsers(_ callback: @escaping (Set<String>) -> Void) -> AnyCancellable {
-        return speakingUsersPublisher
-            .sink(receiveValue: callback)
-    }
-    
-    /// Observe system readiness changes with a callback
-    /// - Parameter callback: Callback to execute when system readiness changes
-    /// - Returns: AnyCancellable for managing the subscription
-    public func observeSystemReadiness(_ callback: @escaping (Bool) -> Void) -> AnyCancellable {
-        return systemReadinessPublisher
-            .sink(receiveValue: callback)
-    }
-    
-    /// Create a debounced publisher for volume updates to reduce UI update frequency
-    /// - Parameter interval: Debounce interval in seconds
-    /// - Returns: Debounced volume publisher
-    public func debouncedVolumePublisher(interval: TimeInterval = 0.1) -> AnyPublisher<[UserVolumeInfo], Never> {
-        return volumeInfosPublisher
-            .debounce(for: .seconds(interval), scheduler: DispatchQueue.main)
-            .eraseToAnyPublisher()
-    }
-    
-    /// Create a throttled publisher for frequent state updates
-    /// - Parameter interval: Throttle interval in seconds
-    /// - Returns: Throttled audio state publisher
-    public func throttledAudioStatePublisher(interval: TimeInterval = 0.05) -> AnyPublisher<AudioStateSummary, Never> {
-        return audioStateSummaryPublisher
-            .throttle(for: .seconds(interval), scheduler: DispatchQueue.main, latest: true)
-            .eraseToAnyPublisher()
-    }
-    
-    /// Combine multiple state publishers for comprehensive UI updates
-    /// - Returns: Combined state publisher
-    public func combinedStatePublisher() -> AnyPublisher<RealtimeSystemStatus, Never> {
-        return Publishers.CombineLatest4(
-            $isInitialized,
-            $connectionState,
-            $currentSession,
-            $lastError
-        )
-        .map { [weak self] isInitialized, connectionState, currentSession, lastError in
-            guard let self = self else {
-                return RealtimeSystemStatus(
-                    isInitialized: false,
-                    currentProvider: nil,
-                    connectionState: .disconnected,
-                    hasActiveSession: false,
-                    availableProviders: [],
-                    supportedFeatures: [],
-                    lastError: nil,
-                    providerSwitchInProgress: false
-                )
-            }
-            
-            return RealtimeSystemStatus(
-                isInitialized: isInitialized,
-                currentProvider: self.currentProvider,
-                connectionState: connectionState,
-                hasActiveSession: currentSession != nil,
-                availableProviders: self.availableProviders,
-                supportedFeatures: self.supportedFeatures,
-                lastError: lastError,
-                providerSwitchInProgress: self.providerSwitchInProgress
-            )
-        }
-        .eraseToAnyPublisher()
     }
 }
 
-/// System status information
-public struct RealtimeSystemStatus {
-    public let isInitialized: Bool
-    public let currentProvider: ProviderType?
-    public let connectionState: ConnectionState
-    public let hasActiveSession: Bool
-    public let availableProviders: Set<ProviderType>
-    public let supportedFeatures: Set<ProviderFeature>
-    public let lastError: RealtimeError?
-    public let providerSwitchInProgress: Bool
+// MARK: - Storage Errors
+
+/// 音频设置存储错误
+public enum AudioSettingsStorageError: Error, LocalizedError {
+    case invalidSettings(String)
+    case corruptedData(String)
+    case migrationFailed(String)
+    case backupFailed(String)
     
-    /// Whether the system is ready for operations
-    public var isReady: Bool {
-        return isInitialized && connectionState.isActive && !providerSwitchInProgress
-    }
-    
-    /// Whether the system has any issues
-    public var hasIssues: Bool {
-        return lastError != nil || connectionState == .failed || connectionState == .disconnected
+    public var errorDescription: String? {
+        switch self {
+        case .invalidSettings(let message):
+            return "无效的音频设置: \(message)"
+        case .corruptedData(let message):
+            return "数据损坏: \(message)"
+        case .migrationFailed(let message):
+            return "数据迁移失败: \(message)"
+        case .backupFailed(let message):
+            return "备份失败: \(message)"
+        }
     }
 }
 
-/// Audio state summary for reactive UI updates
-public struct AudioStateSummary: Equatable {
-    public let isMuted: Bool
-    public let isStreamActive: Bool
-    public let mixingVolume: Int
-    public let playbackVolume: Int
-    public let recordingVolume: Int
+/// 用户会话存储管理器
+/// 需求: 4.4, 4.5 - 用户会话的安全存储和恢复机制
+public class UserSessionStorage {
+    
+    // MARK: - Constants
+    
+    private static let userSessionKey = "RealtimeKit.UserSession"
+    private static let userSessionBackupKey = "RealtimeKit.UserSession.Backup"
+    private static let sessionIntegrityKey = "RealtimeKit.UserSession.Integrity"
+    private static let maxSessionAge: TimeInterval = 7 * 24 * 3600 // 7天
+    
+    // MARK: - Properties
+    
+    private let userDefaults: UserDefaults
+    private let encoder: JSONEncoder
+    private let decoder: JSONDecoder
+    
+    // MARK: - Initialization
+    
+    public init(userDefaults: UserDefaults = .standard) {
+        self.userDefaults = userDefaults
+        self.encoder = JSONEncoder()
+        self.decoder = JSONDecoder()
+        
+        // 配置编码器
+        encoder.dateEncodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .iso8601
+    }
+    
+    // MARK: - Public Methods
+    
+    /// 保存用户会话 (需求 4.4)
+    public func saveUserSession(_ session: UserSession) {
+        do {
+            // 验证会话数据完整性
+            try validateSessionData(session)
+            
+            // 创建备份
+            createSessionBackup()
+            
+            // 编码会话数据
+            let sessionData = try encoder.encode(session)
+            
+            // 计算数据完整性校验值
+            let integrityHash = calculateIntegrityHash(for: sessionData)
+            
+            // 保存会话数据和完整性校验值
+            userDefaults.set(sessionData, forKey: Self.userSessionKey)
+            userDefaults.set(integrityHash, forKey: Self.sessionIntegrityKey)
+            
+            // 强制同步到磁盘
+            userDefaults.synchronize()
+            
+        } catch {
+            handleSaveSessionError(error, session: session)
+        }
+    }
+    
+    /// 加载用户会话 (需求 4.5)
+    public func loadUserSession() -> UserSession? {
+        do {
+            guard let sessionData = userDefaults.data(forKey: Self.userSessionKey) else {
+                return nil
+            }
+            
+            // 验证数据完整性
+            try validateDataIntegrity(sessionData)
+            
+            // 解码会话数据
+            let session = try decoder.decode(UserSession.self, from: sessionData)
+            
+            // 验证会话有效性
+            try validateSessionValidity(session)
+            
+            return session
+            
+        } catch {
+            return handleLoadSessionError(error)
+        }
+    }
+    
+    /// 清除用户会话
+    public func clearUserSession() {
+        userDefaults.removeObject(forKey: Self.userSessionKey)
+        userDefaults.removeObject(forKey: Self.userSessionBackupKey)
+        userDefaults.removeObject(forKey: Self.sessionIntegrityKey)
+        userDefaults.synchronize()
+    }
+    
+    /// 检查是否存在有效的会话
+    public func hasValidSession() -> Bool {
+        guard let session = loadUserSession() else {
+            return false
+        }
+        
+        return session.isValid(maxInactiveTime: Self.maxSessionAge)
+    }
+    
+    /// 更新会话的最后活跃时间
+    public func updateLastActiveTime(for session: UserSession) {
+        // 创建更新了活跃时间的新会话
+        let updatedSession = UserSession(
+            userId: session.userId,
+            userName: session.userName,
+            userRole: session.userRole,
+            roomId: session.roomId,
+            deviceInfo: session.deviceInfo
+        )
+        
+        saveUserSession(updatedSession)
+    }
+    
+    /// 恢复备份会话
+    public func restoreFromBackup() -> UserSession? {
+        guard let backupData = userDefaults.data(forKey: Self.userSessionBackupKey) else {
+            return nil
+        }
+        
+        do {
+            let backupSession = try decoder.decode(UserSession.self, from: backupData)
+            
+            // 验证备份会话
+            try validateSessionValidity(backupSession)
+            
+            // 恢复备份会话
+            saveUserSession(backupSession)
+            return backupSession
+            
+        } catch {
+            print("Failed to restore backup session: \(error)")
+            return nil
+        }
+    }
+    
+    /// 获取会话统计信息
+    public func getSessionStats() -> UserSessionStats? {
+        guard let session = loadUserSession() else {
+            return nil
+        }
+        
+        let sessionDuration = Date().timeIntervalSince(session.joinTime)
+        let inactiveDuration = Date().timeIntervalSince(session.lastActiveTime)
+        
+        return UserSessionStats(
+            sessionId: session.sessionId,
+            userId: session.userId,
+            sessionDuration: sessionDuration,
+            inactiveDuration: inactiveDuration,
+            isValid: session.isValid(maxInactiveTime: Self.maxSessionAge)
+        )
+    }
+    
+    // MARK: - Private Methods
+    
+    /// 验证会话数据完整性
+    private func validateSessionData(_ session: UserSession) throws {
+        // 验证必要字段
+        guard !session.userId.isEmpty else {
+            throw UserSessionStorageError.invalidSessionData("用户ID不能为空")
+        }
+        
+        guard !session.userName.isEmpty else {
+            throw UserSessionStorageError.invalidSessionData("用户名不能为空")
+        }
+        
+        guard !session.sessionId.isEmpty else {
+            throw UserSessionStorageError.invalidSessionData("会话ID不能为空")
+        }
+        
+        // 验证时间戳
+        let now = Date()
+        guard session.joinTime <= now else {
+            throw UserSessionStorageError.invalidSessionData("加入时间不能是未来时间")
+        }
+        
+        guard session.lastActiveTime <= now else {
+            throw UserSessionStorageError.invalidSessionData("最后活跃时间不能是未来时间")
+        }
+    }
+    
+    /// 验证数据完整性
+    private func validateDataIntegrity(_ data: Data) throws {
+        guard let storedHash = userDefaults.string(forKey: Self.sessionIntegrityKey) else {
+            throw UserSessionStorageError.integrityCheckFailed("缺少完整性校验值")
+        }
+        
+        let calculatedHash = calculateIntegrityHash(for: data)
+        
+        guard storedHash == calculatedHash else {
+            throw UserSessionStorageError.integrityCheckFailed("数据完整性校验失败")
+        }
+    }
+    
+    /// 验证会话有效性
+    private func validateSessionValidity(_ session: UserSession) throws {
+        // 检查会话是否过期
+        guard session.isValid(maxInactiveTime: Self.maxSessionAge) else {
+            throw UserSessionStorageError.sessionExpired("会话已过期")
+        }
+        
+        // 验证会话数据
+        try validateSessionData(session)
+    }
+    
+    /// 计算数据完整性校验值
+    private func calculateIntegrityHash(for data: Data) -> String {
+        // 使用简单的哈希算法（在实际应用中可能需要更强的加密）
+        let hash = data.hashValue
+        return String(hash)
+    }
+    
+    /// 创建会话备份
+    private func createSessionBackup() {
+        guard let currentData = userDefaults.data(forKey: Self.userSessionKey) else {
+            return
+        }
+        
+        userDefaults.set(currentData, forKey: Self.userSessionBackupKey)
+    }
+    
+    /// 处理保存会话错误
+    private func handleSaveSessionError(_ error: Error, session: UserSession) {
+        print("Failed to save user session: \(error)")
+        
+        // 尝试保存到备份位置
+        do {
+            let data = try encoder.encode(session)
+            userDefaults.set(data, forKey: Self.userSessionBackupKey)
+            print("User session saved to backup location")
+        } catch {
+            print("Failed to save user session to backup: \(error)")
+        }
+    }
+    
+    /// 处理加载会话错误
+    private func handleLoadSessionError(_ error: Error) -> UserSession? {
+        print("Failed to load user session: \(error)")
+        
+        // 尝试从备份恢复
+        if let backupSession = restoreFromBackup() {
+            print("User session restored from backup")
+            return backupSession
+        }
+        
+        // 清除损坏的数据
+        clearUserSession()
+        print("Cleared corrupted session data")
+        return nil
+    }
+}
+
+// MARK: - User Session Storage Errors and Models
+
+/// 用户会话存储错误
+public enum UserSessionStorageError: Error, LocalizedError {
+    case invalidSessionData(String)
+    case integrityCheckFailed(String)
+    case sessionExpired(String)
+    case corruptedData(String)
+    
+    public var errorDescription: String? {
+        switch self {
+        case .invalidSessionData(let message):
+            return "无效的会话数据: \(message)"
+        case .integrityCheckFailed(let message):
+            return "完整性检查失败: \(message)"
+        case .sessionExpired(let message):
+            return "会话已过期: \(message)"
+        case .corruptedData(let message):
+            return "数据损坏: \(message)"
+        }
+    }
+}
+
+/// 用户会话统计信息
+public struct UserSessionStats {
+    public let sessionId: String
+    public let userId: String
+    public let sessionDuration: TimeInterval
+    public let inactiveDuration: TimeInterval
+    public let isValid: Bool
     
     public init(
-        isMuted: Bool,
-        isStreamActive: Bool,
-        mixingVolume: Int,
-        playbackVolume: Int,
-        recordingVolume: Int
+        sessionId: String,
+        userId: String,
+        sessionDuration: TimeInterval,
+        inactiveDuration: TimeInterval,
+        isValid: Bool
     ) {
-        self.isMuted = isMuted
-        self.isStreamActive = isStreamActive
-        self.mixingVolume = mixingVolume
-        self.playbackVolume = playbackVolume
-        self.recordingVolume = recordingVolume
+        self.sessionId = sessionId
+        self.userId = userId
+        self.sessionDuration = sessionDuration
+        self.inactiveDuration = inactiveDuration
+        self.isValid = isValid
     }
     
-    /// Whether audio is effectively enabled (not muted and stream active)
-    public var isAudioEnabled: Bool {
-        return !isMuted && isStreamActive
-    }
-    
-    /// Average volume level across all volume controls
-    public var averageVolume: Int {
-        return (mixingVolume + playbackVolume + recordingVolume) / 3
-    }
-}
-
-// MARK: - Testing and Simulation Methods (for testing purposes)
-
-#if DEBUG
-extension RealtimeManager {
-    
-    /// Check if a feature is supported by current provider
-    /// - Parameter feature: Feature to check
-    /// - Returns: True if feature is supported
-    public func supportsFeature(_ feature: ProviderFeature) -> Bool {
-        return supportedFeatures.contains(feature)
-    }
-    
-    /// Check if volume indicator is enabled
-    public var volumeIndicatorEnabled: Bool {
-        return volumeIndicatorManager.isEnabled
-    }
-    
-    /// Check if media relay is active
-    public var isMediaRelayActive: Bool {
-        return mediaRelayState?.overallState == .running
-    }
-    
-    /// Process volume update (for testing)
-    /// - Parameter volumeInfos: Volume information to process
-    public func processVolumeUpdate(_ volumeInfos: [UserVolumeInfo]) {
-        self.volumeInfos = volumeInfos
-        self.speakingUsers = Set(volumeInfos.filter { $0.isSpeaking }.map { $0.userId })
-        self.dominantSpeaker = volumeInfos.filter { $0.isSpeaking }.max { $0.volume < $1.volume }?.userId
-    }
-    
-    /// Get current memory usage (mock implementation for testing)
-    /// - Returns: Estimated memory usage in bytes
-    public func getCurrentMemoryUsage() -> Int64 {
-        // Mock implementation - in real app this would use actual memory monitoring
-        return Int64.random(in: 10_000_000...50_000_000) // 10-50 MB
-    }
-    
-    /// Start one-to-one media relay (simplified for testing)
-    /// - Parameters:
-    ///   - source: Source channel information
-    ///   - destination: Destination channel information
-    public func startOneToOneRelay(source: RelayChannelInfo, destination: RelayChannelInfo) async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.providerNotInitialized(currentProvider ?? .mock)
-        }
+    /// 格式化的会话持续时间
+    public var formattedSessionDuration: String {
+        let hours = Int(sessionDuration) / 3600
+        let minutes = Int(sessionDuration) % 3600 / 60
+        let seconds = Int(sessionDuration) % 60
         
-        let config = try MediaRelayConfig(
-            sourceChannel: source,
-            destinationChannels: [destination]
-        )
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
+    
+    /// 格式化的非活跃时间
+    public var formattedInactiveDuration: String {
+        let minutes = Int(inactiveDuration) / 60
+        let seconds = Int(inactiveDuration) % 60
         
-        try await mediaRelayManager.startRelay(config: config)
-        mediaRelayState = MediaRelayState(
-            overallState: .running,
-            sourceChannel: source.channelName,
-            destinationStates: [destination.channelName: .running]
-        )
-    }
-    
-    /// Update stream layout (simplified for testing)
-    /// - Parameter layout: New stream layout
-    public func updateStreamLayout(layout: StreamLayout) async throws {
-        // Mock implementation - in real app this would update the actual stream layout
-        print("Stream layout updated: \(layout)")
-    }
-    
-    /// Get current stream quality (mock implementation)
-    /// - Returns: Current stream quality
-    public func getCurrentStreamQuality() -> StreamQuality {
-        // Mock implementation based on connection state
-        switch connectionState {
-        case .connected:
-            return .high
-        case .connecting, .reconnecting:
-            return .medium
-        default:
-            return .low
-        }
-    }
-    
-    // MARK: - Network Simulation Methods (for testing)
-    
-    /// Simulate network conditions (for testing)
-    /// - Parameters:
-    ///   - latency: Network latency in seconds
-    ///   - packetLoss: Packet loss percentage (0.0-1.0)
-    ///   - bandwidth: Available bandwidth in kbps
-    public func simulateNetworkConditions(latency: TimeInterval = 0.0, packetLoss: Float = 0.0, bandwidth: Int = 1000) {
-        print("Simulating network conditions: latency=\(latency)s, packetLoss=\(packetLoss*100)%, bandwidth=\(bandwidth)kbps")
-        // Mock implementation - in real app this would affect actual network behavior
-    }
-    
-    /// Simulate connection loss (for testing)
-    public func simulateConnectionLoss() {
-        connectionState = .disconnected
-        print("Simulated connection loss")
-    }
-    
-    /// Simulate connection recovery (for testing)
-    public func simulateConnectionRecovery() {
-        connectionState = .connected
-        print("Simulated connection recovery")
-    }
-    
-    /// Reset network simulation (for testing)
-    public func resetNetworkSimulation() {
-        print("Network simulation reset")
-    }
-    
-    /// Simulate network delay (for testing)
-    /// - Parameter delay: Delay in seconds
-    public func simulateNetworkDelay(_ delay: TimeInterval) {
-        print("Simulating network delay: \(delay)s")
-    }
-    
-    /// Simulate bandwidth limit (for testing)
-    /// - Parameter bandwidth: Bandwidth limit in kbps
-    public func simulateBandwidthLimit(_ bandwidth: Int) {
-        print("Simulating bandwidth limit: \(bandwidth)kbps")
-    }
-    
-    /// Simulate persistent connection failure (for testing)
-    public func simulatePersistentConnectionFailure() {
-        connectionState = .failed
-        print("Simulated persistent connection failure")
-    }
-    
-    /// Simulate complete network failure (for testing)
-    public func simulateCompleteNetworkFailure() {
-        connectionState = .failed
-        streamPushState = .stopped
-        mediaRelayState = nil
-        print("Simulated complete network failure")
-    }
-    
-    /// Simulate network recovery (for testing)
-    public func simulateNetworkRecovery() {
-        connectionState = .connected
-        print("Simulated network recovery")
-    }
-    
-    // MARK: - Event Handlers (for testing)
-    
-    /// Handle token expiration (for testing)
-    /// - Parameters:
-    ///   - provider: Provider type
-    ///   - expiresIn: Time until expiration in seconds
-    public func handleTokenExpiration(provider: ProviderType, expiresIn: Int) {
-        onTokenRenewalRequest?(provider, expiresIn)
-        print("Token expiration handled for \(provider), expires in \(expiresIn)s")
-    }
-    
-    // MARK: - Additional Testing Methods
-    
-    /// Enable adaptive quality (for testing)
-    /// - Parameter enabled: Whether to enable adaptive quality
-    public func enableAdaptiveQuality(_ enabled: Bool) {
-        print("Adaptive quality \(enabled ? "enabled" : "disabled")")
-    }
-    
-    /// Enable auto reconnect (for testing)
-    /// - Parameters:
-    ///   - maxAttempts: Maximum reconnection attempts
-    ///   - initialDelay: Initial delay between attempts
-    ///   - useExponentialBackoff: Whether to use exponential backoff
-    public func enableAutoReconnect(maxAttempts: Int, initialDelay: TimeInterval, useExponentialBackoff: Bool = true) {
-        configureAutoReconnection(enabled: true, maxAttempts: maxAttempts, baseDelay: initialDelay)
-        print("Auto reconnect enabled: maxAttempts=\(maxAttempts), initialDelay=\(initialDelay)s")
-    }
-    
-    /// Set network timeouts (for testing)
-    /// - Parameters:
-    ///   - connectionTimeout: Connection timeout in seconds
-    ///   - messageTimeout: Message timeout in seconds
-    ///   - heartbeatInterval: Heartbeat interval in seconds
-    public func setNetworkTimeouts(connectionTimeout: TimeInterval, messageTimeout: TimeInterval, heartbeatInterval: TimeInterval) {
-        print("Network timeouts set: connection=\(connectionTimeout)s, message=\(messageTimeout)s, heartbeat=\(heartbeatInterval)s")
-    }
-    
-    /// Enable network quality monitoring (for testing)
-    /// - Parameter interval: Monitoring interval in seconds
-    public func enableNetworkQualityMonitoring(interval: TimeInterval) {
-        print("Network quality monitoring enabled with interval: \(interval)s")
-    }
-    
-    /// Disable network quality monitoring (for testing)
-    public func disableNetworkQualityMonitoring() {
-        print("Network quality monitoring disabled")
-    }
-}
-
-// MARK: - Mock Types for Testing
-
-/// Network resilience event (for testing)
-public struct NetworkResilienceEvent {
-    public let type: String
-    public let timestamp: Date
-    public let details: [String: Any]
-    
-    public init(type: String, timestamp: Date = Date(), details: [String: Any] = [:]) {
-        self.type = type
-        self.timestamp = timestamp
-        self.details = details
-    }
-}
-
-/// Network recovery event (for testing)
-public struct NetworkRecoveryEvent {
-    public let type: String
-    public let timestamp: Date
-    public let recoveryTime: TimeInterval
-    
-    public init(type: String, timestamp: Date = Date(), recoveryTime: TimeInterval) {
-        self.type = type
-        self.timestamp = timestamp
-        self.recoveryTime = recoveryTime
-    }
-}
-
-/// Quality adaptation event (for testing)
-public struct QualityAdaptation {
-    public let fromQuality: StreamQuality
-    public let toQuality: StreamQuality
-    public let reason: String
-    public let timestamp: Date
-    
-    public init(fromQuality: StreamQuality, toQuality: StreamQuality, reason: String, timestamp: Date = Date()) {
-        self.fromQuality = fromQuality
-        self.toQuality = toQuality
-        self.reason = reason
-        self.timestamp = timestamp
-    }
-}
-
-/// Stream quality levels (for testing)
-public enum StreamQuality: String, CaseIterable {
-    case low = "low"
-    case medium = "medium"
-    case high = "high"
-    
-    public var resolution: (width: Int, height: Int) {
-        switch self {
-        case .low:
-            return (480, 360)
-        case .medium:
-            return (1280, 720)
-        case .high:
-            return (1920, 1080)
+        if minutes > 0 {
+            return String(format: "%d分%d秒", minutes, seconds)
+        } else {
+            return String(format: "%d秒", seconds)
         }
     }
 }
 
-/// Network quality report (for testing)
-public struct NetworkQualityReport {
-    public let timestamp: Date
-    public let latency: TimeInterval
-    public let packetLoss: Float
-    public let bandwidth: Int
-    public let quality: NetworkQuality
-    
-    public init(timestamp: Date = Date(), latency: TimeInterval, packetLoss: Float, bandwidth: Int, quality: NetworkQuality) {
-        self.timestamp = timestamp
-        self.latency = latency
-        self.packetLoss = packetLoss
-        self.bandwidth = bandwidth
-        self.quality = quality
-    }
+// MARK: - Notification Names
+
+extension Notification.Name {
+    static let realtimeConnectionStateChanged = Notification.Name("RealtimeKit.connectionStateChanged")
+    static let realtimeVolumeInfoUpdated = Notification.Name("RealtimeKit.volumeInfoUpdated")
 }
-
-/// Connection event alias for testing compatibility
-public typealias TestConnectionEvent = ConnectionEvent
-
-#endif

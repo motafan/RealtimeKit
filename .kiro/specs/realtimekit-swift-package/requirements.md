@@ -215,3 +215,25 @@ RealtimeKit 是一个统一的 Swift Package，用于集成多家第三方 RTM (
 3. WHEN 单元测试 THEN 系统 SHALL 覆盖所有核心协议、数据模型和管理器功能
 4. WHEN 集成测试 THEN 系统 SHALL 测试多服务商兼容性和网络异常处理
 5. WHEN UI 测试 THEN 系统 SHALL 测试 UIKit 和 SwiftUI 组件的用户交互
+
+### Requirement 17
+
+**User Story:** 作为一个开发者，我希望框架具有完善的错误处理和本地化支持，这样我就能为用户提供良好的用户体验。
+
+#### Acceptance Criteria
+
+1. WHEN 发生错误 THEN 系统 SHALL 提供多语言的错误消息和用户提示
+2. WHEN 系统初始化 THEN 系统 SHALL 自动检测设备语言并加载相应的本地化资源
+3. WHEN 用户切换语言 THEN 系统 SHALL 动态更新所有错误消息和用户界面文本
+4. WHEN 提供错误信息 THEN 系统 SHALL 支持中文（简体/繁体）、英文、日文、韩文等主要语言
+5. WHEN 缺少特定语言 THEN 系统 SHALL 回退到英文作为默认语言
+6. WHEN 显示用户提示 THEN 系统 SHALL 提供本地化的连接状态、权限请求、网络错误等提示信息
+7. WHEN 开发者自定义 THEN 系统 SHALL 支持开发者添加自定义语言包和本地化字符串
+8. WHEN 格式化消息 THEN 系统 SHALL 支持带参数的本地化字符串格式化（如用户名、时间等动态内容）
+
+## 测试要求
+
+### 1. Swift Testing 框架
+- 使用 **Swift Testing** 替代 XCTest
+- 利用 `@Test` 宏简化测试编写
+- 支持参数化测试和条件测试

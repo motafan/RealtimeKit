@@ -1,564 +1,14 @@
-// RealtimeMocking.swift
-// Mock provider implementation for testing RealtimeKit
-
 import Foundation
 import RealtimeCore
 
-/// RealtimeMocking version information
-public struct RealtimeMockingVersion {
-    public static let current = "1.0.0"
-    public static let build = "1"
-}
-
-/// Mock RTC provider for testing
-public final class MockRTCProvider: RTCProvider, @unchecked Sendable {
-    
-    // MARK: - Mock State
-    public var isInitialized = false
-    public var currentConfig: RTCConfig?
-    public var currentRoom: RTCRoom?
-    public var microphoneMuted = false
-    public var localAudioStreamActive = true
-    public var audioMixingVolume = 100
-    public var playbackSignalVolume = 100
-    public var recordingSignalVolume = 100
-    public var volumeIndicatorEnabled = false
-    public var streamPushActive = false
-    public var mediaRelayActive = false
-    
-    // MARK: - Mock Handlers
-    public var volumeIndicatorHandler: (@Sendable ([UserVolumeInfo]) -> Void)?
-    public var volumeEventHandler: (@Sendable (VolumeEvent) -> Void)?
-    public var tokenExpirationHandler: (@Sendable (Int) -> Void)?
-    
-    // MARK: - Mock Configuration
-    public var shouldFailInitialization = false
-    public var shouldFailRoomOperations = false
-    public var shouldFailAudioOperations = false
-    public var simulateTokenExpiration = false
-    
-    public init() {}
-    
-    // MARK: - RTCProvider Implementation
-    
-    public func initialize(config: RTCConfig) async throws {
-        if shouldFailInitialization {
-            throw RealtimeError.providerInitializationFailed(.mock, "Mock initialization failure")
-        }
-        
-        currentConfig = config
-        isInitialized = true
-        print("MockRTCProvider initialized with config: \(config.appId)")
-    }
-    
-    public func createRoom(roomId: String) async throws -> RTCRoom {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        if shouldFailRoomOperations {
-            throw RealtimeError.roomCreationFailed("Mock room creation failure")
-        }
-        
-        let room = RTCRoom(roomId: roomId, roomName: "Mock Room \(roomId)")
-        currentRoom = room
-        return room
-    }
-    
-    public func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        if shouldFailRoomOperations {
-            throw RealtimeError.roomJoinFailed("Mock room join failure")
-        }
-        
-        currentRoom = RTCRoom(roomId: roomId)
-        print("Mock: Joined room \(roomId) as \(userId) with role \(userRole)")
-    }
-    
-    public func joinChannel(channelName: String, userId: String, userRole: UserRole) async throws {
-        // Delegate to joinRoom for compatibility
-        try await joinRoom(roomId: channelName, userId: userId, userRole: userRole)
-    }
-    
-    public func leaveRoom() async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        if shouldFailRoomOperations {
-            throw RealtimeError.roomLeaveFailed("Mock room leave failure")
-        }
-        
-        currentRoom = nil
-        print("Mock: Left room")
-    }
-    
-    public func switchUserRole(_ role: UserRole) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        print("Mock: Switched to role \(role)")
-    }
-    
-    // MARK: - Audio Stream Control
-    
-    public func muteMicrophone(_ muted: Bool) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        if shouldFailAudioOperations {
-            throw RealtimeError.audioControlFailed("Mock microphone control failure")
-        }
-        
-        microphoneMuted = muted
-        print("Mock: Microphone muted: \(muted)")
-    }
-    
-    public func isMicrophoneMuted() -> Bool {
-        return microphoneMuted
-    }
-    
-    public func stopLocalAudioStream() async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        if shouldFailAudioOperations {
-            throw RealtimeError.audioStreamControlFailed("Mock audio stream control failure")
-        }
-        
-        localAudioStreamActive = false
-        print("Mock: Stopped local audio stream")
-    }
-    
-    public func resumeLocalAudioStream() async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        if shouldFailAudioOperations {
-            throw RealtimeError.audioStreamControlFailed("Mock audio stream control failure")
-        }
-        
-        localAudioStreamActive = true
-        print("Mock: Resumed local audio stream")
-    }
-    
-    public func isLocalAudioStreamActive() -> Bool {
-        return localAudioStreamActive
-    }
-    
-    // MARK: - Volume Control
-    
-    public func setAudioMixingVolume(_ volume: Int) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        audioMixingVolume = max(0, min(100, volume))
-        print("Mock: Set audio mixing volume: \(audioMixingVolume)")
-    }
-    
-    public func getAudioMixingVolume() -> Int {
-        return audioMixingVolume
-    }
-    
-    public func setPlaybackSignalVolume(_ volume: Int) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        playbackSignalVolume = max(0, min(100, volume))
-        print("Mock: Set playback signal volume: \(playbackSignalVolume)")
-    }
-    
-    public func getPlaybackSignalVolume() -> Int {
-        return playbackSignalVolume
-    }
-    
-    public func setRecordingSignalVolume(_ volume: Int) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        recordingSignalVolume = max(0, min(100, volume))
-        print("Mock: Set recording signal volume: \(recordingSignalVolume)")
-    }
-    
-    public func getRecordingSignalVolume() -> Int {
-        return recordingSignalVolume
-    }
-    
-    // MARK: - Stream Push
-    
-    public func startStreamPush(config: StreamPushConfig) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        streamPushActive = true
-        print("Mock: Started stream push to: \(config.pushUrl)")
-    }
-    
-    public func stopStreamPush() async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        streamPushActive = false
-        print("Mock: Stopped stream push")
-    }
-    
-    public func updateStreamPushLayout(layout: StreamLayout) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        print("Mock: Updated stream push layout")
-    }
-    
-    // MARK: - Media Relay
-    
-    public func startMediaRelay(config: MediaRelayConfig) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        mediaRelayActive = true
-        print("Mock: Started media relay")
-    }
-    
-    public func stopMediaRelay() async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        mediaRelayActive = false
-        print("Mock: Stopped media relay")
-    }
-    
-    public func updateMediaRelayChannels(config: MediaRelayConfig) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        print("Mock: Updated media relay channels")
-    }
-    
-    public func pauseMediaRelay(toChannel: String) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        print("Mock: Paused media relay to channel: \(toChannel)")
-    }
-    
-    public func resumeMediaRelay(toChannel: String) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        print("Mock: Resumed media relay to channel: \(toChannel)")
-    }
-    
-    // MARK: - Volume Indicator
-    
-    public func enableVolumeIndicator(config: VolumeDetectionConfig) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        volumeIndicatorEnabled = true
-        print("Mock: Enabled volume indicator")
-        
-        // Simulate volume updates
-        simulateVolumeUpdates()
-    }
-    
-    public func disableVolumeIndicator() async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        volumeIndicatorEnabled = false
-        print("Mock: Disabled volume indicator")
-    }
-    
-    public func setVolumeIndicatorHandler(_ handler: @escaping @Sendable ([UserVolumeInfo]) -> Void) {
-        volumeIndicatorHandler = handler
-        print("Mock: Set volume indicator handler")
-    }
-    
-    public func setVolumeEventHandler(_ handler: @escaping @Sendable (VolumeEvent) -> Void) {
-        volumeEventHandler = handler
-        print("Mock: Set volume event handler")
-    }
-    
-    public func getCurrentVolumeInfos() -> [UserVolumeInfo] {
-        return [
-            UserVolumeInfo(userId: "mock_user_1", volume: 0.5, isSpeaking: true),
-            UserVolumeInfo(userId: "mock_user_2", volume: 0.2, isSpeaking: false)
-        ]
-    }
-    
-    public func getVolumeInfo(for userId: String) -> UserVolumeInfo? {
-        return getCurrentVolumeInfos().first { $0.userId == userId }
-    }
-    
-    // MARK: - Token Management
-    
-    public func renewToken(_ newToken: String) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        print("Mock: Renewed token: \(newToken)")
-    }
-    
-    public func onTokenWillExpire(_ handler: @escaping @Sendable (Int) -> Void) {
-        tokenExpirationHandler = handler
-        print("Mock: Set token expiration handler")
-        
-        if simulateTokenExpiration {
-            // Simulate token expiration in 5 seconds
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
-                handler(30) // 30 seconds until expiration
-            }
-        }
-    }
-    
-    // MARK: - Mock Utilities
-    
-    /// Simulate volume updates for testing
-    private func simulateVolumeUpdates() {
-        guard volumeIndicatorEnabled else { return }
-        
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-            guard let self = self, self.volumeIndicatorEnabled else { return }
-            
-            let volumeInfos = [
-                UserVolumeInfo(userId: "mock_user_1", volume: Float.random(in: 0.3...0.8), isSpeaking: true),
-                UserVolumeInfo(userId: "mock_user_2", volume: Float.random(in: 0.0...0.2), isSpeaking: false)
-            ]
-            
-            self.volumeIndicatorHandler?(volumeInfos)
-            self.simulateVolumeUpdates() // Continue simulation
-        }
-    }
-    
-    /// Trigger mock token expiration
-    public func triggerTokenExpiration() {
-        tokenExpirationHandler?(30)
-    }
-    
-    /// Reset mock state
-    public func reset() {
-        isInitialized = false
-        currentConfig = nil
-        currentRoom = nil
-        microphoneMuted = false
-        localAudioStreamActive = true
-        audioMixingVolume = 100
-        playbackSignalVolume = 100
-        recordingSignalVolume = 100
-        volumeIndicatorEnabled = false
-        streamPushActive = false
-        mediaRelayActive = false
-        shouldFailInitialization = false
-        shouldFailRoomOperations = false
-        shouldFailAudioOperations = false
-        simulateTokenExpiration = false
-    }
-}
-
-/// Mock RTM provider for testing
-public final class MockRTMProvider: RTMProvider, @unchecked Sendable {
-    
-    // MARK: - Mock State
-    public var isInitialized = false
-    public var currentConfig: RTMConfig?
-    public var subscribedChannels: Set<String> = []
-    public var connectionState: ConnectionState = .disconnected
-    
-    // MARK: - Mock Handlers
-    public var messageHandler: (@Sendable (RealtimeMessage) -> Void)?
-    public var connectionStateHandler: (@Sendable (ConnectionState) -> Void)?
-    public var tokenExpirationHandler: (@Sendable (Int) -> Void)?
-    
-    // MARK: - Mock Configuration
-    public var shouldFailInitialization = false
-    public var shouldFailMessageOperations = false
-    public var simulateTokenExpiration = false
-    
-    public init() {}
-    
-    // MARK: - RTMProvider Implementation
-    
-    public func initialize(config: RTMConfig) async throws {
-        if shouldFailInitialization {
-            throw RealtimeError.providerInitializationFailed(.mock, "Mock RTM initialization failure")
-        }
-        
-        currentConfig = config
-        isInitialized = true
-        connectionState = .connected
-        print("MockRTMProvider initialized with config: \(config.appId)")
-    }
-    
-    public func sendMessage(_ message: RealtimeMessage) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        if shouldFailMessageOperations {
-            throw RealtimeError.messageSendFailed("Mock message send failure")
-        }
-        
-        print("Mock RTM: Sent message: \(message.content)")
-        
-        // Simulate message echo for testing
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
-            let echoMessage = RealtimeMessage.text(
-                "Echo: \(message.content)",
-                from: "mock_echo_user",
-                senderName: "Mock Echo",
-                in: message.channelId
-            )
-            self?.messageHandler?(echoMessage)
-        }
-    }
-    
-    public func subscribe(to channel: String) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        if shouldFailMessageOperations {
-            throw RealtimeError.messageSubscriptionFailed("Mock subscription failure")
-        }
-        
-        subscribedChannels.insert(channel)
-        print("Mock RTM: Subscribed to channel: \(channel)")
-    }
-    
-    public func unsubscribe(from channel: String) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        subscribedChannels.remove(channel)
-        print("Mock RTM: Unsubscribed from channel: \(channel)")
-    }
-    
-    public func setMessageHandler(_ handler: @escaping @Sendable (RealtimeMessage) -> Void) {
-        messageHandler = handler
-        print("Mock RTM: Set message handler")
-    }
-    
-    public func setConnectionStateHandler(_ handler: @escaping @Sendable (ConnectionState) -> Void) {
-        connectionStateHandler = handler
-        print("Mock RTM: Set connection state handler")
-    }
-    
-    public func processIncomingMessage(_ rawMessage: Any) async throws -> RealtimeMessage {
-        // Mock message processing
-        if let messageDict = rawMessage as? [String: Any],
-           let content = messageDict["content"] as? String,
-           let senderId = messageDict["senderId"] as? String {
-            return RealtimeMessage.text(content, from: senderId)
-        }
-        
-        return RealtimeMessage.system("Processed mock message")
-    }
-    
-    public func renewToken(_ newToken: String) async throws {
-        guard isInitialized else {
-            throw RealtimeError.providerNotInitialized(.mock)
-        }
-        
-        print("Mock RTM: Renewed token: \(newToken)")
-    }
-    
-    public func onTokenWillExpire(_ handler: @escaping @Sendable (Int) -> Void) {
-        tokenExpirationHandler = handler
-        print("Mock RTM: Set token expiration handler")
-        
-        if simulateTokenExpiration {
-            // Simulate token expiration in 5 seconds
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
-                handler(30) // 30 seconds until expiration
-            }
-        }
-    }
-    
-    public func getConnectionState() -> ConnectionState {
-        return connectionState
-    }
-    
-    public func reconnect() async throws {
-        connectionState = .connecting
-        connectionStateHandler?(.connecting)
-        
-        // Simulate reconnection delay
-        try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-        
-        connectionState = .connected
-        connectionStateHandler?(.connected)
-        print("Mock RTM: Reconnected")
-    }
-    
-    public func disconnect() async throws {
-        connectionState = .disconnected
-        connectionStateHandler?(.disconnected)
-        isInitialized = false
-        subscribedChannels.removeAll()
-        print("Mock RTM: Disconnected")
-    }
-    
-    // MARK: - Mock Utilities
-    
-    /// Simulate incoming message
-    public func simulateIncomingMessage(_ message: RealtimeMessage) {
-        messageHandler?(message)
-    }
-    
-    /// Simulate connection state change
-    public func simulateConnectionStateChange(_ state: ConnectionState) {
-        connectionState = state
-        connectionStateHandler?(state)
-    }
-    
-    /// Trigger mock token expiration
-    public func triggerTokenExpiration() {
-        tokenExpirationHandler?(30)
-    }
-    
-    /// Reset mock state
-    public func reset() {
-        isInitialized = false
-        currentConfig = nil
-        subscribedChannels.removeAll()
-        connectionState = .disconnected
-        shouldFailInitialization = false
-        shouldFailMessageOperations = false
-        simulateTokenExpiration = false
-    }
-}
+/// RealtimeMocking 模块
+/// 提供用于测试的模拟实现
+/// 需求: 12.4, 16.3
 
 // MARK: - Mock Provider Factory
 
-/// Mock provider factory for testing
-public final class MockProviderFactory: ProviderFactory, @unchecked Sendable {
-    public let providerType: ProviderType = .mock
+/// Mock 服务商工厂
+public class MockProviderFactory: ProviderFactory {
     
     public init() {}
     
@@ -571,16 +21,616 @@ public final class MockProviderFactory: ProviderFactory, @unchecked Sendable {
     }
     
     public func supportedFeatures() -> Set<ProviderFeature> {
-        return Set(ProviderFeature.allCases) // Mock supports all features
+        return [
+            .audioStreaming,
+            .videoStreaming,
+            .streamPush,
+            .mediaRelay,
+            .volumeIndicator,
+            .messageProcessing
+        ]
     }
 }
 
-// MARK: - Convenience Registration
+// MARK: - Mock RTC Provider
 
-public extension RealtimeManager {
+/// Mock RTC 提供者实现，用于测试
+public class MockRTCProvider: RTCProvider {
     
-    /// Register mock provider factory for testing
-    func registerMockProvider() {
-        registerProviderFactory(MockProviderFactory())
+    // MARK: - Properties
+    
+    private var config: RTCConfig?
+    private var currentRoom: RTCRoom?
+    private var isMuted: Bool = false
+    private var isLocalAudioActive: Bool = true
+    private var volumeHandler: (([UserVolumeInfo]) -> Void)?
+    private var volumeEventHandler: ((VolumeEvent) -> Void)?
+    private var tokenExpirationHandler: ((Int) -> Void)?
+    
+    // 音量控制
+    private var audioMixingVolume: Int = 100
+    private var playbackSignalVolume: Int = 100
+    private var recordingSignalVolume: Int = 100
+    
+    // 模拟配置
+    public var simulateNetworkDelay: Bool = true
+    public var simulateErrors: Bool = false
+    public var networkDelayRange: ClosedRange<UInt64> = 100_000_000...500_000_000 // 0.1-0.5秒
+    
+    // MARK: - Initialization
+    
+    public init() {}
+    
+    // MARK: - RTCProvider Implementation
+    
+    public func initialize(config: RTCConfig) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        if simulateErrors && Bool.random() {
+            throw RealtimeError.configurationError("模拟配置错误")
+        }
+        
+        self.config = config
+        print("Mock RTC Provider 初始化完成 - App ID: \(config.appId)")
+    }
+    
+    public func createRoom(roomId: String) async throws -> RTCRoom {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        guard config != nil else {
+            throw RealtimeError.configurationError("RTC Provider 未初始化")
+        }
+        
+        let room = RTCRoom(
+            id: roomId,
+            name: "Mock 房间 \(roomId)",
+            config: RTCRoomConfig(),
+            creatorId: "mock_user"
+        )
+        
+        currentRoom = room
+        print("Mock: 创建房间 \(roomId)")
+        return room
+    }
+    
+    public func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        guard config != nil else {
+            throw RealtimeError.configurationError("RTC Provider 未初始化")
+        }
+        
+        print("Mock: 用户 \(userId) 以 \(userRole.displayName) 身份加入房间 \(roomId)")
+    }
+    
+    public func leaveRoom() async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        guard currentRoom != nil else {
+            throw RealtimeError.noActiveSession
+        }
+        
+        print("Mock: 离开房间")
+        currentRoom = nil
+    }
+    
+    public func switchUserRole(_ role: UserRole) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 切换用户角色到 \(role.displayName)")
+    }
+    
+    // MARK: - Audio Stream Control
+    
+    public func muteMicrophone(_ muted: Bool) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        isMuted = muted
+        print("Mock: 麦克风 \(muted ? "静音" : "取消静音")")
+    }
+    
+    public func isMicrophoneMuted() -> Bool {
+        return isMuted
+    }
+    
+    public func stopLocalAudioStream() async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        isLocalAudioActive = false
+        print("Mock: 停止本地音频流")
+    }
+    
+    public func resumeLocalAudioStream() async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        isLocalAudioActive = true
+        print("Mock: 恢复本地音频流")
+    }
+    
+    public func isLocalAudioStreamActive() -> Bool {
+        return isLocalAudioActive
+    }
+    
+    // MARK: - Volume Control
+    
+    public func setAudioMixingVolume(_ volume: Int) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        audioMixingVolume = max(0, min(100, volume))
+        print("Mock: 设置混音音量为 \(audioMixingVolume)")
+    }
+    
+    public func getAudioMixingVolume() -> Int {
+        return audioMixingVolume
+    }
+    
+    public func setPlaybackSignalVolume(_ volume: Int) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        playbackSignalVolume = max(0, min(100, volume))
+        print("Mock: 设置播放音量为 \(playbackSignalVolume)")
+    }
+    
+    public func getPlaybackSignalVolume() -> Int {
+        return playbackSignalVolume
+    }
+    
+    public func setRecordingSignalVolume(_ volume: Int) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        recordingSignalVolume = max(0, min(100, volume))
+        print("Mock: 设置录音音量为 \(recordingSignalVolume)")
+    }
+    
+    public func getRecordingSignalVolume() -> Int {
+        return recordingSignalVolume
+    }
+    
+    // MARK: - Stream Push
+    
+    public func startStreamPush(config: StreamPushConfig) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 开始推流到 \(config.url)")
+    }
+    
+    public func stopStreamPush() async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 停止推流")
+    }
+    
+    public func updateStreamPushLayout(layout: StreamLayout) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 更新推流布局")
+    }
+    
+    // MARK: - Media Relay
+    
+    public func startMediaRelay(config: MediaRelayConfig) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 开始媒体中继")
+    }
+    
+    public func stopMediaRelay() async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 停止媒体中继")
+    }
+    
+    public func updateMediaRelayChannels(config: MediaRelayConfig) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 更新媒体中继频道")
+    }
+    
+    public func pauseMediaRelay(toChannel: String) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 暂停到频道 \(toChannel) 的媒体中继")
+    }
+    
+    public func resumeMediaRelay(toChannel: String) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 恢复到频道 \(toChannel) 的媒体中继")
+    }
+    
+    // MARK: - Volume Indicator
+    
+    public func enableVolumeIndicator(config: VolumeDetectionConfig) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 启用音量指示器，间隔 \(config.interval)ms")
+        
+        // 启动模拟音量数据
+        startMockVolumeSimulation(interval: config.interval)
+    }
+    
+    public func disableVolumeIndicator() async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 禁用音量指示器")
+    }
+    
+    public func setVolumeIndicatorHandler(_ handler: @escaping ([UserVolumeInfo]) -> Void) {
+        volumeHandler = handler
+    }
+    
+    public func setVolumeEventHandler(_ handler: @escaping (VolumeEvent) -> Void) {
+        volumeEventHandler = handler
+    }
+    
+    public func getCurrentVolumeInfos() -> [UserVolumeInfo] {
+        return generateMockVolumeInfos()
+    }
+    
+    public func getVolumeInfo(for userId: String) -> UserVolumeInfo? {
+        return UserVolumeInfo(userId: userId, volume: Int.random(in: 0...255))
+    }
+    
+    // MARK: - Token Management
+    
+    public func renewToken(_ newToken: String) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock: 更新 Token")
+    }
+    
+    public func onTokenWillExpire(_ handler: @escaping (Int) -> Void) {
+        tokenExpirationHandler = handler
+        
+        // 模拟 Token 过期通知 - 简化实现
+        print("Mock RTC: Token 过期处理器已设置")
+    }
+    
+    // MARK: - Private Methods
+    
+    private func simulateDelay() async throws {
+        let delay = UInt64.random(in: networkDelayRange)
+        try await Task.sleep(nanoseconds: delay)
+    }
+    
+    private func startMockVolumeSimulation(interval: Int) {
+        // 模拟音量数据更新 - 简化实现避免并发问题
+        print("Mock: 音量模拟已启动，间隔 \(interval)ms")
+    }
+    
+    private func generateMockVolumeInfos() -> [UserVolumeInfo] {
+        let userIds = ["user1", "user2", "user3", "local_user"]
+        return userIds.map { userId in
+            let volume = Int.random(in: 0...255)
+            let isSpeaking = volume > 50 // 简单的说话检测逻辑
+            return UserVolumeInfo(
+                userId: userId,
+                volume: volume,
+                vad: isSpeaking ? .speaking : .notSpeaking
+            )
+        }
+    }
+}
+
+// MARK: - Mock RTM Provider
+
+/// Mock RTM 提供者实现，用于测试
+public class MockRTMProvider: RTMProvider {
+    
+    // MARK: - Properties
+    
+    private var config: RTMConfig?
+    private var _isLoggedIn: Bool = false
+    private var messageHandler: ((RTMMessage) -> Void)?
+    private var connectionStateHandler: ((RTMConnectionState, RTMConnectionChangeReason) -> Void)?
+    private var tokenExpirationHandler: (() -> Void)?
+    
+    // 模拟配置
+    public var simulateNetworkDelay: Bool = true
+    public var simulateErrors: Bool = false
+    public var networkDelayRange: ClosedRange<UInt64> = 100_000_000...300_000_000 // 0.1-0.3秒
+    
+    // MARK: - Initialization
+    
+    public init() {}
+    
+    // MARK: - RTMProvider Implementation
+    
+    public func initialize(config: RTMConfig) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        if simulateErrors && Bool.random() {
+            throw RealtimeError.configurationError("模拟RTM配置错误")
+        }
+        
+        self.config = config
+        print("Mock RTM Provider 初始化完成 - App ID: \(config.appId)")
+    }
+    
+    public func login(userId: String, token: String) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        guard config != nil else {
+            throw RealtimeError.configurationError("RTM Provider 未初始化")
+        }
+        
+        print("Mock RTM: 用户 \(userId) 登录")
+        _isLoggedIn = true
+        
+        connectionStateHandler?(.connected, .loginSuccess)
+    }
+    
+    public func logout() async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock RTM: 用户登出")
+        _isLoggedIn = false
+        
+        connectionStateHandler?(.disconnected, .logout)
+    }
+    
+    public func isLoggedIn() -> Bool {
+        return _isLoggedIn
+    }
+    
+    // MARK: - Channel Management
+    
+    public func createChannel(channelId: String) -> RTMChannel {
+        return RTMChannel(
+            id: channelId,
+            name: "Mock 频道 \(channelId)",
+            creatorId: "mock_user"
+        )
+    }
+    
+    public func joinChannel(channelId: String) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock RTM: 加入频道 \(channelId)")
+    }
+    
+    public func leaveChannel(channelId: String) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock RTM: 离开频道 \(channelId)")
+    }
+    
+    public func getChannelMembers(channelId: String) async throws -> [RTMChannelMember] {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        // 返回模拟的频道成员
+        return [
+            RTMChannelMember(userId: "mock_user1"),
+            RTMChannelMember(userId: "mock_user2")
+        ]
+    }
+    
+    public func getChannelMemberCount(channelId: String) async throws -> Int {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        return Int.random(in: 1...10)
+    }
+    
+    // MARK: - Message Sending
+    
+    public func sendPeerMessage(_ message: RTMMessage, toPeer peerId: String, options: RTMSendMessageOptions?) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock RTM: 发送点对点消息给 \(peerId): \(message.text)")
+        
+        // 模拟消息回执
+        simulateMessageDelivery(message)
+    }
+    
+    public func sendChannelMessage(_ message: RTMMessage, toChannel channelId: String, options: RTMSendMessageOptions?) async throws {
+        if simulateNetworkDelay {
+            try await simulateDelay()
+        }
+        
+        print("Mock RTM: 发送频道消息到 \(channelId): \(message.text)")
+        
+        // 模拟消息回执
+        simulateMessageDelivery(message)
+    }
+    
+    // MARK: - User Attributes (简化实现)
+    
+    public func setLocalUserAttributes(_ attributes: [String: String]) async throws {
+        if simulateNetworkDelay { try await simulateDelay() }
+        print("Mock RTM: 设置本地用户属性")
+    }
+    
+    public func addOrUpdateLocalUserAttributes(_ attributes: [String: String]) async throws {
+        if simulateNetworkDelay { try await simulateDelay() }
+        print("Mock RTM: 添加或更新本地用户属性")
+    }
+    
+    public func deleteLocalUserAttributesByKeys(_ attributeKeys: [String]) async throws {
+        if simulateNetworkDelay { try await simulateDelay() }
+        print("Mock RTM: 删除本地用户属性")
+    }
+    
+    public func clearLocalUserAttributes() async throws {
+        if simulateNetworkDelay { try await simulateDelay() }
+        print("Mock RTM: 清除本地用户属性")
+    }
+    
+    public func getUserAttributes(userId: String) async throws -> [String: String] {
+        if simulateNetworkDelay { try await simulateDelay() }
+        return ["nickname": "Mock User", "status": "online"]
+    }
+    
+    public func getUsersAttributes(userIds: [String]) async throws -> [String: [String: String]] {
+        if simulateNetworkDelay { try await simulateDelay() }
+        return userIds.reduce(into: [:]) { result, userId in
+            result[userId] = ["nickname": "Mock User \(userId)", "status": "online"]
+        }
+    }
+    
+    // MARK: - Channel Attributes (简化实现)
+    
+    public func setChannelAttributes(channelId: String, attributes: [String: String], options: RTMChannelAttributeOptions?) async throws {
+        if simulateNetworkDelay { try await simulateDelay() }
+        print("Mock RTM: 设置频道 \(channelId) 属性")
+    }
+    
+    public func addOrUpdateChannelAttributes(channelId: String, attributes: [String: String], options: RTMChannelAttributeOptions?) async throws {
+        if simulateNetworkDelay { try await simulateDelay() }
+        print("Mock RTM: 添加或更新频道 \(channelId) 属性")
+    }
+    
+    public func deleteChannelAttributesByKeys(channelId: String, attributeKeys: [String], options: RTMChannelAttributeOptions?) async throws {
+        if simulateNetworkDelay { try await simulateDelay() }
+        print("Mock RTM: 删除频道 \(channelId) 属性")
+    }
+    
+    public func clearChannelAttributes(channelId: String, options: RTMChannelAttributeOptions?) async throws {
+        if simulateNetworkDelay { try await simulateDelay() }
+        print("Mock RTM: 清除频道 \(channelId) 属性")
+    }
+    
+    public func getChannelAttributes(channelId: String) async throws -> [String: String] {
+        if simulateNetworkDelay { try await simulateDelay() }
+        return ["topic": "Mock Channel Topic", "description": "Mock Channel Description"]
+    }
+    
+    public func getChannelAttributesByKeys(channelId: String, attributeKeys: [String]) async throws -> [String: String] {
+        if simulateNetworkDelay { try await simulateDelay() }
+        return attributeKeys.reduce(into: [:]) { result, key in
+            result[key] = "Mock Value for \(key)"
+        }
+    }
+    
+    // MARK: - Online Status (简化实现)
+    
+    public func queryPeersOnlineStatus(userIds: [String]) async throws -> [String: Bool] {
+        if simulateNetworkDelay { try await simulateDelay() }
+        return userIds.reduce(into: [:]) { result, userId in
+            result[userId] = Bool.random()
+        }
+    }
+    
+    public func subscribePeersOnlineStatus(userIds: [String]) async throws {
+        if simulateNetworkDelay { try await simulateDelay() }
+        print("Mock RTM: 订阅用户在线状态")
+    }
+    
+    public func unsubscribePeersOnlineStatus(userIds: [String]) async throws {
+        if simulateNetworkDelay { try await simulateDelay() }
+        print("Mock RTM: 取消订阅用户在线状态")
+    }
+    
+    public func querySubscribedPeersList() async throws -> [String] {
+        if simulateNetworkDelay { try await simulateDelay() }
+        return ["mock_user1", "mock_user2"]
+    }
+    
+    // MARK: - Token Management
+    
+    public func renewToken(_ newToken: String) async throws {
+        if simulateNetworkDelay { try await simulateDelay() }
+        print("Mock RTM: 更新 Token")
+    }
+    
+    public func onTokenWillExpire(_ handler: @escaping () -> Void) {
+        tokenExpirationHandler = handler
+        
+        // 模拟 Token 过期通知 - 简化实现
+        print("Mock RTM: Token 过期处理器已设置")
+    }
+    
+    // MARK: - Event Handlers
+    
+    public func onConnectionStateChanged(_ handler: @escaping (RTMConnectionState, RTMConnectionChangeReason) -> Void) {
+        connectionStateHandler = handler
+    }
+    
+    public func onPeerMessageReceived(_ handler: @escaping (RTMMessage, String) -> Void) {
+        // 模拟接收点对点消息 - 简化实现
+        print("Mock RTM: 点对点消息接收处理器已设置")
+    }
+    
+    public func onChannelMessageReceived(_ handler: @escaping (RTMMessage, RTMChannelMember, String) -> Void) {
+        // 模拟接收频道消息 - 简化实现
+        print("Mock RTM: 频道消息接收处理器已设置")
+    }
+    
+    public func onPeersOnlineStatusChanged(_ handler: @escaping ([String: Bool]) -> Void) {
+        // 模拟用户在线状态变化 - 简化实现
+        print("Mock RTM: 在线状态变化处理器已设置")
+    }
+    
+    // MARK: - Private Methods
+    
+    private func simulateDelay() async throws {
+        let delay = UInt64.random(in: networkDelayRange)
+        try await Task.sleep(nanoseconds: delay)
+    }
+    
+    private func simulateMessageDelivery(_ message: RTMMessage) {
+        Task {
+            try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒后模拟送达
+            // 这里可以触发消息状态更新回调
+        }
     }
 }

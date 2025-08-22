@@ -876,7 +876,344 @@ public class VolumeIndicatorManager: ObservableObject {
 }
 ```
 
-### 5. Token 管理系统设计
+### 5. 本地化支持系统设计 (需求 17)
+
+#### LocalizationManager 设计
+```swift
+@MainActor
+public class LocalizationManager: ObservableObject {
+    public static let shared = LocalizationManager()
+    
+    @Published public private(set) var currentLanguage: SupportedLanguage = .english
+    @Published public private(set) var availableLanguages: [SupportedLanguage] = SupportedLanguage.allCases
+    
+    private var localizedStrings: [SupportedLanguage: [String: String]] = [:]
+    private var customLocalizations: [String: [SupportedLanguage: String]] = [:]
+    
+    private init() {
+        detectSystemLanguage()
+        loadBuiltInLocalizations()
+    }
+    
+    // 支持的语言 (需求 17.4)
+    public enum SupportedLanguage: String, CaseIterable, Codable {
+        case english = "en"
+        case simplifiedChinese = "zh-Hans"
+        case traditionalChinese = "zh-Hant"
+        case japanese = "ja"
+        case korean = "ko"
+        
+        public var displayName: String {
+            switch self {
+            case .english: return "English"
+            case .simplifiedChinese: return "简体中文"
+            case .traditionalChinese: return "繁體中文"
+            case .japanese: return "日本語"
+            case .korean: return "한국어"
+            }
+        }
+        
+        public var localeIdentifier: String {
+            return self.rawValue
+        }
+    }
+    
+    // 自动检测系统语言 (需求 17.2)
+    private func detectSystemLanguage() {
+        let preferredLanguages = Locale.preferredLanguages
+        
+        for languageCode in preferredLanguages {
+            if let supportedLanguage = SupportedLanguage.allCases.first(where: { 
+                languageCode.hasPrefix($0.rawValue) 
+            }) {
+                currentLanguage = supportedLanguage
+                return
+            }
+        }
+        
+        // 回退到英文 (需求 17.5)
+        currentLanguage = .english
+    }
+    
+    // 动态切换语言 (需求 17.3)
+    public func setLanguage(_ language: SupportedLanguage) {
+        currentLanguage = language
+        UserDefaults.standard.set(language.rawValue, forKey: "RealtimeKit.PreferredLanguage")
+        
+        // 通知所有组件更新本地化文本
+        NotificationCenter.default.post(name: .languageDidChange, object: language)
+    }
+    
+    // 获取本地化字符串
+    public func localizedString(for key: String, arguments: [String] = []) -> String {
+        // 首先检查自定义本地化 (需求 17.7)
+        if let customString = customLocalizations[key]?[currentLanguage] {
+            return formatString(customString, arguments: arguments)
+        }
+        
+        // 然后检查内置本地化
+        if let localizedString = localizedStrings[currentLanguage]?[key] {
+            return formatString(localizedString, arguments: arguments)
+        }
+        
+        // 回退到英文 (需求 17.5)
+        if currentLanguage != .english,
+           let fallbackString = localizedStrings[.english]?[key] {
+            return formatString(fallbackString, arguments: arguments)
+        }
+        
+        // 最后回退到 key 本身
+        return key
+    }
+    
+    // 格式化带参数的字符串 (需求 17.8)
+    private func formatString(_ template: String, arguments: [String]) -> String {
+        guard !arguments.isEmpty else { return template }
+        
+        var result = template
+        for (index, argument) in arguments.enumerated() {
+            result = result.replacingOccurrences(of: "{\(index)}", with: argument)
+        }
+        return result
+    }
+    
+    // 添加自定义本地化 (需求 17.7)
+    public func addCustomLocalization(key: String, localizations: [SupportedLanguage: String]) {
+        customLocalizations[key] = localizations
+    }
+    
+    // 加载内置本地化资源
+    private func loadBuiltInLocalizations() {
+        localizedStrings = [
+            .english: loadEnglishStrings(),
+            .simplifiedChinese: loadSimplifiedChineseStrings(),
+            .traditionalChinese: loadTraditionalChineseStrings(),
+            .japanese: loadJapaneseStrings(),
+            .korean: loadKoreanStrings()
+        ]
+    }
+    
+    // 内置英文本地化
+    private func loadEnglishStrings() -> [String: String] {
+        return [
+            // 连接状态 (需求 17.6)
+            "connection.connecting": "Connecting...",
+            "connection.connected": "Connected",
+            "connection.disconnected": "Disconnected",
+            "connection.reconnecting": "Reconnecting...",
+            "connection.failed": "Connection failed",
+            
+            // 错误消息 (需求 17.1)
+            "error.network.timeout": "Network timeout. Please check your connection.",
+            "error.network.unavailable": "Network unavailable. Please check your internet connection.",
+            "error.authentication.failed": "Authentication failed. Please check your credentials.",
+            "error.authentication.tokenExpired": "Token expired. Please refresh your session.",
+            "error.permission.microphone": "Microphone permission required. Please enable in Settings.",
+            "error.permission.camera": "Camera permission required. Please enable in Settings.",
+            "error.room.notFound": "Room not found. Please check the room ID.",
+            "error.room.full": "Room is full. Please try again later.",
+            "error.user.alreadyInRoom": "User is already in the room.",
+            "error.provider.notAvailable": "Service provider not available.",
+            "error.provider.switchFailed": "Failed to switch service provider.",
+            
+            // 用户角色
+            "role.broadcaster": "Broadcaster",
+            "role.audience": "Audience",
+            "role.coHost": "Co-host",
+            "role.moderator": "Moderator",
+            
+            // 音频控制
+            "audio.muted": "Muted",
+            "audio.unmuted": "Unmuted",
+            "audio.volumeChanged": "Volume changed to {0}%",
+            
+            // 用户提示 (需求 17.6)
+            "prompt.joinRoom": "Join room {0}?",
+            "prompt.leaveRoom": "Leave current room?",
+            "prompt.switchRole": "Switch to {0} role?",
+            "prompt.enableMicrophone": "Enable microphone?",
+            "prompt.networkReconnect": "Network connection lost. Attempting to reconnect..."
+        ]
+    }
+    
+    // 内置中文简体本地化
+    private func loadSimplifiedChineseStrings() -> [String: String] {
+        return [
+            // 连接状态
+            "connection.connecting": "连接中...",
+            "connection.connected": "已连接",
+            "connection.disconnected": "已断开",
+            "connection.reconnecting": "重新连接中...",
+            "connection.failed": "连接失败",
+            
+            // 错误消息
+            "error.network.timeout": "网络超时，请检查您的网络连接。",
+            "error.network.unavailable": "网络不可用，请检查您的网络连接。",
+            "error.authentication.failed": "身份验证失败，请检查您的凭据。",
+            "error.authentication.tokenExpired": "令牌已过期，请刷新您的会话。",
+            "error.permission.microphone": "需要麦克风权限，请在设置中启用。",
+            "error.permission.camera": "需要摄像头权限，请在设置中启用。",
+            "error.room.notFound": "未找到房间，请检查房间ID。",
+            "error.room.full": "房间已满，请稍后再试。",
+            "error.user.alreadyInRoom": "用户已在房间中。",
+            "error.provider.notAvailable": "服务提供商不可用。",
+            "error.provider.switchFailed": "切换服务提供商失败。",
+            
+            // 用户角色
+            "role.broadcaster": "主播",
+            "role.audience": "观众",
+            "role.coHost": "连麦嘉宾",
+            "role.moderator": "主持人",
+            
+            // 音频控制
+            "audio.muted": "已静音",
+            "audio.unmuted": "已取消静音",
+            "audio.volumeChanged": "音量已调整至 {0}%",
+            
+            // 用户提示
+            "prompt.joinRoom": "加入房间 {0}？",
+            "prompt.leaveRoom": "离开当前房间？",
+            "prompt.switchRole": "切换到{0}角色？",
+            "prompt.enableMicrophone": "启用麦克风？",
+            "prompt.networkReconnect": "网络连接丢失，正在尝试重新连接..."
+        ]
+    }
+    
+    // 其他语言的本地化方法...
+    private func loadTraditionalChineseStrings() -> [String: String] { /* 实现繁体中文 */ return [:] }
+    private func loadJapaneseStrings() -> [String: String] { /* 实现日文 */ return [:] }
+    private func loadKoreanStrings() -> [String: String] { /* 实现韩文 */ return [:] }
+}
+
+// 本地化错误类型
+public enum LocalizedRealtimeError: LocalizedError {
+    case networkTimeout
+    case networkUnavailable
+    case authenticationFailed
+    case tokenExpired
+    case microphonePermissionRequired
+    case cameraPermissionRequired
+    case roomNotFound
+    case roomFull
+    case userAlreadyInRoom
+    case providerNotAvailable
+    case providerSwitchFailed
+    
+    public var errorDescription: String? {
+        let localizationManager = LocalizationManager.shared
+        
+        switch self {
+        case .networkTimeout:
+            return localizationManager.localizedString(for: "error.network.timeout")
+        case .networkUnavailable:
+            return localizationManager.localizedString(for: "error.network.unavailable")
+        case .authenticationFailed:
+            return localizationManager.localizedString(for: "error.authentication.failed")
+        case .tokenExpired:
+            return localizationManager.localizedString(for: "error.authentication.tokenExpired")
+        case .microphonePermissionRequired:
+            return localizationManager.localizedString(for: "error.permission.microphone")
+        case .cameraPermissionRequired:
+            return localizationManager.localizedString(for: "error.permission.camera")
+        case .roomNotFound:
+            return localizationManager.localizedString(for: "error.room.notFound")
+        case .roomFull:
+            return localizationManager.localizedString(for: "error.room.full")
+        case .userAlreadyInRoom:
+            return localizationManager.localizedString(for: "error.user.alreadyInRoom")
+        case .providerNotAvailable:
+            return localizationManager.localizedString(for: "error.provider.notAvailable")
+        case .providerSwitchFailed:
+            return localizationManager.localizedString(for: "error.provider.switchFailed")
+        }
+    }
+}
+
+// 本地化通知
+extension Notification.Name {
+    static let languageDidChange = Notification.Name("RealtimeKit.languageDidChange")
+}
+```
+
+#### 本地化 UI 组件支持
+
+##### SwiftUI 本地化支持
+```swift
+// 本地化文本视图
+public struct LocalizedText: View {
+    private let key: String
+    private let arguments: [String]
+    @StateObject private var localizationManager = LocalizationManager.shared
+    
+    public init(_ key: String, arguments: String...) {
+        self.key = key
+        self.arguments = arguments
+    }
+    
+    public var body: some View {
+        Text(localizationManager.localizedString(for: key, arguments: arguments))
+            .onReceive(NotificationCenter.default.publisher(for: .languageDidChange)) { _ in
+                // SwiftUI 会自动重新渲染
+            }
+    }
+}
+
+// 本地化按钮
+public struct LocalizedButton: View {
+    private let titleKey: String
+    private let action: () -> Void
+    @StateObject private var localizationManager = LocalizationManager.shared
+    
+    public init(_ titleKey: String, action: @escaping () -> Void) {
+        self.titleKey = titleKey
+        self.action = action
+    }
+    
+    public var body: some View {
+        Button(action: action) {
+            LocalizedText(titleKey)
+        }
+    }
+}
+```
+
+##### UIKit 本地化支持
+```swift
+// UIKit 本地化扩展
+extension UILabel {
+    public func setLocalizedText(_ key: String, arguments: String...) {
+        let localizationManager = LocalizationManager.shared
+        self.text = localizationManager.localizedString(for: key, arguments: arguments)
+        
+        // 监听语言变化
+        NotificationCenter.default.addObserver(
+            forName: .languageDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.text = localizationManager.localizedString(for: key, arguments: arguments)
+        }
+    }
+}
+
+extension UIButton {
+    public func setLocalizedTitle(_ key: String, for state: UIControl.State, arguments: String...) {
+        let localizationManager = LocalizationManager.shared
+        self.setTitle(localizationManager.localizedString(for: key, arguments: arguments), for: state)
+        
+        // 监听语言变化
+        NotificationCenter.default.addObserver(
+            forName: .languageDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.setTitle(localizationManager.localizedString(for: key, arguments: arguments), for: state)
+        }
+    }
+}
+```
+
+### 6. Token 管理系统设计
 
 #### TokenManager 设计
 ```swift
@@ -898,7 +1235,284 @@ public class TokenManager {
         // 提前 30 秒开始续期流程
         let renewalDelay = max(0, expiresIn - 30)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(renewalDelay)) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(renewalDelay)) {
+            Task {
+                await self.performTokenRenewal(provider: provider)
+            }
+        }
+    }
+    
+    private func performTokenRenewal(provider: ProviderType) async {
+        guard let renewalHandler = tokenRenewalHandlers[provider] else {
+            print("No token renewal handler registered for provider: \(provider)")
+            return
+        }
+        
+        do {
+            let newToken = try await renewalHandler()
+            
+            // 更新 RTC Provider Token
+            if let rtcProvider = RealtimeManager.shared.rtcProvider {
+                try await rtcProvider.renewToken(newToken)
+            }
+            
+            // 更新 RTM Provider Token
+            if let rtmProvider = RealtimeManager.shared.rtmProvider {
+                try await rtmProvider.renewToken(newToken)
+            }
+            
+            print("Token renewed successfully for provider: \(provider)")
+            
+        } catch {
+            print("Token renewal failed for provider \(provider): \(error)")
+            
+            // 重试机制 (需求 9.4)
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(5)) {
+                Task {
+                    await self.performTokenRenewal(provider: provider)
+                }
+            }
+        }
+    }
+    
+    public func clearTokenRenewalHandler(for provider: ProviderType) {
+        tokenRenewalHandlers.removeValue(forKey: provider)
+        tokenExpirationTimers[provider]?.invalidate()
+        tokenExpirationTimers.removeValue(forKey: provider)
+    }
+}() + .seconds(renewalDelay)) {
+            Task {
+                await self.performTokenRenewal(provider: provider)
+            }
+        }
+    }
+    
+    private func performTokenRenewal(provider: ProviderType) async {
+        guard let handler = tokenRenewalHandlers[provider] else {
+            print("No token renewal handler registered for provider: \(provider)")
+            return
+        }
+        
+        do {
+            let newToken = try await handler()
+            
+            // 更新 RTC 和 RTM Provider 的 Token
+            try await RealtimeManager.shared.rtcProvider.renewToken(newToken)
+            try await RealtimeManager.shared.rtmProvider.renewToken(newToken)
+            
+            print("Token renewed successfully for provider: \(provider)")
+        } catch {
+            print("Token renewal failed for provider \(provider): \(error)")
+            // 实现重试机制
+            await retryTokenRenewal(provider: provider, attempt: 1)
+        }
+    }
+    
+    private func retryTokenRenewal(provider: ProviderType, attempt: Int) async {
+        guard attempt <= 3 else {
+            print("Token renewal failed after 3 attempts for provider: \(provider)")
+            return
+        }
+        
+        let delay = TimeInterval(attempt * 2) // 指数退避
+        try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        
+        await performTokenRenewal(provider: provider)
+    }
+}
+
+## 测试策略
+
+### 测试框架选择
+
+基于需求 16 的测试要求，RealtimeKit 采用现代化的测试策略：
+
+#### Swift Testing 框架
+- **替代 XCTest**: 使用 Swift Testing 框架提供更现代化的测试体验
+- **@Test 宏**: 利用 `@Test` 宏简化测试编写，减少样板代码
+- **参数化测试**: 支持使用 `@Test(arguments:)` 进行数据驱动测试
+- **条件测试**: 支持使用 `@Test(.enabled(if:))` 进行条件性测试执行
+
+### 测试架构设计
+
+```swift
+import Testing
+import Foundation
+@testable import RealtimeCore
+
+// 参数化测试示例
+@Test("Audio volume validation", arguments: [
+    (0, true),
+    (50, true), 
+    (100, true),
+    (-1, false),
+    (101, false)
+])
+func testAudioVolumeValidation(volume: Int, expectedValid: Bool) async throws {
+    let settings = AudioSettings(audioMixingVolume: volume)
+    let isValid = (0...100).contains(settings.audioMixingVolume)
+    #expect(isValid == expectedValid)
+}
+
+// 条件测试示例
+@Test("Provider switching", .enabled(if: ProcessInfo.processInfo.environment["ENABLE_PROVIDER_TESTS"] == "true"))
+func testProviderSwitching() async throws {
+    let manager = RealtimeManager.shared
+    try await manager.configure(provider: .mock, config: .default)
+    
+    #expect(manager.currentProvider == .mock)
+}
+
+// 异步测试示例
+@Test("Token renewal mechanism")
+func testTokenRenewal() async throws {
+    let tokenManager = TokenManager()
+    var renewalCalled = false
+    
+    tokenManager.setupTokenRenewal(provider: .mock) {
+        renewalCalled = true
+        return "new_token_123"
+    }
+    
+    await tokenManager.handleTokenExpiration(provider: .mock, expiresIn: 30)
+    
+    // 等待异步操作完成
+    try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+    
+    #expect(renewalCalled == true)
+}
+```
+
+### 测试覆盖策略
+
+#### 1. 单元测试覆盖
+- **协议实现测试**: 测试所有 RTCProvider 和 RTMProvider 实现
+- **数据模型测试**: 验证 AudioSettings, UserSession, VolumeDetectionConfig 等模型
+- **管理器功能测试**: 测试 RealtimeManager, TokenManager, VolumeIndicatorManager 核心功能
+- **工具类测试**: 测试存储管理器、消息处理器等工具类
+
+#### 2. 集成测试覆盖
+- **服务商兼容性测试**: 测试不同服务商的切换和兼容性
+- **网络异常处理测试**: 模拟网络中断、超时等异常情况
+- **状态同步测试**: 测试跨组件的状态同步和一致性
+
+#### 3. UI 测试覆盖
+- **UIKit 组件测试**: 测试 UIKit 视图控制器和用户交互
+- **SwiftUI 组件测试**: 测试 SwiftUI 视图和状态绑定
+- **跨框架兼容性测试**: 测试 UIKit 和 SwiftUI 混合使用场景
+
+### Mock 和测试工具
+
+#### RealtimeMocking 模块设计
+```swift
+import Testing
+import RealtimeCore
+
+// Mock Provider 实现
+public class MockRTCProvider: RTCProvider {
+    public var mockAudioSettings = AudioSettings.default
+    public var mockConnectionState: ConnectionState = .disconnected
+    public var mockVolumeInfos: [UserVolumeInfo] = []
+    
+    // 测试验证属性
+    public var initializeCalled = false
+    public var joinRoomCalled = false
+    public var muteCallCount = 0
+    
+    public func initialize(config: RTCConfig) async throws {
+        initializeCalled = true
+    }
+    
+    public func muteMicrophone(_ muted: Bool) async throws {
+        muteCallCount += 1
+        mockAudioSettings = AudioSettings(
+            microphoneMuted: muted,
+            audioMixingVolume: mockAudioSettings.audioMixingVolume,
+            playbackSignalVolume: mockAudioSettings.playbackSignalVolume,
+            recordingSignalVolume: mockAudioSettings.recordingSignalVolume,
+            localAudioStreamActive: mockAudioSettings.localAudioStreamActive
+        )
+    }
+    
+    // 其他方法的 Mock 实现...
+}
+
+// 测试工具类
+public class TestUtilities {
+    public static func createMockVolumeInfo(userId: String, volume: Float, isSpeaking: Bool) -> UserVolumeInfo {
+        return UserVolumeInfo(
+            userId: userId,
+            volume: volume,
+            isSpeaking: isSpeaking,
+            timestamp: Date()
+        )
+    }
+    
+    public static func createMockUserSession(role: UserRole = .audience) -> UserSession {
+        return UserSession(
+            userId: "test_user_\(UUID().uuidString)",
+            userName: "Test User",
+            userRole: role
+        )
+    }
+}
+```
+
+### 性能测试
+
+#### 性能基准测试
+```swift
+import Testing
+import RealtimeCore
+
+@Test("Volume processing performance")
+func testVolumeProcessingPerformance() async throws {
+    let manager = VolumeIndicatorManager()
+    let volumeInfos = (0..<100).map { index in
+        TestUtilities.createMockVolumeInfo(
+            userId: "user_\(index)",
+            volume: Float.random(in: 0...1),
+            isSpeaking: Bool.random()
+        )
+    }
+    
+    let startTime = CFAbsoluteTimeGetCurrent()
+    
+    for _ in 0..<1000 {
+        manager.processVolumeUpdate(volumeInfos)
+    }
+    
+    let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
+    
+    // 验证处理时间在合理范围内 (< 1秒)
+    #expect(timeElapsed < 1.0)
+}
+```
+
+### 测试配置和 CI/CD 集成
+
+#### Package.swift 测试配置
+```swift
+// Package.swift 中的测试目标配置
+.testTarget(
+    name: "RealtimeCoreTests",
+    dependencies: [
+        "RealtimeCore",
+        "RealtimeMocking"
+    ],
+    swiftSettings: [
+        .enableExperimentalFeature("StrictConcurrency")
+    ]
+)
+```
+
+#### 测试执行策略
+- **本地开发**: 使用 `swift test` 执行完整测试套件
+- **CI/CD 流水线**: 分层执行单元测试、集成测试、性能测试
+- **代码覆盖率**: 目标达到 80% 以上的代码覆盖率
+- **测试报告**: 生成详细的测试报告和覆盖率报告
+
+这种基于 Swift Testing 的现代化测试策略确保了 RealtimeKit 的高质量和可靠性，同时提供了更好的开发体验和测试维护性。() + .seconds(renewalDelay)) { [weak self] in
             Task {
                 await self?.renewToken(for: provider)
             }
@@ -1999,9 +2613,149 @@ import RealtimeKit // 包含所有模块
 3. **透明度**: 清晰的数据使用说明
 4. **合规性**: 符合 GDPR 和其他隐私法规要求
 
+## 测试策略
+
+### 本地化测试设计 (需求 17)
+
+#### 单元测试
+```swift
+@Test("LocalizationManager 语言检测测试")
+func testLanguageDetection() async throws {
+    let manager = LocalizationManager.shared
+    
+    // 测试系统语言检测
+    #expect(manager.currentLanguage != nil)
+    #expect(manager.availableLanguages.contains(manager.currentLanguage))
+}
+
+@Test("本地化字符串获取测试")
+func testLocalizedStringRetrieval() async throws {
+    let manager = LocalizationManager.shared
+    
+    // 测试英文本地化
+    manager.setLanguage(.english)
+    let englishString = manager.localizedString(for: "error.network.timeout")
+    #expect(englishString == "Network timeout. Please check your connection.")
+    
+    // 测试中文本地化
+    manager.setLanguage(.simplifiedChinese)
+    let chineseString = manager.localizedString(for: "error.network.timeout")
+    #expect(chineseString == "网络超时，请检查您的网络连接。")
+}
+
+@Test("本地化字符串格式化测试")
+func testLocalizedStringFormatting() async throws {
+    let manager = LocalizationManager.shared
+    manager.setLanguage(.english)
+    
+    let formattedString = manager.localizedString(
+        for: "prompt.joinRoom", 
+        arguments: ["Room123"]
+    )
+    #expect(formattedString == "Join room Room123?")
+}
+
+@Test("回退语言测试")
+func testLanguageFallback() async throws {
+    let manager = LocalizationManager.shared
+    
+    // 设置为不存在完整本地化的语言
+    manager.setLanguage(.korean)
+    
+    // 测试回退到英文
+    let fallbackString = manager.localizedString(for: "error.network.timeout")
+    #expect(fallbackString.contains("Network timeout") || fallbackString.contains("网络超时"))
+}
+```
+
+#### 集成测试
+```swift
+@Test("本地化错误消息集成测试")
+func testLocalizedErrorIntegration() async throws {
+    let manager = LocalizationManager.shared
+    
+    // 测试不同语言下的错误消息
+    for language in LocalizationManager.SupportedLanguage.allCases {
+        manager.setLanguage(language)
+        
+        let error = LocalizedRealtimeError.networkTimeout
+        let errorMessage = error.errorDescription
+        
+        #expect(errorMessage != nil)
+        #expect(!errorMessage!.isEmpty)
+    }
+}
+
+@Test("UI 组件本地化测试")
+func testUIComponentLocalization() async throws {
+    let manager = LocalizationManager.shared
+    
+    // 测试 SwiftUI 组件
+    manager.setLanguage(.simplifiedChinese)
+    let localizedText = LocalizedText("connection.connecting")
+    
+    // 验证文本内容更新
+    #expect(true) // 实际测试需要 UI 测试框架支持
+}
+```
+
+#### 性能测试
+```swift
+@Test("本地化性能测试")
+func testLocalizationPerformance() async throws {
+    let manager = LocalizationManager.shared
+    
+    let startTime = CFAbsoluteTimeGetCurrent()
+    
+    // 批量获取本地化字符串
+    for _ in 0..<1000 {
+        _ = manager.localizedString(for: "error.network.timeout")
+    }
+    
+    let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
+    #expect(timeElapsed < 0.1) // 应在 100ms 内完成
+}
+```
+
+### 错误处理测试设计 (需求 13)
+
+#### 错误恢复测试
+```swift
+@Test("网络错误恢复测试")
+func testNetworkErrorRecovery() async throws {
+    let manager = RealtimeManager.shared
+    
+    // 模拟网络错误
+    do {
+        try await manager.joinRoom(roomId: "invalid", userId: "test", userRole: .audience)
+        #expect(Bool(false), "Should throw network error")
+    } catch let error as LocalizedRealtimeError {
+        #expect(error == .networkUnavailable)
+        #expect(error.errorDescription != nil)
+    }
+}
+
+@Test("Token 过期处理测试")
+func testTokenExpirationHandling() async throws {
+    let tokenManager = TokenManager()
+    
+    var renewalCalled = false
+    tokenManager.setupTokenRenewal(provider: .agora) {
+        renewalCalled = true
+        return "new_token_123"
+    }
+    
+    await tokenManager.handleTokenExpiration(provider: .agora, expiresIn: 30)
+    
+    // 验证续期逻辑被调用
+    try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+    #expect(renewalCalled == true)
+}
+```
+
 ## 设计总结
 
-本设计文档全面覆盖了 16 个核心需求，重点关注以下设计决策：
+本设计文档全面覆盖了 17 个核心需求，重点关注以下设计决策：
 
 1. **统一抽象**: 通过 RTCProvider 和 RTMProvider 协议实现服务商抽象
 2. **插件化架构**: 支持动态服务商切换和扩展
@@ -2009,7 +2763,19 @@ import RealtimeKit // 包含所有模块
 4. **现代并发**: 采用 Swift Concurrency 确保线程安全
 5. **模块化结构**: 支持按需导入减少应用体积
 6. **完善测试**: 使用 Swift Testing 框架确保代码质量
-7. **错误处理**: 提供完整的错误恢复机制
-8. **性能优化**: 内存管理和网络优化策略
+7. **错误处理**: 提供完整的错误恢复机制和本地化支持
+8. **国际化支持**: 完整的多语言错误消息和用户界面本地化
+9. **性能优化**: 内存管理和网络优化策略
 
-该设计确保了 RealtimeKit 作为统一实时通信解决方案的可扩展性、可维护性和高性能。
+### 本地化支持设计亮点
+
+1. **自动语言检测**: 系统启动时自动检测设备语言设置
+2. **动态语言切换**: 支持运行时切换语言，无需重启应用
+3. **多语言支持**: 支持中文（简繁体）、英文、日文、韩文等主要语言
+4. **智能回退**: 缺少特定语言时自动回退到英文
+5. **开发者友好**: 支持自定义语言包和本地化字符串
+6. **参数化消息**: 支持带动态参数的本地化字符串格式化
+7. **UI 框架集成**: 为 UIKit 和 SwiftUI 提供专门的本地化组件
+8. **错误消息本地化**: 所有系统错误都提供多语言支持
+
+该设计确保了 RealtimeKit 作为统一实时通信解决方案的可扩展性、可维护性、高性能和国际化支持。

@@ -73,6 +73,8 @@
         "-color-diagnostics",
         "-swift-version",
         "6",
+        "-enable-experimental-feature",
+        "StrictConcurrency",
         "-plugin-path",
         "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
@@ -130,67 +132,15 @@
       "inputs" : [
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ConnectionStateManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ErrorHandler.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MediaRelayManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MessageProcessorManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MessageProcessors.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ProviderFactory.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/RealtimeManager.swift"
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/StreamPushManager.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/CoreModels.swift"
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/TokenManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeEventProcessor.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeIndicatorManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/AudioSettings.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ConfigModels.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/Enums.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ErrorRecovery.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/MessageModels.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTCConfig.swift"
         },
         {
           "kind" : "file",
@@ -198,7 +148,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RealtimeError.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTMConfig.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTMModels.swift"
         },
         {
           "kind" : "file",
@@ -206,35 +160,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/UserSession.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/UserRole.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/VolumeModels.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ConnectionPool.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/DataCompression.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/MemoryManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ObjectPool.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ThreadSafetyManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/MessageProcessor.swift"
         },
         {
           "kind" : "file",
@@ -250,26 +180,6 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/AudioSettingsStorage.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/RealtimeStorage.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageExample.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageProtocol.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/UserSessionStorage.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/swift-version-39B54973F684ADAB.txt"
         },
         {
@@ -281,41 +191,18 @@
       "moduleName" : "RealtimeCore",
       "moduleOutputPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules/RealtimeCore.swiftmodule",
       "objects" : [
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ConnectionStateManager.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ErrorHandler.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MediaRelayManager.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageProcessorManager.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageProcessors.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ProviderFactory.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RealtimeManager.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/StreamPushManager.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/TokenManager.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/VolumeEventProcessor.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/VolumeIndicatorManager.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/AudioSettings.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ConfigModels.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/Enums.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ErrorRecovery.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageModels.swift.o",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/CoreModels.swift.o",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTCConfig.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTCRoom.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RealtimeError.swift.o",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTMConfig.swift.o",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTMModels.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/StreamModels.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/UserSession.swift.o",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/UserRole.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/VolumeModels.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ConnectionPool.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/DataCompression.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MemoryManager.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ObjectPool.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ThreadSafetyManager.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageProcessor.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTCProvider.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTMProvider.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RealtimeCore.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/AudioSettingsStorage.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RealtimeStorage.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/StorageExample.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/StorageProtocol.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage.swift.o"
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RealtimeCore.swift.o"
       ],
       "otherArguments" : [
         "-target",
@@ -341,6 +228,8 @@
         "-color-diagnostics",
         "-swift-version",
         "6",
+        "-enable-experimental-feature",
+        "StrictConcurrency",
         "-plugin-path",
         "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
@@ -377,67 +266,15 @@
       "outputs" : [
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ConnectionStateManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ErrorHandler.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MediaRelayManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageProcessorManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageProcessors.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ProviderFactory.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RealtimeManager.swift.o"
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/StreamPushManager.swift.o"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/CoreModels.swift.o"
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/TokenManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/VolumeEventProcessor.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/VolumeIndicatorManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/AudioSettings.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ConfigModels.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/Enums.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ErrorRecovery.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageModels.swift.o"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTCConfig.swift.o"
         },
         {
           "kind" : "file",
@@ -445,7 +282,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RealtimeError.swift.o"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTMConfig.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTMModels.swift.o"
         },
         {
           "kind" : "file",
@@ -453,35 +294,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/UserSession.swift.o"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/UserRole.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/VolumeModels.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ConnectionPool.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/DataCompression.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MemoryManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ObjectPool.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ThreadSafetyManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageProcessor.swift.o"
         },
         {
           "kind" : "file",
@@ -497,66 +314,23 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/AudioSettingsStorage.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RealtimeStorage.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/StorageExample.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/StorageProtocol.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules/RealtimeCore.swiftmodule"
         }
       ],
       "prepareForIndexing" : false,
       "sources" : [
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ConnectionStateManager.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ErrorHandler.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MediaRelayManager.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MessageProcessorManager.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MessageProcessors.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ProviderFactory.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/RealtimeManager.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/StreamPushManager.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/TokenManager.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeEventProcessor.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeIndicatorManager.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/AudioSettings.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ConfigModels.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/Enums.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ErrorRecovery.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/MessageModels.swift",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/CoreModels.swift",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTCConfig.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTCRoom.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RealtimeError.swift",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTMConfig.swift",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTMModels.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/StreamModels.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/UserSession.swift",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/UserRole.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/VolumeModels.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ConnectionPool.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/DataCompression.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/MemoryManager.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ObjectPool.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ThreadSafetyManager.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/MessageProcessor.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/RTCProvider.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/RTMProvider.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/RealtimeCore.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/AudioSettingsStorage.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/RealtimeStorage.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageExample.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageProtocol.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/UserSessionStorage.swift"
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/RealtimeCore.swift"
       ],
       "tempsPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build",
       "wholeModuleOptimization" : false
@@ -568,127 +342,15 @@
       "inputs" : [
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AgoraProviderTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioControlManagementTests.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsStorageTests.swift"
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/BasicErrorHandlingTest.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ConnectionStateManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ErrorHandlingTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayConfigTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayIntegrationTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MemoryLeakDetectionTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessingIntegrationTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessorManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessorsTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/NetworkPerformanceTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeCoreTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StorageExampleTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamModelsTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIAnimationTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIComponentsTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIDataFlowTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIReactiveTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIViewModelTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitComponentsTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitInteractionTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserIdentityManagementTests.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/CoreModelsTests.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeEventProcessorTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeIndicatorManagerTests.swift"
         },
         {
           "kind" : "file",
@@ -711,37 +373,9 @@
       "moduleName" : "RealtimeCoreTests",
       "moduleOutputPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules/RealtimeCoreTests.swiftmodule",
       "objects" : [
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AgoraProviderTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioControlManagementTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsStorageTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/BasicErrorHandlingTest.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ConnectionStateManagerTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ErrorHandlingTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayConfigTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayIntegrationTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayManagerTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MemoryLeakDetectionTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessingIntegrationTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessorManagerTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessorsTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/NetworkPerformanceTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/RealtimeCoreTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/RealtimeManagerTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageExampleTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamModelsTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushManagerTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIAnimationTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIComponentsTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIDataFlowTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIReactiveTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIViewModelTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UIKitComponentsTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UIKitInteractionTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserIdentityManagementTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeEventProcessorTests.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeIndicatorManagerTests.swift.o"
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/CoreModelsTests.swift.o",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.swift.o"
       ],
       "otherArguments" : [
         "-target",
@@ -766,6 +400,8 @@
         "-color-diagnostics",
         "-swift-version",
         "6",
+        "-enable-experimental-feature",
+        "StrictConcurrency",
         "-plugin-path",
         "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
@@ -802,127 +438,15 @@
       "outputs" : [
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AgoraProviderTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioControlManagementTests.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsStorageTests.swift.o"
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/BasicErrorHandlingTest.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ConnectionStateManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ErrorHandlingTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayConfigTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayIntegrationTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MemoryLeakDetectionTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessingIntegrationTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessorManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessorsTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/NetworkPerformanceTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/RealtimeCoreTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/RealtimeManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageExampleTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamModelsTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIAnimationTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIComponentsTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIDataFlowTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIReactiveTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIViewModelTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UIKitComponentsTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UIKitInteractionTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserIdentityManagementTests.swift.o"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/CoreModelsTests.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeEventProcessorTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeIndicatorManagerTests.swift.o"
         },
         {
           "kind" : "file",
@@ -931,37 +455,9 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AgoraProviderTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioControlManagementTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsStorageTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/BasicErrorHandlingTest.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ConnectionStateManagerTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ErrorHandlingTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayConfigTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayIntegrationTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayManagerTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MemoryLeakDetectionTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessingIntegrationTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessorManagerTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessorsTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/NetworkPerformanceTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeCoreTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeManagerTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StorageExampleTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamModelsTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIAnimationTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIComponentsTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIDataFlowTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIReactiveTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIViewModelTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitComponentsTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitInteractionTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserIdentityManagementTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeEventProcessorTests.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeIndicatorManagerTests.swift"
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/CoreModelsTests.swift",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift"
       ],
       "tempsPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build",
       "wholeModuleOptimization" : false
@@ -1030,6 +526,8 @@
         "-color-diagnostics",
         "-swift-version",
         "6",
+        "-enable-experimental-feature",
+        "StrictConcurrency",
         "-plugin-path",
         "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
@@ -1238,6 +736,8 @@
         "-color-diagnostics",
         "-swift-version",
         "6",
+        "-enable-experimental-feature",
+        "StrictConcurrency",
         "-plugin-path",
         "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
@@ -1295,7 +795,7 @@
       "inputs" : [
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeMockingTests/MockProviderTests.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeMockingTests/MockingTests.swift"
         },
         {
           "kind" : "file",
@@ -1318,7 +818,7 @@
       "moduleName" : "RealtimeMockingTests",
       "moduleOutputPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules/RealtimeMockingTests.swiftmodule",
       "objects" : [
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMockingTests.build/MockProviderTests.swift.o"
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMockingTests.build/MockingTests.swift.o"
       ],
       "otherArguments" : [
         "-target",
@@ -1343,6 +843,8 @@
         "-color-diagnostics",
         "-swift-version",
         "6",
+        "-enable-experimental-feature",
+        "StrictConcurrency",
         "-plugin-path",
         "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
@@ -1379,7 +881,7 @@
       "outputs" : [
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMockingTests.build/MockProviderTests.swift.o"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMockingTests.build/MockingTests.swift.o"
         },
         {
           "kind" : "file",
@@ -1388,7 +890,7 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeMockingTests/MockProviderTests.swift"
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeMockingTests/MockingTests.swift"
       ],
       "tempsPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMockingTests.build",
       "wholeModuleOptimization" : false
@@ -1445,6 +947,8 @@
         "-color-diagnostics",
         "-swift-version",
         "6",
+        "-enable-experimental-feature",
+        "StrictConcurrency",
         "-plugin-path",
         "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
@@ -1547,6 +1051,8 @@
         "-color-diagnostics",
         "-swift-version",
         "6",
+        "-enable-experimental-feature",
+        "StrictConcurrency",
         "-plugin-path",
         "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
@@ -1635,6 +1141,8 @@
       "-color-diagnostics",
       "-swift-version",
       "6",
+      "-enable-experimental-feature",
+      "StrictConcurrency",
       "-plugin-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
@@ -1676,41 +1184,18 @@
       "-package-name",
       "realtimekit",
       "-c",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ConnectionStateManager.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ErrorHandler.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MediaRelayManager.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MessageProcessorManager.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MessageProcessors.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ProviderFactory.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/RealtimeManager.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/StreamPushManager.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/TokenManager.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeEventProcessor.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeIndicatorManager.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/AudioSettings.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ConfigModels.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/Enums.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ErrorRecovery.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/MessageModels.swift",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/CoreModels.swift",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTCConfig.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTCRoom.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RealtimeError.swift",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTMConfig.swift",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTMModels.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/StreamModels.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/UserSession.swift",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/UserRole.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/VolumeModels.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ConnectionPool.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/DataCompression.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/MemoryManager.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ObjectPool.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ThreadSafetyManager.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/MessageProcessor.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/RTCProvider.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/RTMProvider.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/RealtimeCore.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/AudioSettingsStorage.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/RealtimeStorage.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageExample.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageProtocol.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/UserSessionStorage.swift",
       "-I",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules",
       "-target",
@@ -1736,6 +1221,8 @@
       "-color-diagnostics",
       "-swift-version",
       "6",
+      "-enable-experimental-feature",
+      "StrictConcurrency",
       "-plugin-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
@@ -1777,37 +1264,9 @@
       "-package-name",
       "realtimekit",
       "-c",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AgoraProviderTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioControlManagementTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsStorageTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/BasicErrorHandlingTest.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ConnectionStateManagerTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ErrorHandlingTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayConfigTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayIntegrationTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayManagerTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MemoryLeakDetectionTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessingIntegrationTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessorManagerTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessorsTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/NetworkPerformanceTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeCoreTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeManagerTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StorageExampleTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamModelsTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIAnimationTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIComponentsTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIDataFlowTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIReactiveTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIViewModelTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitComponentsTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitInteractionTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserIdentityManagementTests.swift",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/CoreModelsTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeEventProcessorTests.swift",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeIndicatorManagerTests.swift",
       "-I",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules",
       "-target",
@@ -1832,6 +1291,8 @@
       "-color-diagnostics",
       "-swift-version",
       "6",
+      "-enable-experimental-feature",
+      "StrictConcurrency",
       "-plugin-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
@@ -1899,6 +1360,8 @@
       "-color-diagnostics",
       "-swift-version",
       "6",
+      "-enable-experimental-feature",
+      "StrictConcurrency",
       "-plugin-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
@@ -2033,6 +1496,8 @@
       "-color-diagnostics",
       "-swift-version",
       "6",
+      "-enable-experimental-feature",
+      "StrictConcurrency",
       "-plugin-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
@@ -2074,7 +1539,7 @@
       "-package-name",
       "realtimekit",
       "-c",
-      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeMockingTests/MockProviderTests.swift",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeMockingTests/MockingTests.swift",
       "-I",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules",
       "-target",
@@ -2099,6 +1564,8 @@
       "-color-diagnostics",
       "-swift-version",
       "6",
+      "-enable-experimental-feature",
+      "StrictConcurrency",
       "-plugin-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
@@ -2166,6 +1633,8 @@
       "-color-diagnostics",
       "-swift-version",
       "6",
+      "-enable-experimental-feature",
+      "StrictConcurrency",
       "-plugin-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
@@ -2233,6 +1702,8 @@
       "-color-diagnostics",
       "-swift-version",
       "6",
+      "-enable-experimental-feature",
+      "StrictConcurrency",
       "-plugin-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
@@ -2350,67 +1821,15 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ConnectionStateManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ErrorHandler.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MediaRelayManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MessageProcessorManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MessageProcessors.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ProviderFactory.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/RealtimeManager.swift"
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/StreamPushManager.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/CoreModels.swift"
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/TokenManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeEventProcessor.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeIndicatorManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/AudioSettings.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ConfigModels.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/Enums.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ErrorRecovery.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/MessageModels.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTCConfig.swift"
         },
         {
           "kind" : "file",
@@ -2418,7 +1837,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RealtimeError.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTMConfig.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTMModels.swift"
         },
         {
           "kind" : "file",
@@ -2426,35 +1849,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/UserSession.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/UserRole.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/VolumeModels.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ConnectionPool.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/DataCompression.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/MemoryManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ObjectPool.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Performance/ThreadSafetyManager.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/MessageProcessor.swift"
         },
         {
           "kind" : "file",
@@ -2467,26 +1866,6 @@
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/RealtimeCore.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/AudioSettingsStorage.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/RealtimeStorage.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageExample.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageProtocol.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/UserSessionStorage.swift"
         }
       ],
       "outputFilePath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/sources"
@@ -2500,127 +1879,15 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AgoraProviderTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioControlManagementTests.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsStorageTests.swift"
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/BasicErrorHandlingTest.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ConnectionStateManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ErrorHandlingTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayConfigTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayIntegrationTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MemoryLeakDetectionTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessingIntegrationTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessorManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessorsTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/NetworkPerformanceTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeCoreTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StorageExampleTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamModelsTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIAnimationTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIComponentsTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIDataFlowTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIReactiveTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIViewModelTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitComponentsTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitInteractionTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserIdentityManagementTests.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/CoreModelsTests.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeEventProcessorTests.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeIndicatorManagerTests.swift"
         }
       ],
       "outputFilePath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/sources"
@@ -2662,71 +1929,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/AudioSettings.swift.o"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/CoreModels.swift.o"
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/AudioSettingsStorage.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ConfigModels.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ConnectionPool.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ConnectionStateManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/DataCompression.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/Enums.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ErrorHandler.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ErrorRecovery.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MediaRelayManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MemoryManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageModels.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageProcessor.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageProcessorManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/MessageProcessors.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ObjectPool.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ProviderFactory.swift.o"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTCConfig.swift.o"
         },
         {
           "kind" : "file",
@@ -2738,6 +1945,14 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTMConfig.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTMModels.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RTMProvider.swift.o"
         },
         {
@@ -2746,23 +1961,7 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RealtimeError.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RealtimeManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/RealtimeStorage.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/StorageExample.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/StorageProtocol.swift.o"
         },
         {
           "kind" : "file",
@@ -2770,31 +1969,7 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/StreamPushManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/ThreadSafetyManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/TokenManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/UserSession.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/UserSessionStorage.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/VolumeEventProcessor.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/VolumeIndicatorManager.swift.o"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/UserRole.swift.o"
         },
         {
           "kind" : "file",
@@ -2802,127 +1977,15 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AgoraProviderTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioControlManagementTests.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsStorageTests.swift.o"
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/BasicErrorHandlingTest.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ConnectionStateManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ErrorHandlingTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayConfigTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayIntegrationTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MemoryLeakDetectionTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessingIntegrationTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessorManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessorsTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/NetworkPerformanceTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/RealtimeCoreTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/RealtimeManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageExampleTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamModelsTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIAnimationTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIComponentsTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIDataFlowTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIReactiveTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIViewModelTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UIKitComponentsTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UIKitInteractionTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserIdentityManagementTests.swift.o"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/CoreModelsTests.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeEventProcessorTests.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeIndicatorManagerTests.swift.o"
         },
         {
           "kind" : "file",
@@ -2934,7 +1997,7 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMockingTests.build/MockProviderTests.swift.o"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMockingTests.build/MockingTests.swift.o"
         }
       ],
       "outputFilePath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeKitPackageTests.product/Objects.LinkFileList"
@@ -2962,7 +2025,7 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeMockingTests/MockProviderTests.swift"
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeMockingTests/MockingTests.swift"
         }
       ],
       "outputFilePath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMockingTests.build/sources"
