@@ -611,7 +611,7 @@ public enum RTMMessageStatus: String, CaseIterable, Codable {
 }
 
 /// RTM频道模型
-public struct RTMChannel: Codable, Identifiable {
+public struct RTMChannelModel: Codable, Identifiable {
     /// 频道唯一标识符
     public let id: String
     

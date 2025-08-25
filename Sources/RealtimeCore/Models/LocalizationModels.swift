@@ -85,16 +85,9 @@ public struct LocalizationConfig: Sendable {
 
 // MARK: - Localization Events
 
-/// Notification for language change events
-extension Notification.Name {
-    public static let realtimeLanguageDidChange = Notification.Name("RealtimeKit.languageDidChange")
-}
+// Note: Notification names are defined in ConnectionModels.swift to avoid duplicates
 
-/// User info keys for language change notifications
-public struct LocalizationNotificationKeys {
-    public static let previousLanguage = "previousLanguage"
-    public static let currentLanguage = "currentLanguage"
-}
+// Note: LocalizationNotificationKeys is defined in ConnectionModels.swift to avoid duplicates
 
 // MARK: - User Preferences
 

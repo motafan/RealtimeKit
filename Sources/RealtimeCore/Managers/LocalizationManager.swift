@@ -165,7 +165,7 @@ public class LocalizationManager: ObservableObject {
         
         // Notify observers if requested and user preferences allow it
         if notifyObservers && userPreferences.showLanguageChangeNotifications {
-            NotificationCenter.default.post(
+            let notification = Notification(
                 name: .realtimeLanguageDidChange,
                 object: self,
                 userInfo: [
@@ -173,6 +173,7 @@ public class LocalizationManager: ObservableObject {
                     LocalizationNotificationKeys.currentLanguage: language
                 ]
             )
+            NotificationCenter.default.post(notification)
         }
     }
     

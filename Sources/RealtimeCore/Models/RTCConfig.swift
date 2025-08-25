@@ -2,7 +2,7 @@ import Foundation
 
 /// RTC服务配置
 /// 需求: 1.1, 1.2
-public struct RTCConfig: Codable {
+public struct RTCConfig: Codable, Sendable {
     /// 应用ID
     public let appId: String
     
@@ -74,7 +74,7 @@ public enum RTCRegion: String, CaseIterable, Codable, Sendable {
 }
 
 /// RTC音频配置
-public struct RTCAudioConfig: Codable {
+public struct RTCAudioConfig: Codable, Sendable {
     /// 音频场景
     public let audioScenario: RTCAudioScenario
     
@@ -111,7 +111,7 @@ public struct RTCAudioConfig: Codable {
 }
 
 /// RTC音频场景
-public enum RTCAudioScenario: String, CaseIterable, Codable {
+public enum RTCAudioScenario: String, CaseIterable, Codable, Sendable {
     /// 默认场景
     case `default` = "default"
     /// 聊天室场景
@@ -145,7 +145,7 @@ public enum RTCAudioScenario: String, CaseIterable, Codable {
 }
 
 /// RTC音频质量配置
-public enum RTCAudioProfile: String, CaseIterable, Codable {
+public enum RTCAudioProfile: String, CaseIterable, Codable, Sendable {
     /// 默认质量
     case `default` = "default"
     /// 语音标准质量
@@ -179,7 +179,7 @@ public enum RTCAudioProfile: String, CaseIterable, Codable {
 }
 
 /// RTC日志配置
-public struct RTCLogConfig: Codable {
+public struct RTCLogConfig: Codable, Sendable {
     /// 日志级别
     public let logLevel: RTCLogLevel
     
@@ -236,7 +236,7 @@ public enum RTCLogLevel: String, CaseIterable, Codable, Sendable {
 }
 
 /// RTC自定义服务器配置
-public struct RTCCustomServerConfig: Codable {
+public struct RTCCustomServerConfig: Codable, Sendable {
     /// 自定义服务器地址
     public let serverAddress: String
     

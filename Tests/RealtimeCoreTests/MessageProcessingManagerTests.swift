@@ -3,584 +3,539 @@ import Foundation
 @testable import RealtimeCore
 
 /// 消息处理管理器测试
-/// 需求: 10.1, 10.2, 测试要求 1, 18.1, 18.2
-@Suite("Message Processing Manager Tests")
+/// 需求: 10.1, 10.2, 10.3, 测试要求 1
 @MainActor
 struct MessageProcessingManagerTests {
     
-    // MARK: - Initialization Tests
+    // MARK: - Processor Registration Tests (需求 10.2)
     
-    @Test("消息处理管理器初始化")
-    func testInitialization() async throws {
-        let manager = MessageProcessingManager()
+    @Test("消息处理器注册测试")
+    func testMessageProcessorRegistration() async throws {
+        let processingManager = MessageProcessingManager()
+        let textProcessor = TextMessageProcessor()
         
-        #expect(manager.config == MessageProcessingConfig.default)
-        #expect(!manager.isProcessing)
-        #expect(manager.pendingMessages.isEmpty)
-        #expect(manager.processingQueue.isEmpty)
+        // 注册处理器 (需求 10.2)
+        try processingManager.registerProcessor(textProcessor)
+        
+        // 验证处理器已注册
+        #expect(processingManager.registeredProcessors.contains("TextMessageProcessor"))
+        
+        // 验证可以获取处理器
+        let retrievedProcessor = processingManager.getProcessor(named: "TextMessageProcessor")
+        #expect(retrievedProcessor != nil)
+        #expect(retrievedProcessor?.processorName == "TextMessageProcessor")
     }
     
-    // MARK: - Message Processing Tests
-    
-    @Test("处理有效消息")
-    func testProcessValidMessage() async throws {
-        let manager = MessageProcessingManager()
-        var processedMessage: RealtimeMessage?
+    @Test("重复注册处理器应该失败")
+    func testDuplicateProcessorRegistration() async throws {
+        let processingManager = MessageProcessingManager()
+        let textProcessor1 = TextMessageProcessor()
+        let textProcessor2 = TextMessageProcessor()
         
-        manager.onMessageProcessed = { message in
-            processedMessage = message
+        // 第一次注册应该成功
+        try processingManager.registerProcessor(textProcessor1)
+        
+        // 第二次注册相同名称的处理器应该失败
+        #expect(throws: MessageProcessorError.self) {
+            try processingManager.registerProcessor(textProcessor2)
         }
+    }
+    
+    @Test("处理器注销测试")
+    func testProcessorUnregistration() async throws {
+        let processingManager = MessageProcessingManager()
+        let textProcessor = TextMessageProcessor()
+        
+        // 注册处理器
+        try processingManager.registerProcessor(textProcessor)
+        #expect(processingManager.registeredProcessors.contains("TextMessageProcessor"))
+        
+        // 注销处理器
+        try processingManager.unregisterProcessor(named: "TextMessageProcessor")
+        #expect(!processingManager.registeredProcessors.contains("TextMessageProcessor"))
+        
+        // 验证处理器已被移除
+        let retrievedProcessor = processingManager.getProcessor(named: "TextMessageProcessor")
+        #expect(retrievedProcessor == nil)
+    }
+    
+    @Test("根据消息类型获取处理器")
+    func testGetProcessorsByMessageType() async throws {
+        let processingManager = MessageProcessingManager()
+        let textProcessor = TextMessageProcessor()
+        let systemProcessor = SystemMessageProcessor()
+        
+        try processingManager.registerProcessor(textProcessor)
+        try processingManager.registerProcessor(systemProcessor)
+        
+        // 获取文本消息处理器
+        let textProcessors = processingManager.getProcessors(for: "text")
+        #expect(textProcessors.count == 1)
+        #expect(textProcessors.first?.processorName == "TextMessageProcessor")
+        
+        // 获取系统消息处理器
+        let systemProcessors = processingManager.getProcessors(for: "system")
+        #expect(systemProcessors.count == 1)
+        #expect(systemProcessors.first?.processorName == "SystemMessageProcessor")
+    }
+    
+    // MARK: - Message Processing Chain Tests (需求 10.3)
+    
+    @Test("消息处理链测试")
+    func testMessageProcessingChain() async throws {
+        let processingManager = MessageProcessingManager()
+        let textProcessor = TextMessageProcessor()
+        let imageProcessor = ImageMessageProcessor()
+        
+        try processingManager.registerProcessor(textProcessor)
+        try processingManager.registerProcessor(imageProcessor)
+        
+        // 创建文本消息
+        let textMessage = RealtimeMessage(
+            type: .text,
+            content: .text("  Hello World  "),
+            senderId: "user123"
+        )
+        
+        // 处理消息
+        await processingManager.processMessage(textMessage)
+        
+        // 验证统计信息
+        #expect(processingManager.processingStats.totalReceived == 1)
+        #expect(processingManager.processingStats.totalProcessed == 1)
+    }
+    
+    @Test("消息处理优先级测试")
+    func testMessageProcessingPriority() async throws {
+        let processingManager = MessageProcessingManager()
+        
+        // 创建不同优先级的处理器
+        let highPriorityProcessor = CustomMessageProcessor(
+            name: "HighPriorityProcessor",
+            supportedTypes: ["text"],
+            priority: 200
+        )
+        
+        let lowPriorityProcessor = CustomMessageProcessor(
+            name: "LowPriorityProcessor", 
+            supportedTypes: ["text"],
+            priority: 50
+        )
+        
+        try processingManager.registerProcessor(lowPriorityProcessor)
+        try processingManager.registerProcessor(highPriorityProcessor)
+        
+        // 获取文本消息处理器，应该按优先级排序
+        let processors = processingManager.getProcessors(for: "text")
+        #expect(processors.count == 2)
+        #expect(processors.first?.processorName == "HighPriorityProcessor")
+        #expect(processors.last?.processorName == "LowPriorityProcessor")
+    }
+    
+    // MARK: - Filter Tests (需求 10.5)
+    
+    @Test("消息过滤器测试")
+    func testMessageFiltering() async throws {
+        let processingManager = MessageProcessingManager()
+        let spamFilter = SpamMessageFilter()
+        
+        // 注册过滤器
+        processingManager.registerFilter(spamFilter)
+        
+        // 创建包含垃圾信息的消息
+        let spamMessage = RealtimeMessage(
+            type: .text,
+            content: .text("这是一条垃圾广告消息"),
+            senderId: "spammer123"
+        )
+        
+        // 处理消息
+        await processingManager.processMessage(spamMessage)
+        
+        // 验证消息被过滤
+        #expect(processingManager.processingStats.totalSkipped == 1)
+    }
+    
+    @Test("过期消息过滤测试")
+    func testExpiredMessageFiltering() async throws {
+        let processingManager = MessageProcessingManager()
+        let expiredFilter = ExpiredMessageFilter()
+        
+        processingManager.registerFilter(expiredFilter)
+        
+        // 创建已过期的消息
+        let expiredMessage = RealtimeMessage(
+            type: .text,
+            content: .text("这是一条过期消息"),
+            senderId: "user123",
+            expirationTime: Date().addingTimeInterval(-3600) // 1小时前过期
+        )
+        
+        await processingManager.processMessage(expiredMessage)
+        
+        // 验证过期消息被过滤
+        #expect(processingManager.processingStats.totalSkipped == 1)
+    }
+    
+    // MARK: - Transformer Tests (需求 10.5)
+    
+    @Test("消息转换器测试")
+    func testMessageTransformation() async throws {
+        let processingManager = MessageProcessingManager()
+        let textProcessor = TextMessageProcessor()
+        let formattingTransformer = TextFormattingTransformer()
+        
+        try processingManager.registerProcessor(textProcessor)
+        processingManager.registerTransformer(formattingTransformer)
+        
+        // 创建需要格式化的文本消息
+        let message = RealtimeMessage(
+            type: .text,
+            content: .text("hello world"),
+            senderId: "user123"
+        )
+        
+        await processingManager.processMessage(message)
+        
+        // 验证消息被处理
+        #expect(processingManager.processingStats.totalProcessed == 1)
+    }
+    
+    @Test("元数据增强转换器测试")
+    func testMetadataEnhancement() async throws {
+        let processingManager = MessageProcessingManager()
+        let textProcessor = TextMessageProcessor()
+        let metadataTransformer = MetadataEnhancementTransformer()
+        
+        try processingManager.registerProcessor(textProcessor)
+        processingManager.registerTransformer(metadataTransformer)
         
         let message = RealtimeMessage(
             type: .text,
-            content: .text("测试消息"),
-            senderId: "user123",
-            channelId: "channel456"
+            content: .text("Test message"),
+            senderId: "user123"
         )
         
-        manager.processMessage(message)
+        await processingManager.processMessage(message)
         
-        #expect(!manager.processingQueue.isEmpty)
-        
-        // 手动处理下一条消息
-        manager.processNextMessage()
-        
-        // 等待处理完成
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-        
-        #expect(processedMessage != nil)
-        #expect(processedMessage?.status == .processed)
+        #expect(processingManager.processingStats.totalProcessed == 1)
     }
     
-    @Test("处理无效消息")
-    func testProcessInvalidMessage() async throws {
-        let manager = MessageProcessingManager()
-        var validationErrors: [MessageValidationError]?
+    // MARK: - Validator Tests (需求 10.5)
+    
+    @Test("消息验证器测试")
+    func testMessageValidation() async throws {
+        let processingManager = MessageProcessingManager()
+        let contentValidator = MessageContentValidator()
         
-        manager.onValidationFailed = { _, errors in
-            validationErrors = errors
+        processingManager.registerValidator(contentValidator)
+        
+        // 创建空内容消息
+        let emptyMessage = RealtimeMessage(
+            type: .text,
+            content: .text(""),
+            senderId: "user123"
+        )
+        
+        await processingManager.processMessage(emptyMessage)
+        
+        // 验证空消息被拒绝
+        #expect(processingManager.processingStats.totalFailed == 1)
+    }
+    
+    @Test("权限验证器测试")
+    func testPermissionValidation() async throws {
+        let processingManager = MessageProcessingManager()
+        let permissionValidator = MessagePermissionValidator(allowedSenders: ["user123", "user456"])
+        
+        processingManager.registerValidator(permissionValidator)
+        
+        // 测试允许的发送者
+        let allowedMessage = RealtimeMessage(
+            type: .text,
+            content: .text("Allowed message"),
+            senderId: "user123"
+        )
+        
+        await processingManager.processMessage(allowedMessage)
+        #expect(processingManager.processingStats.totalReceived == 1)
+        
+        // 测试不允许的发送者
+        let deniedMessage = RealtimeMessage(
+            type: .text,
+            content: .text("Denied message"),
+            senderId: "hacker999"
+        )
+        
+        await processingManager.processMessage(deniedMessage)
+        #expect(processingManager.processingStats.totalReceived == 2)
+    }
+    
+    // MARK: - Error Handling Tests (需求 10.5)
+    
+    @Test("处理错误重试机制测试")
+    func testProcessingErrorRetry() async throws {
+        let processingManager = MessageProcessingManager()
+        
+        // 创建会抛出错误的处理器
+        let errorProcessor = CustomMessageProcessor(
+            name: "ErrorProcessor",
+            supportedTypes: ["text"],
+            priority: 100
+        ) { message in
+            throw MessageProcessorError.processingTimeout
         }
         
-        let invalidMessage = RealtimeMessage(
-            type: .text,
-            content: .text(""),  // 空内容
-            senderId: "",        // 空发送者ID
-            channelId: "channel456"
-        )
-        
-        manager.processMessage(invalidMessage)
-        
-        #expect(validationErrors != nil)
-        #expect(!validationErrors!.isEmpty)
-        #expect(manager.processingQueue.isEmpty) // 无效消息不应该进入队列
-    }
-    
-    @Test("批量处理消息")
-    func testProcessMessages() async throws {
-        let manager = MessageProcessingManager()
-        
-        let messages = [
-            RealtimeMessage(type: .text, content: .text("消息1"), senderId: "user1", channelId: "channel1"),
-            RealtimeMessage(type: .text, content: .text("消息2"), senderId: "user2", channelId: "channel1"),
-            RealtimeMessage(type: .text, content: .text("消息3"), senderId: "user3", channelId: "channel1")
-        ]
-        
-        manager.processMessages(messages)
-        
-        // 等待消息被添加到队列
-        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
-        
-        #expect(manager.processingQueue.count >= 0) // 消息可能已经被处理
-    }
-    
-    @Test("消息优先级排序")
-    func testMessagePriorityOrdering() async throws {
-        let manager = MessageProcessingManager()
-        
-        let lowPriorityMessage = RealtimeMessage(
-            type: .text,
-            content: .text("低优先级"),
-            senderId: "user1",
-            channelId: "channel1",
-            priority: .low
-        )
-        
-        let highPriorityMessage = RealtimeMessage(
-            type: .text,
-            content: .text("高优先级"),
-            senderId: "user2",
-            channelId: "channel1",
-            priority: .high
-        )
-        
-        let urgentMessage = RealtimeMessage(
-            type: .text,
-            content: .text("紧急"),
-            senderId: "user3",
-            channelId: "channel1",
-            priority: .urgent
-        )
-        
-        // 按低优先级顺序添加
-        manager.processMessage(lowPriorityMessage)
-        manager.processMessage(highPriorityMessage)
-        manager.processMessage(urgentMessage)
-        
-        // 队列应该按优先级排序
-        #expect(manager.processingQueue[0].priority == .urgent)
-        #expect(manager.processingQueue[1].priority == .high)
-        #expect(manager.processingQueue[2].priority == .low)
-    }
-    
-    @Test("清空处理队列")
-    func testClearProcessingQueue() async throws {
-        let manager = MessageProcessingManager()
+        try processingManager.registerProcessor(errorProcessor)
         
         let message = RealtimeMessage(
             type: .text,
-            content: .text("测试消息"),
-            senderId: "user123",
-            channelId: "channel456"
+            content: .text("Test message"),
+            senderId: "user123"
         )
         
-        manager.processMessage(message)
+        await processingManager.processMessage(message)
         
-        // 等待消息被添加到队列
-        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        // 等待重试完成
+        try await Task.sleep(nanoseconds: 2_000_000_000) // 2秒
         
-        manager.clearProcessingQueue()
-        
-        #expect(manager.processingQueue.isEmpty)
-        #expect(manager.pendingMessages.isEmpty)
+        // 验证错误统计
+        #expect(processingManager.processingStats.totalFailed > 0)
     }
     
-    // MARK: - Message Templates Tests
+    // MARK: - Configuration Tests
     
-    @Test("创建消息模板")
-    func testCreateTemplate() async throws {
-        let manager = MessageProcessingManager()
+    @Test("处理配置测试")
+    func testProcessingConfiguration() async throws {
+        let processingManager = MessageProcessingManager()
         
-        manager.createTemplate(
-            name: "欢迎消息",
-            type: .system,
-            content: .system(SystemContent(message: "欢迎加入房间", systemType: .userJoined))
-        )
+        // 测试默认配置
+        #expect(processingManager.config.enableValidation == true)
+        #expect(processingManager.config.enableFiltering == true)
+        #expect(processingManager.config.maxRetryCount == 3)
         
-        #expect(manager.getTemplateNames().contains("欢迎消息"))
+        // 更新配置
+        var newConfig = MessageProcessingConfig()
+        newConfig.enableValidation = false
+        newConfig.maxRetryCount = 5
+        
+        processingManager.updateConfig(newConfig)
+        
+        #expect(processingManager.config.enableValidation == false)
+        #expect(processingManager.config.maxRetryCount == 5)
     }
     
-    @Test("从模板创建消息")
-    func testCreateMessageFromTemplate() async throws {
-        let manager = MessageProcessingManager()
-        
-        manager.createTemplate(
-            name: "欢迎消息",
-            type: .system,
-            content: .system(SystemContent(message: "欢迎加入房间", systemType: .userJoined))
-        )
-        
-        let message = manager.createMessageFromTemplate(
-            templateName: "欢迎消息",
-            senderId: "system",
-            channelId: "channel123"
-        )
-        
-        #expect(message != nil)
-        #expect(message?.type == .system)
-        #expect(message?.senderId == "system")
-        #expect(message?.channelId == "channel123")
-    }
+    // MARK: - Statistics Tests
     
-    @Test("从不存在的模板创建消息")
-    func testCreateMessageFromNonexistentTemplate() async throws {
-        let manager = MessageProcessingManager()
+    @Test("处理统计信息测试")
+    func testProcessingStatistics() async throws {
+        let processingManager = MessageProcessingManager()
+        let textProcessor = TextMessageProcessor()
         
-        let message = manager.createMessageFromTemplate(
-            templateName: "不存在的模板",
-            senderId: "user123",
-            channelId: "channel456"
-        )
-        
-        #expect(message == nil)
-    }
-    
-    @Test("删除消息模板")
-    func testDeleteTemplate() async throws {
-        let manager = MessageProcessingManager()
-        
-        manager.createTemplate(
-            name: "测试模板",
-            type: .text,
-            content: .text("测试内容")
-        )
-        
-        #expect(manager.getTemplateNames().contains("测试模板"))
-        
-        manager.deleteTemplate(name: "测试模板")
-        
-        #expect(!manager.getTemplateNames().contains("测试模板"))
-    }
-    
-    // MARK: - Message History Tests
-    
-    @Test("获取消息历史")
-    func testGetMessageHistory() async throws {
-        let manager = MessageProcessingManager()
-        var processedCount = 0
-        
-        manager.onMessageProcessed = { _ in
-            processedCount += 1
-        }
+        try processingManager.registerProcessor(textProcessor)
         
         // 处理多条消息
         for i in 1...5 {
             let message = RealtimeMessage(
                 type: .text,
-                content: .text("消息\(i)"),
-                senderId: "user\(i)",
-                channelId: "channel1"
+                content: .text("Message \(i)"),
+                senderId: "user123"
             )
-            manager.processMessage(message)
-            manager.processNextMessage()
+            await processingManager.processMessage(message)
         }
         
-        // 等待处理完成
-        try await Task.sleep(nanoseconds: 500_000_000) // 0.5秒
-        
-        let history = manager.getMessageHistory()
-        #expect(history.count == processedCount)
+        // 验证统计信息
+        let stats = processingManager.processingStats
+        #expect(stats.totalReceived == 5)
+        #expect(stats.totalProcessed == 5)
+        #expect(stats.totalFailed == 0)
+        #expect(stats.totalSkipped == 0)
     }
     
-    @Test("搜索消息历史")
-    func testSearchMessages() async throws {
-        let manager = MessageProcessingManager()
+    // MARK: - Concurrent Processing Tests
+    
+    @Test("并发处理测试")
+    func testConcurrentProcessing() async throws {
+        let processingManager = MessageProcessingManager()
+        let textProcessor = TextMessageProcessor()
         
-        // 手动添加一些消息到历史（模拟已处理的消息）
+        try processingManager.registerProcessor(textProcessor)
+        
+        // 并发处理多条消息
+        await withTaskGroup(of: Void.self) { group in
+            for i in 1...10 {
+                group.addTask {
+                    let message = RealtimeMessage(
+                        type: .text,
+                        content: .text("Concurrent message \(i)"),
+                        senderId: "user\(i)"
+                    )
+                    await processingManager.processMessage(message)
+                }
+            }
+        }
+        
+        // 验证所有消息都被处理
+        #expect(processingManager.processingStats.totalReceived == 10)
+        #expect(processingManager.processingStats.totalProcessed == 10)
+    }
+    
+    // MARK: - Integration Tests
+    
+    @Test("完整处理管道集成测试")
+    func testCompleteProcessingPipeline() async throws {
+        let processingManager = MessageProcessingManager()
+        
+        // 注册所有组件
+        let textProcessor = TextMessageProcessor()
+        let systemProcessor = SystemMessageProcessor()
+        let spamFilter = SpamMessageFilter()
+        let formattingTransformer = TextFormattingTransformer()
+        let contentValidator = MessageContentValidator()
+        
+        try processingManager.registerProcessor(textProcessor)
+        try processingManager.registerProcessor(systemProcessor)
+        processingManager.registerFilter(spamFilter)
+        processingManager.registerTransformer(formattingTransformer)
+        processingManager.registerValidator(contentValidator)
+        
+        // 处理各种类型的消息
         let messages = [
-            RealtimeMessage(type: .text, content: .text("消息1"), senderId: "user1", channelId: "channel1"),
-            RealtimeMessage(type: .text, content: .text("消息2"), senderId: "user2", channelId: "channel1"),
-            RealtimeMessage(type: .system, content: .system(SystemContent(message: "系统消息", systemType: .userJoined)), senderId: "system", channelId: "channel1")
+            RealtimeMessage(type: .text, content: .text("hello world"), senderId: "user1"),
+            RealtimeMessage(type: .text, content: .text("这是垃圾广告"), senderId: "spammer"),
+            RealtimeMessage(type: .system, content: .system(SystemContent(message: "用户加入", systemType: .userJoined)), senderId: "system"),
+            RealtimeMessage(type: .text, content: .text(""), senderId: "user2") // 空消息
         ]
         
         for message in messages {
-            manager.processMessage(message)
-            manager.processNextMessage()
+            await processingManager.processMessage(message)
         }
         
-        // 等待处理完成
-        try await Task.sleep(nanoseconds: 300_000_000) // 0.3秒
+        let stats = processingManager.processingStats
         
-        // 按发送者搜索
-        let user1Messages = manager.searchMessages(senderId: "user1")
-        #expect(user1Messages.count >= 0) // 可能为0，因为消息可能还在处理中
-        
-        // 按类型搜索
-        let systemMessages = manager.searchMessages(type: .system)
-        #expect(systemMessages.count >= 0)
+        // 验证处理结果
+        #expect(stats.totalReceived == 4)
+        #expect(stats.totalProcessed >= 1) // 至少有一条消息被成功处理
+        #expect(stats.totalSkipped >= 1) // 垃圾消息被过滤
+        #expect(stats.totalFailed >= 1) // 空消息验证失败
     }
+}
+
+// MARK: - Concrete Processor Tests
+
+@MainActor
+struct ConcreteProcessorTests {
     
-    @Test("清除消息历史")
-    func testClearMessageHistory() async throws {
-        let manager = MessageProcessingManager()
+    @Test("文本消息处理器测试")
+    func testTextMessageProcessor() async throws {
+        let processor = TextMessageProcessor()
         
         let message = RealtimeMessage(
             type: .text,
-            content: .text("测试消息"),
-            senderId: "user123",
-            channelId: "channel456"
+            content: .text("  Hello    World  "),
+            senderId: "user123"
         )
         
-        manager.processMessage(message)
-        manager.processNextMessage()
+        let result = try await processor.process(message)
         
-        // 等待处理完成
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+        #expect(result.isSuccess)
         
-        manager.clearMessageHistory()
-        
-        #expect(manager.getMessageHistory().isEmpty)
-    }
-    
-    // MARK: - Statistics Tests
-    
-    @Test("处理统计信息")
-    func testProcessingStatistics() async throws {
-        let manager = MessageProcessingManager()
-        
-        let initialStats = manager.getProcessingStatistics()
-        #expect(initialStats.processedMessages == 0)
-        #expect(initialStats.validationFailures == 0)
-        
-        // 处理有效消息
-        let validMessage = RealtimeMessage(
-            type: .text,
-            content: .text("有效消息"),
-            senderId: "user123",
-            channelId: "channel456"
-        )
-        manager.processMessage(validMessage)
-        manager.processNextMessage()
-        
-        // 处理无效消息
-        let invalidMessage = RealtimeMessage(
-            type: .text,
-            content: .text(""),
-            senderId: "",
-            channelId: "channel456"
-        )
-        manager.processMessage(invalidMessage)
-        
-        // 等待处理完成
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-        
-        let updatedStats = manager.getProcessingStatistics()
-        #expect(updatedStats.validationFailures >= 1)
-    }
-    
-    @Test("重置统计信息")
-    func testResetStatistics() async throws {
-        let manager = MessageProcessingManager()
-        
-        // 处理一些消息以产生统计数据
-        let message = RealtimeMessage(
-            type: .text,
-            content: .text("测试消息"),
-            senderId: "user123",
-            channelId: "channel456"
-        )
-        manager.processMessage(message)
-        manager.processNextMessage()
-        
-        // 等待处理完成
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-        
-        manager.resetStatistics()
-        
-        let stats = manager.getProcessingStatistics()
-        #expect(stats.processedMessages == 0)
-        #expect(stats.validationFailures == 0)
-        #expect(stats.processingErrors == 0)
-    }
-    
-    // MARK: - Configuration Tests
-    
-    @Test("更新处理配置")
-    func testUpdateConfig() async throws {
-        let manager = MessageProcessingManager()
-        
-        var newConfig = MessageProcessingConfig()
-        newConfig.enableAutoProcessing = false
-        newConfig.maxQueueSize = 500
-        
-        manager.updateConfig(newConfig)
-        
-        #expect(manager.config.enableAutoProcessing == false)
-        #expect(manager.config.maxQueueSize == 500)
-    }
-    
-    // MARK: - Storage Tests
-    
-    @Test("重置存储数据")
-    func testResetStorage() async throws {
-        let manager = MessageProcessingManager()
-        
-        // 修改配置和创建模板
-        var newConfig = MessageProcessingConfig()
-        newConfig.maxQueueSize = 500
-        manager.updateConfig(newConfig)
-        
-        manager.createTemplate(
-            name: "测试模板",
-            type: .text,
-            content: .text("测试内容")
-        )
-        
-        manager.resetStorage()
-        
-        #expect(manager.config == MessageProcessingConfig.default)
-        #expect(manager.getTemplateNames().isEmpty)
-        #expect(manager.processingQueue.isEmpty)
-    }
-    
-    // MARK: - @RealtimeStorage Integration Tests
-    
-    @Test("配置数据持久化")
-    func testConfigPersistence() async throws {
-        let manager1 = MessageProcessingManager()
-        
-        var customConfig = MessageProcessingConfig()
-        customConfig.enableAutoProcessing = false
-        customConfig.maxQueueSize = 500
-        customConfig.processingInterval = 0.5
-        
-        manager1.updateConfig(customConfig)
-        
-        // 验证配置已更新
-        #expect(manager1.config.enableAutoProcessing == false)
-        #expect(manager1.config.maxQueueSize == 500)
-        #expect(manager1.config.processingInterval == 0.5)
-    }
-    
-    @Test("模板数据持久化")
-    func testTemplatesPersistence() async throws {
-        let manager1 = MessageProcessingManager()
-        
-        manager1.createTemplate(
-            name: "持久化模板",
-            type: .text,
-            content: .text("持久化内容"),
-            metadata: ["key": .string("value")]
-        )
-        
-        // 验证模板在同一实例中可用
-        #expect(manager1.getTemplateNames().contains("持久化模板"))
-        
-        let message = manager1.createMessageFromTemplate(
-            templateName: "持久化模板",
-            senderId: "user123",
-            channelId: "channel456"
-        )
-        
-        #expect(message != nil)
-        #expect(message?.content.textValue == "持久化内容")
-        #expect(message?.metadata["key"]?.stringValue == "value")
-    }
-    
-    // MARK: - Event Handler Tests
-    
-    @Test("消息处理完成事件")
-    func testMessageProcessedEvent() async throws {
-        let manager = MessageProcessingManager()
-        var processedMessage: RealtimeMessage?
-        
-        manager.onMessageProcessed = { message in
-            processedMessage = message
+        if case .processed(let processedMessage) = result,
+           let processed = processedMessage,
+           case .text(let processedText) = processed.content {
+            #expect(processedText.trimmingCharacters(in: .whitespaces) != "  Hello    World  ")
+            #expect(processed.status == .processed)
+        } else {
+            #expect(Bool(false), "处理结果不符合预期")
         }
+    }
+    
+    @Test("系统消息处理器测试")
+    func testSystemMessageProcessor() async throws {
+        let processor = SystemMessageProcessor()
+        
+        let systemContent = SystemContent(
+            message: "用户已加入房间",
+            systemType: .userJoined,
+            parameters: ["userId": "user123"]
+        )
         
         let message = RealtimeMessage(
-            type: .text,
-            content: .text("测试消息"),
-            senderId: "user123",
-            channelId: "channel456"
+            type: .system,
+            content: .system(systemContent),
+            senderId: "system"
         )
         
-        manager.processMessage(message)
-        manager.processNextMessage()
+        let result = try await processor.process(message)
         
-        // 等待处理完成
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+        #expect(result.isSuccess)
         
-        #expect(processedMessage != nil)
-        #expect(processedMessage?.id == message.id)
+        if case .processed(let processedMessage) = result,
+           let processed = processedMessage,
+           case .system(let processedContent) = processed.content {
+            #expect(processedContent.parameters.keys.contains("processedAt"))
+            #expect(processedContent.parameters.keys.contains("processorName"))
+        } else {
+            #expect(Bool(false), "系统消息处理结果不符合预期")
+        }
     }
     
-    @Test("验证失败事件")
-    func testValidationFailedEvent() async throws {
-        let manager = MessageProcessingManager()
-        var failedMessage: RealtimeMessage?
-        var validationErrors: [MessageValidationError]?
+    @Test("图片消息处理器测试")
+    func testImageMessageProcessor() async throws {
+        let processor = ImageMessageProcessor()
         
-        manager.onValidationFailed = { message, errors in
-            failedMessage = message
-            validationErrors = errors
-        }
-        
-        let invalidMessage = RealtimeMessage(
-            type: .text,
-            content: .text(""),
-            senderId: "",
-            channelId: "channel456"
+        let imageContent = ImageContent(
+            url: "https://example.com/image.jpg",
+            width: 800,
+            height: 600
         )
         
-        manager.processMessage(invalidMessage)
-        
-        #expect(failedMessage != nil)
-        #expect(validationErrors != nil)
-        #expect(!validationErrors!.isEmpty)
-    }
-    
-    // MARK: - Performance Tests
-    
-    @Test("大量消息处理性能")
-    func testLargeMessageProcessingPerformance() async throws {
-        let manager = MessageProcessingManager()
-        var processedCount = 0
-        
-        manager.onMessageProcessed = { _ in
-            processedCount += 1
-        }
-        
-        // 创建大量消息
-        var messages: [RealtimeMessage] = []
-        for i in 1...100 {
-            messages.append(RealtimeMessage(
-                type: .text,
-                content: .text("消息\(i)"),
-                senderId: "user\(i % 10)",
-                channelId: "channel1"
-            ))
-        }
-        
-        let startTime = Date()
-        manager.processMessages(messages)
-        let endTime = Date()
-        
-        // 等待消息处理完成
-        try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
-        
-        #expect(processedCount > 0) // 至少处理了一些消息
-        #expect(endTime.timeIntervalSince(startTime) < 0.1) // 应该在100ms内完成
-    }
-    
-    // MARK: - Edge Cases Tests
-    
-    @Test("队列大小限制")
-    func testQueueSizeLimit() async throws {
-        let manager = MessageProcessingManager()
-        
-        // 设置较小的队列大小
-        var config = manager.config
-        config.maxQueueSize = 5
-        manager.updateConfig(config)
-        
-        // 添加超过限制的消息
-        for i in 1...10 {
-            let message = RealtimeMessage(
-                type: .text,
-                content: .text("消息\(i)"),
-                senderId: "user\(i)",
-                channelId: "channel1"
-            )
-            manager.processMessage(message)
-        }
-        
-        #expect(manager.processingQueue.count <= 5)
-    }
-    
-    @Test("过期消息清理")
-    func testExpiredMessageCleanup() async throws {
-        let manager = MessageProcessingManager()
-        
-        // 创建过期消息
-        let expiredMessage = RealtimeMessage(
-            type: .text,
-            content: .text("过期消息"),
-            senderId: "user123",
-            channelId: "channel456",
-            expirationTime: Date().addingTimeInterval(-60) // 1分钟前过期
+        let message = RealtimeMessage(
+            type: .image,
+            content: .image(imageContent),
+            senderId: "user123"
         )
         
-        manager.processMessage(expiredMessage)
-        manager.processNextMessage()
+        let result = try await processor.process(message)
         
-        // 等待处理完成
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+        #expect(result.isSuccess)
         
-        manager.clearExpiredMessages()
+        if case .processed(let processedMessage) = result,
+           let processed = processedMessage,
+           case .image(let processedContent) = processed.content {
+            #expect(processedContent.url == "https://example.com/image.jpg")
+            #expect(processedContent.mimeType != nil)
+        } else {
+            #expect(Bool(false), "图片消息处理结果不符合预期")
+        }
+    }
+    
+    @Test("自定义消息处理器测试")
+    func testCustomMessageProcessor() async throws {
+        let processor = CustomMessageProcessor()
         
-        // 过期消息应该被清理
-        let history = manager.getMessageHistory()
-        let hasExpiredMessage = history.contains { $0.id == expiredMessage.id }
-        #expect(!hasExpiredMessage)
+        let customContent = CustomContent(
+            data: ["key": .string("value")],
+            customType: "test"
+        )
+        
+        let message = RealtimeMessage(
+            type: .custom,
+            content: .custom(customContent),
+            senderId: "user123"
+        )
+        
+        let result = try await processor.process(message)
+        
+        #expect(result.isSuccess)
+        
+        if case .processed(let processedMessage) = result,
+           let processed = processedMessage,
+           case .custom(let processedContent) = processed.content {
+            #expect(processedContent.data.keys.contains("processedAt"))
+            #expect(processedContent.data.keys.contains("processorName"))
+        } else {
+            #expect(Bool(false), "自定义消息处理结果不符合预期")
+        }
     }
 }

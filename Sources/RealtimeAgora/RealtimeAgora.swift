@@ -71,12 +71,7 @@ public class AgoraRTCProvider: RTCProvider {
             throw RealtimeError.configurationError("RTC Provider 未初始化")
         }
         
-        let room = RTCRoom(
-            id: roomId,
-            name: "房间 \(roomId)",
-            config: RTCRoomConfig(),
-            creatorId: "system"
-        )
+        let room = AgoraRTCRoom(roomId: roomId)
         
         currentRoom = room
         print("Agora: 创建房间 \(roomId)")
@@ -301,11 +296,7 @@ public class AgoraRTMProvider: RTMProvider {
     // MARK: - Channel Management
     
     public func createChannel(channelId: String) -> RTMChannel {
-        return RTMChannel(
-            id: channelId,
-            name: "频道 \(channelId)",
-            creatorId: "system"
-        )
+        return AgoraRTMChannel(channelId: channelId)
     }
     
     public func joinChannel(channelId: String) async throws {
@@ -431,5 +422,27 @@ public class AgoraRTMProvider: RTMProvider {
     
     public func onPeersOnlineStatusChanged(_ handler: @escaping ([String: Bool]) -> Void) {
         // 设置用户在线状态变化处理器
+    }
+}
+
+// MARK: - Agora RTC Room
+
+/// Agora RTC Room 实现
+internal class AgoraRTCRoom: RTCRoom {
+    let roomId: String
+    
+    init(roomId: String) {
+        self.roomId = roomId
+    }
+}
+
+// MARK: - Agora RTM Channel
+
+/// Agora RTM Channel 实现
+internal class AgoraRTMChannel: RTMChannel {
+    let channelId: String
+    
+    init(channelId: String) {
+        self.channelId = channelId
     }
 }

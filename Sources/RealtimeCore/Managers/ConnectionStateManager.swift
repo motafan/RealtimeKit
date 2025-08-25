@@ -103,6 +103,9 @@ public class ConnectionStateManager: ObservableObject {
         case .reconnecting:
             // Reconnection logic is handled separately
             break
+        case .suspended:
+            // Handle suspended state
+            break
         }
     }
     
@@ -485,7 +488,7 @@ extension ConnectionState {
         switch self {
         case .connected:
             return true
-        case .disconnected, .connecting, .reconnecting, .failed:
+        case .disconnected, .connecting, .reconnecting, .failed, .suspended:
             return false
         }
     }
@@ -495,7 +498,7 @@ extension ConnectionState {
         switch self {
         case .failed:
             return true
-        case .disconnected, .connecting, .connected, .reconnecting:
+        case .disconnected, .connecting, .connected, .reconnecting, .suspended:
             return false
         }
     }

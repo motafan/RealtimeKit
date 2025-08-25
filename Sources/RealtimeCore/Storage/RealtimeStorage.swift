@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 /// 自动状态持久化属性包装器
 /// 需求: 18.1, 18.2, 18.3, 18.10
@@ -78,6 +79,13 @@ extension UserDefaults: RealtimeStorageProvider {
             encoder.dateEncodingStrategy = .iso8601
             let data = try encoder.encode(value)
             set(data, forKey: key)
+            
+            // Post notification for value change
+            NotificationCenter.default.post(
+                name: .realtimeStorageDidChange,
+                object: nil,
+                userInfo: ["key": key]
+            )
         } catch {
             print("Failed to encode value for key \(key): \(error)")
         }
@@ -325,6 +333,50 @@ public struct RealtimeStorageBinding<Value: Codable & Sendable>: Sendable {
     public func setValue(_ value: Value) {
         storage.setValue(value, for: key)
     }
+}
+
+// MARK: - Publisher Support
+extension RealtimeStorageBinding: Publisher {
+    public typealias Output = Value
+    public typealias Failure = Never
+    
+    public func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, Value == S.Input {
+        let publisher = NotificationCenter.default
+            .publisher(for: .realtimeStorageDidChange)
+            .compactMap { [key, defaultValue, storage] notification in
+                guard let changedKey = notification.userInfo?["key"] as? String,
+                      changedKey == key else { return nil }
+                return storage.getValue(for: key, defaultValue: defaultValue)
+            }
+            .prepend(storage.getValue(for: key, defaultValue: defaultValue))
+        
+        publisher.receive(subscriber: subscriber)
+    }
+}
+
+extension RealtimeStorageBinding {
+    /// 创建一个 Publisher 来监听值的变化
+    public func publisher() -> AnyPublisher<Value, Never> {
+        return NotificationCenter.default
+            .publisher(for: .realtimeStorageDidChange)
+            .compactMap { [key, defaultValue, storage] notification in
+                guard let changedKey = notification.userInfo?["key"] as? String,
+                      changedKey == key else { return nil }
+                return storage.getValue(for: key, defaultValue: defaultValue)
+            }
+            .prepend(storage.getValue(for: key, defaultValue: defaultValue))
+            .eraseToAnyPublisher()
+    }
+    
+    /// 创建一个可以用于 sink 的 Publisher
+    public func sinkValue(receiveValue: @escaping (Value) -> Void) -> AnyCancellable {
+        return publisher().sink(receiveValue: receiveValue)
+    }
+}
+
+// MARK: - Notification Names
+extension Notification.Name {
+    static let realtimeStorageDidChange = Notification.Name("RealtimeStorageDidChange")
 }
 
 /// 存储管理器，提供中央化的存储管理

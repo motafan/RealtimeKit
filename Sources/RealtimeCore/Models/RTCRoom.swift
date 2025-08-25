@@ -2,7 +2,7 @@ import Foundation
 
 /// RTC房间模型
 /// 需求: 1.2, 1.3
-public struct RTCRoom: Codable, Identifiable {
+public struct RTCRoomModel: Codable, Identifiable, Sendable {
     /// 房间唯一标识符
     public let id: String
     
@@ -64,7 +64,7 @@ public struct RTCRoom: Codable, Identifiable {
 }
 
 /// RTC房间状态
-public enum RTCRoomStatus: String, CaseIterable, Codable {
+public enum RTCRoomStatus: String, CaseIterable, Codable, Sendable {
     /// 活跃状态
     case active = "active"
     /// 暂停状态
@@ -90,7 +90,7 @@ public enum RTCRoomStatus: String, CaseIterable, Codable {
 }
 
 /// RTC房间配置
-public struct RTCRoomConfig: Codable {
+public struct RTCRoomConfig: Codable, Sendable {
     /// 是否启用音频录制
     public let enableAudioRecording: Bool
     

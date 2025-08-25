@@ -380,9 +380,5 @@ public enum TokenError: Error, LocalizedError, Sendable {
 // MARK: - Notifications
 
 extension Notification.Name {
-    /// Token 续期成功通知
-    public static let tokenRenewed = Notification.Name("RealtimeKit.tokenRenewed")
-    
-    /// Token 续期失败通知
-    public static let tokenRenewalFailed = Notification.Name("RealtimeKit.tokenRenewalFailed")
+    // Note: Notification names are defined in ConnectionModels.swift to avoid duplicates
 }

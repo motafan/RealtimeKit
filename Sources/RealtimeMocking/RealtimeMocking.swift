@@ -85,12 +85,7 @@ public class MockRTCProvider: RTCProvider {
             throw RealtimeError.configurationError("RTC Provider 未初始化")
         }
         
-        let room = RTCRoom(
-            id: roomId,
-            name: "Mock 房间 \(roomId)",
-            config: RTCRoomConfig(),
-            creatorId: "mock_user"
-        )
+        let room = MockingRTCRoom(roomId: roomId)
         
         currentRoom = room
         print("Mock: 创建房间 \(roomId)")
@@ -426,11 +421,7 @@ public class MockRTMProvider: RTMProvider {
     // MARK: - Channel Management
     
     public func createChannel(channelId: String) -> RTMChannel {
-        return RTMChannel(
-            id: channelId,
-            name: "Mock 频道 \(channelId)",
-            creatorId: "mock_user"
-        )
+        return MockingRTMChannel(channelId: channelId)
     }
     
     public func joinChannel(channelId: String) async throws {
@@ -632,5 +623,27 @@ public class MockRTMProvider: RTMProvider {
             try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒后模拟送达
             // 这里可以触发消息状态更新回调
         }
+    }
+}
+
+// MARK: - Mock RTC Room
+
+/// Mock RTC Room 实现
+internal class MockingRTCRoom: RTCRoom {
+    let roomId: String
+    
+    init(roomId: String) {
+        self.roomId = roomId
+    }
+}
+
+// MARK: - Mock RTM Channel
+
+/// Mock RTM Channel 实现
+internal class MockingRTMChannel: RTMChannel {
+    let channelId: String
+    
+    init(channelId: String) {
+        self.channelId = channelId
     }
 }

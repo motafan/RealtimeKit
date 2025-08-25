@@ -11,7 +11,7 @@ import AppKit
 // MARK: - Provider Feature
 
 /// 服务商功能特性
-public enum ProviderFeature: String, CaseIterable, Codable {
+public enum ProviderFeature: String, CaseIterable, Codable, Sendable {
     case audioStreaming = "audio_streaming"
     case videoStreaming = "video_streaming"
     case streamPush = "stream_push"

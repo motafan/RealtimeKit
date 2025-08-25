@@ -277,6 +277,8 @@ extension ConnectionState {
             return .green
         case .failed:
             return .red
+        case .suspended:
+            return .yellow
         }
     }
 }

@@ -12,7 +12,7 @@ public class MediaRelayManager: ObservableObject {
     @Published public private(set) var currentConfig: MediaRelayConfig?
     
     /// 当前中继状态
-    @Published public private(set) var currentState: MediaRelayState = .stopped
+    @Published public private(set) var currentState: MediaRelayState = .idle
     
     /// 详细中继状态
     @Published public private(set) var detailedState: MediaRelayDetailedState?
@@ -77,7 +77,7 @@ public class MediaRelayManager: ObservableObject {
             throw LocalizedRealtimeError.mediaRelayNotSupported
         }
         
-        guard currentState == .stopped else {
+        guard currentState == .idle else {
             throw LocalizedRealtimeError.mediaRelayFailed(reason: "Media relay is already running")
         }
         
@@ -85,7 +85,7 @@ public class MediaRelayManager: ObservableObject {
         try config.validate()
         
         // 更新状态
-        updateState(.starting)
+        updateState(.connecting)
         currentConfig = config
         startTime = Date()
         
@@ -105,7 +105,7 @@ public class MediaRelayManager: ObservableObject {
             
         } catch {
             // 启动失败，重置状态
-            updateState(.failed)
+            updateState(.failure)
             currentConfig = nil
             startTime = nil
             isRunning = false
@@ -133,7 +133,7 @@ public class MediaRelayManager: ObservableObject {
             try await rtcProvider.stopMediaRelay()
             
             // 更新状态
-            updateState(.stopped)
+            updateState(.idle)
             isRunning = false
             pausedChannels.removeAll()
             
@@ -144,7 +144,7 @@ public class MediaRelayManager: ObservableObject {
             finalizeStatistics()
             
         } catch {
-            updateState(.failed)
+            updateState(.failure)
             onError?(error)
             throw error
         }
@@ -436,9 +436,9 @@ public class MediaRelayManager: ObservableObject {
         
         let overallState: MediaRelayOverallState
         switch currentState {
-        case .stopped:
+        case .idle:
             overallState = .idle
-        case .starting:
+        case .connecting:
             overallState = .connecting
         case .running:
             if pausedChannels.count == config.destinationChannels.count {
@@ -446,9 +446,11 @@ public class MediaRelayManager: ObservableObject {
             } else {
                 overallState = .running
             }
+        case .paused:
+            overallState = .paused
         case .stopping:
             overallState = .stopping
-        case .failed:
+        case .failure:
             overallState = .failure
         }
         
@@ -534,7 +536,7 @@ extension MediaRelayManager {
     /// 重置管理器状态
     public func reset() {
         currentConfig = nil
-        currentState = .stopped
+        currentState = .idle
         detailedState = nil
         statistics = nil
         isRunning = false

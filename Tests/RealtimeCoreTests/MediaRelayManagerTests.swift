@@ -7,7 +7,15 @@ import Foundation
 @Suite("MediaRelayManager Tests")
 struct MediaRelayManagerTests {
     
-    // MARK: - Mock RTC Provider
+    // MARK: - Mock Classes
+    
+    class MockRTCRoom: RTCRoom {
+        let roomId: String
+        
+        init(roomId: String) {
+            self.roomId = roomId
+        }
+    }
     
     class MockRTCProvider: RTCProvider {
         var shouldFailStartRelay = false
@@ -30,7 +38,7 @@ struct MediaRelayManagerTests {
         
         func initialize(config: RTCConfig) async throws {}
         func createRoom(roomId: String) async throws -> RTCRoom { 
-            return RTCRoom(id: roomId, name: "Test Room", creatorId: "test_user")
+            return MockRTCRoom(roomId: roomId)
         }
         func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws {}
         func leaveRoom() async throws {}
@@ -142,7 +150,7 @@ struct MediaRelayManagerTests {
         let manager = MediaRelayManager(rtcProvider: mockProvider)
         
         #expect(manager.currentConfig == nil)
-        #expect(manager.currentState == .stopped)
+        #expect(manager.currentState == .idle)
         #expect(manager.detailedState == nil)
         #expect(manager.statistics == nil)
         #expect(!manager.isRunning)
@@ -197,7 +205,7 @@ struct MediaRelayManagerTests {
             try await manager.startRelay(config: config)
         }
         
-        #expect(manager.currentState == .failed)
+        #expect(manager.currentState == .failure)
         #expect(!manager.isRunning)
         #expect(manager.currentConfig == nil)
         #expect(mockProvider.startRelayCallCount == 1)
@@ -259,7 +267,7 @@ struct MediaRelayManagerTests {
         // 停止
         try await manager.stopRelay()
         
-        #expect(manager.currentState == .stopped)
+        #expect(manager.currentState == .idle)
         #expect(!manager.isRunning)
         #expect(manager.pausedChannels.isEmpty)
         #expect(mockProvider.stopRelayCallCount == 1)
@@ -283,7 +291,7 @@ struct MediaRelayManagerTests {
             try await manager.stopRelay()
         }
         
-        #expect(manager.currentState == .failed)
+        #expect(manager.currentState == .failure)
         #expect(mockProvider.stopRelayCallCount == 1)
     }
     
@@ -296,7 +304,7 @@ struct MediaRelayManagerTests {
         // 直接停止（没有启动）
         try await manager.stopRelay()
         
-        #expect(manager.currentState == .stopped)
+        #expect(manager.currentState == .idle)
         #expect(!manager.isRunning)
         #expect(mockProvider.stopRelayCallCount == 0) // 没有调用
     }
@@ -591,7 +599,7 @@ struct MediaRelayManagerTests {
         manager.reset()
         
         #expect(manager.currentConfig == nil)
-        #expect(manager.currentState == .stopped)
+        #expect(manager.currentState == .idle)
         #expect(manager.detailedState == nil)
         #expect(manager.statistics == nil)
         #expect(!manager.isRunning)
@@ -617,8 +625,8 @@ struct MediaRelayManagerTests {
         try await manager.startRelay(config: config)
         
         // 检查状态变化回调
-        #expect(stateChanges.count >= 2) // starting -> running
-        #expect(stateChanges.contains { $0.0 == .starting })
+        #expect(stateChanges.count >= 2) // connecting -> running
+        #expect(stateChanges.contains { $0.0 == .connecting })
         #expect(stateChanges.contains { $0.0 == .running })
     }
     

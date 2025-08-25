@@ -1,7 +1,7 @@
 import Foundation
 
-/// 消息处理管理器，准备集成 @RealtimeStorage 支持
-/// 需求: 10.1, 10.2, 18.1, 18.2
+/// 消息处理管理器，实现消息处理管道系统
+/// 需求: 10.1, 10.2, 10.3, 18.1, 18.2
 /// 注意: @RealtimeStorage 集成将在任务 3.3, 3.4 完成后实现
 @MainActor
 public class MessageProcessingManager: ObservableObject {
@@ -12,11 +12,36 @@ public class MessageProcessingManager: ObservableObject {
     private var messageHistory: [RealtimeMessage] = []
     private var statistics: MessageProcessingStatistics = MessageProcessingStatistics()
     
+    // MARK: - Message Processing Pipeline Properties
+    
+    /// 注册的消息处理器（按类型索引）
+    private var processors: [String: MessageProcessor] = [:]
+    
+    /// 处理器链（按优先级排序）
+    private var processingChain: [MessageProcessor] = []
+    
+    /// 消息过滤器
+    private var filters: [MessageFilter] = []
+    
+    /// 消息转换器
+    private var transformers: [MessageTransformer] = []
+    
+    /// 消息验证器
+    private var validators: [MessageValidatorProtocol] = []
+    
+    /// 处理中的消息（用于避免重复处理）
+    private var processingMessages: Set<String> = []
+    
+    /// 重试计数器
+    private var retryCounters: [String: Int] = [:]
+    
     // MARK: - Published Properties
     
     @Published public private(set) var isProcessing: Bool = false
     @Published public private(set) var pendingMessages: [RealtimeMessage] = []
     @Published public private(set) var processingQueue: [RealtimeMessage] = []
+    @Published public private(set) var registeredProcessors: [String] = []
+    @Published public private(set) var processingStats: MessageProcessingStats = MessageProcessingStats()
     
     // MARK: - Private Properties
     
@@ -28,6 +53,8 @@ public class MessageProcessingManager: ObservableObject {
     public var onMessageProcessed: ((RealtimeMessage) -> Void)?
     public var onProcessingError: ((RealtimeMessage, Error) -> Void)?
     public var onValidationFailed: ((RealtimeMessage, [MessageValidationError]) -> Void)?
+    public var onProcessorRegistered: ((MessageProcessor) -> Void)?
+    public var onProcessorUnregistered: ((String) -> Void)?
     
     // MARK: - Initialization
     
@@ -35,33 +62,217 @@ public class MessageProcessingManager: ObservableObject {
         startProcessingTimer()
     }
     
-    // TODO: 在任务 3.3, 3.4 完成后，实现正确的资源清理
+    deinit {
+        // Note: Cannot use async operations in deinit
+        // Cleanup will be handled by explicit cleanup calls
+    }
     
-    // MARK: - Message Processing
+    // MARK: - Processor Registration and Management (需求 10.2)
+    
+    /// 注册消息处理器
+    /// - Parameter processor: 要注册的处理器
+    /// - Throws: 如果处理器已存在则抛出错误
+    public func registerProcessor<T: MessageProcessor>(_ processor: T) throws {
+        // 检查是否已注册同名处理器
+        if processors[processor.processorName] != nil {
+            throw MessageProcessorError.processorAlreadyRegistered(processor.processorName)
+        }
+        
+        // 初始化处理器
+        Task {
+            do {
+                try await processor.initialize()
+            } catch {
+                throw MessageProcessorError.initializationFailed("处理器 \(processor.processorName) 初始化失败: \(error.localizedDescription)")
+            }
+        }
+        
+        // 注册处理器
+        processors[processor.processorName] = processor
+        
+        // 重新构建处理链（按优先级排序）
+        rebuildProcessingChain()
+        
+        // 更新发布的属性
+        registeredProcessors = Array(processors.keys).sorted()
+        
+        // 触发事件
+        onProcessorRegistered?(processor)
+        
+        print("已注册消息处理器: \(processor.processorName)")
+    }
+    
+    /// 注销消息处理器
+    /// - Parameter processorName: 处理器名称
+    /// - Throws: 如果处理器不存在则抛出错误
+    public func unregisterProcessor(named processorName: String) throws {
+        guard let processor = processors[processorName] else {
+            throw MessageProcessorError.processorNotFound(processorName)
+        }
+        
+        // 清理处理器
+        Task {
+            await processor.cleanup()
+        }
+        
+        // 移除处理器
+        processors.removeValue(forKey: processorName)
+        
+        // 重新构建处理链
+        rebuildProcessingChain()
+        
+        // 更新发布的属性
+        registeredProcessors = Array(processors.keys).sorted()
+        
+        // 触发事件
+        onProcessorUnregistered?(processorName)
+        
+        print("已注销消息处理器: \(processorName)")
+    }
+    
+    /// 根据消息类型注销处理器
+    /// - Parameter messageType: 消息类型
+    public func unregisterProcessor(for messageType: String) throws {
+        let processorsToRemove = processors.values.filter { processor in
+            processor.supportedMessageTypes.contains(messageType)
+        }
+        
+        for processor in processorsToRemove {
+            try unregisterProcessor(named: processor.processorName)
+        }
+    }
+    
+    /// 获取已注册的处理器
+    /// - Parameter processorName: 处理器名称
+    /// - Returns: 处理器实例，如果不存在返回nil
+    public func getProcessor(named processorName: String) -> MessageProcessor? {
+        return processors[processorName]
+    }
+    
+    /// 注册默认的消息处理器
+    /// 包括文本、系统、图片和自定义消息处理器
+    public func registerDefaultProcessors() {
+        do {
+            // 注册文本消息处理器
+            try registerProcessor(TextMessageProcessor())
+            
+            // 注册系统消息处理器
+            try registerProcessor(SystemMessageProcessor())
+            
+            // 注册图片消息处理器
+            try registerProcessor(ImageMessageProcessor())
+            
+            // 注册自定义消息处理器
+            try registerProcessor(CustomMessageProcessor())
+            
+            print("已注册所有默认消息处理器")
+        } catch {
+            print("注册默认消息处理器失败: \(error)")
+        }
+    }
+    
+    /// 获取支持指定消息类型的处理器
+    /// - Parameter messageType: 消息类型
+    /// - Returns: 支持该类型的处理器数组
+    public func getProcessors(for messageType: String) -> [MessageProcessor] {
+        return processors.values.filter { processor in
+            processor.supportedMessageTypes.contains(messageType)
+        }.sorted { $0.priority > $1.priority }
+    }
+    
+    /// 清理所有处理器
+    public func cleanupAllProcessors() async {
+        for processor in processors.values {
+            await processor.cleanup()
+        }
+        processors.removeAll()
+        processingChain.removeAll()
+        registeredProcessors.removeAll()
+    }
+    
+    /// 重新构建处理链
+    private func rebuildProcessingChain() {
+        processingChain = processors.values.sorted { $0.priority > $1.priority }
+    }
+    
+    // MARK: - Filter Management
+    
+    /// 注册消息过滤器
+    /// - Parameter filter: 要注册的过滤器
+    public func registerFilter(_ filter: MessageFilter) {
+        filters.append(filter)
+        print("已注册消息过滤器: \(filter.filterName)")
+    }
+    
+    /// 注销消息过滤器
+    /// - Parameter filterName: 过滤器名称
+    public func unregisterFilter(named filterName: String) {
+        filters.removeAll { $0.filterName == filterName }
+        print("已注销消息过滤器: \(filterName)")
+    }
+    
+    // MARK: - Transformer Management
+    
+    /// 注册消息转换器
+    /// - Parameter transformer: 要注册的转换器
+    public func registerTransformer(_ transformer: MessageTransformer) {
+        transformers.append(transformer)
+        print("已注册消息转换器: \(transformer.transformerName)")
+    }
+    
+    /// 注销消息转换器
+    /// - Parameter transformerName: 转换器名称
+    public func unregisterTransformer(named transformerName: String) {
+        transformers.removeAll { $0.transformerName == transformerName }
+        print("已注销消息转换器: \(transformerName)")
+    }
+    
+    // MARK: - Validator Management
+    
+    /// 注册消息验证器
+    /// - Parameter validator: 要注册的验证器
+    public func registerValidator(_ validator: MessageValidatorProtocol) {
+        validators.append(validator)
+        print("已注册消息验证器: \(validator.validatorName)")
+    }
+    
+    /// 注销消息验证器
+    /// - Parameter validatorName: 验证器名称
+    public func unregisterValidator(named validatorName: String) {
+        validators.removeAll { $0.validatorName == validatorName }
+        print("已注销消息验证器: \(validatorName)")
+    }
+    
+    // MARK: - Message Processing (需求 10.3, 10.4)
     
     /// 处理消息
-    public func processMessage(_ message: RealtimeMessage) {
-        // 验证消息
-        let validationResult = MessageValidator.validate(message)
-        guard validationResult.isValid else {
-            onValidationFailed?(message, validationResult.errors)
-            statistics.validationFailures += 1
+    public func processMessage(_ message: RealtimeMessage) async {
+        // 检查是否已在处理中
+        guard !processingMessages.contains(message.id) else {
+            print("消息 \(message.id) 已在处理中，跳过")
             return
         }
         
-        // 添加到处理队列
-        addToProcessingQueue(message)
+        // 标记为处理中
+        processingMessages.insert(message.id)
+        defer { processingMessages.remove(message.id) }
         
-        // 如果启用了自动处理，立即处理
-        if config.enableAutoProcessing {
-            processNextMessage()
+        // 更新统计信息
+        processingStats.totalReceived += 1
+        
+        do {
+            // 执行完整的处理管道
+            let result = try await processMessageThroughPipeline(message)
+            await handleProcessingResult(result, for: message)
+        } catch {
+            await handleProcessingError(error, for: message)
         }
     }
     
     /// 批量处理消息
-    public func processMessages(_ messages: [RealtimeMessage]) {
+    public func processMessages(_ messages: [RealtimeMessage]) async {
         for message in messages {
-            processMessage(message)
+            await processMessage(message)
         }
     }
     
@@ -70,9 +281,10 @@ public class MessageProcessingManager: ObservableObject {
         guard !processingQueue.isEmpty else { return }
         
         let message = processingQueue.removeFirst()
+        pendingMessages = processingQueue
         
         Task {
-            await performMessageProcessing(message)
+            await processMessage(message)
         }
     }
     
@@ -80,6 +292,194 @@ public class MessageProcessingManager: ObservableObject {
     public func clearProcessingQueue() {
         processingQueue.removeAll()
         pendingMessages.removeAll()
+    }
+    
+    /// 通过完整管道处理消息
+    private func processMessageThroughPipeline(_ message: RealtimeMessage) async throws -> MessageProcessingResult {
+        var currentMessage = message
+        
+        // 1. 消息验证阶段
+        if config.enableValidation {
+            let validationResult = await validateMessage(currentMessage)
+            guard validationResult.isValid else {
+                onValidationFailed?(currentMessage, validationResult.errors)
+                processingStats.totalFailed += 1
+                return .failed(MessageProcessorError.invalidMessageType)
+            }
+        }
+        
+        // 2. 消息过滤阶段
+        if config.enableFiltering {
+            let filterResult = await filterMessage(currentMessage)
+            if !filterResult.passed {
+                processingStats.totalSkipped += 1
+                return .skipped
+            }
+        }
+        
+        // 3. 消息转换阶段
+        currentMessage = try await transformMessage(currentMessage)
+        
+        // 4. 处理器链处理阶段
+        let processingResult = try await processMessageThroughChain(currentMessage)
+        
+        return processingResult
+    }
+    
+    /// 通过处理器链处理消息
+    private func processMessageThroughChain(_ message: RealtimeMessage) async throws -> MessageProcessingResult {
+        var currentMessage = message
+        var lastResult: MessageProcessingResult = .skipped
+        
+        // 按优先级顺序处理
+        for processor in processingChain {
+            if processor.canProcess(currentMessage) {
+                do {
+                    let result = try await processor.process(currentMessage)
+                    
+                    switch result {
+                    case .processed(let processedMessage):
+                        if let processed = processedMessage {
+                            currentMessage = processed
+                        }
+                        lastResult = result
+                        processingStats.totalProcessed += 1
+                        
+                        // 如果配置为单处理器模式，处理完成后退出
+                        if config.singleProcessorMode {
+                            return lastResult
+                        }
+                        
+                    case .failed(let error):
+                        let errorResult = await processor.handleProcessingError(error, for: currentMessage)
+                        if case .retry(let delay) = errorResult {
+                            return .retry(after: delay)
+                        }
+                        return errorResult
+                        
+                    case .skipped:
+                        continue
+                        
+                    case .retry(let delay):
+                        return .retry(after: delay)
+                    }
+                } catch {
+                    let errorResult = await processor.handleProcessingError(error, for: currentMessage)
+                    if case .retry(let delay) = errorResult {
+                        return .retry(after: delay)
+                    }
+                    return errorResult
+                }
+            }
+        }
+        
+        return lastResult
+    }
+    
+    /// 验证消息
+    private func validateMessage(_ message: RealtimeMessage) async -> MessageValidationResult {
+        // 使用内置验证器
+        let builtinResult = MessageValidator.validate(message)
+        guard builtinResult.isValid else {
+            return builtinResult
+        }
+        
+        // 使用自定义验证器
+        for validator in validators {
+            let result = await validator.validate(message)
+            if !result.isValid {
+                return result
+            }
+        }
+        
+        return .valid
+    }
+    
+    /// 过滤消息
+    private func filterMessage(_ message: RealtimeMessage) async -> FilterResult {
+        for filter in filters {
+            if filter.shouldFilter(message) {
+                let reason = filter.filterReason(for: message)
+                print("消息被过滤: \(reason)")
+                return FilterResult(passed: false, reason: reason)
+            }
+        }
+        return FilterResult(passed: true, reason: nil)
+    }
+    
+    /// 转换消息
+    private func transformMessage(_ message: RealtimeMessage) async throws -> RealtimeMessage {
+        var currentMessage = message
+        
+        for transformer in transformers {
+            if transformer.supportedMessageTypes.contains(message.type.rawValue) {
+                currentMessage = try await transformer.transform(currentMessage)
+            }
+        }
+        
+        return currentMessage
+    }
+    
+    /// 处理处理结果
+    private func handleProcessingResult(_ result: MessageProcessingResult, for message: RealtimeMessage) async {
+        switch result {
+        case .processed(let processedMessage):
+            let finalMessage = processedMessage ?? message.withStatus(.processed)
+            addToHistory(finalMessage)
+            onMessageProcessed?(finalMessage)
+            
+            // 发送通知
+            NotificationCenter.default.post(
+                name: .messageProcessed,
+                object: finalMessage
+            )
+            
+        case .failed(let error):
+            await handleProcessingError(error, for: message)
+            
+        case .skipped:
+            processingStats.totalSkipped += 1
+            print("消息 \(message.id) 被跳过处理")
+            
+        case .retry(let delay):
+            await scheduleRetry(for: message, after: delay)
+        }
+    }
+    
+    /// 处理处理错误
+    private func handleProcessingError(_ error: Error, for message: RealtimeMessage) async {
+        processingStats.totalFailed += 1
+        
+        // 检查重试次数
+        let retryCount = retryCounters[message.id] ?? 0
+        if retryCount < config.maxRetryCount {
+            retryCounters[message.id] = retryCount + 1
+            await scheduleRetry(for: message, after: config.retryDelay)
+        } else {
+            // 达到最大重试次数，记录错误
+            let failedMessage = message.withStatus(.failed)
+            addToHistory(failedMessage)
+            onProcessingError?(message, error)
+            
+            // 清除重试计数
+            retryCounters.removeValue(forKey: message.id)
+            
+            // 发送错误通知
+            NotificationCenter.default.post(
+                name: .messageProcessingFailed,
+                object: MessageProcessingError(message: message, error: error)
+            )
+        }
+    }
+    
+    /// 安排重试
+    private func scheduleRetry(for message: RealtimeMessage, after delay: TimeInterval) async {
+        print("消息 \(message.id) 将在 \(delay) 秒后重试")
+        
+        Task {
+            try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            await processMessage(message)
+        }
     }
     
     // MARK: - Message Templates
@@ -226,17 +626,18 @@ public class MessageProcessingManager: ObservableObject {
         pendingMessages = processingQueue
     }
     
+    /// 处理消息（同步版本，用于向后兼容）
+    public func processMessage(_ message: RealtimeMessage) {
+        Task {
+            await processMessage(message)
+        }
+    }
+    
     private func performMessageProcessing(_ message: RealtimeMessage) async {
         isProcessing = true
+        defer { isProcessing = false }
         
-        // 模拟消息处理
-        let processedMessage = message.withStatus(.processed)
-        
-        // 添加到历史记录
-        addToHistory(processedMessage)
-        statistics.processedMessages += 1
-        onMessageProcessed?(processedMessage)
-        isProcessing = false
+        await processMessage(message)
         pendingMessages = processingQueue
     }
     
@@ -275,6 +676,10 @@ public struct MessageProcessingConfig: Codable, Sendable, Equatable {
     public var messageRetentionTime: TimeInterval = 86400 // 24 hours
     public var enableValidation: Bool = true
     public var enableFiltering: Bool = true
+    public var singleProcessorMode: Bool = false // 是否只使用第一个匹配的处理器
+    public var maxRetryCount: Int = 3
+    public var retryDelay: TimeInterval = 1.0
+    public var processingTimeout: TimeInterval = 30.0
     
     @MainActor
     public static let `default` = MessageProcessingConfig()
@@ -322,4 +727,58 @@ public struct MessageProcessingStatistics: Codable, Sendable {
         averageProcessingTime = 0
         lastProcessedTime = nil
     }
+}
+
+/// 消息处理统计信息（新版本，用于处理管道）
+public struct MessageProcessingStats: Codable, Sendable {
+    public var totalReceived: Int = 0
+    public var totalProcessed: Int = 0
+    public var totalFailed: Int = 0
+    public var totalSkipped: Int = 0
+    public var retryCount: [String: Int] = [:]
+    
+    public init() {}
+    
+    public mutating func reset() {
+        totalReceived = 0
+        totalProcessed = 0
+        totalFailed = 0
+        totalSkipped = 0
+        retryCount.removeAll()
+    }
+    
+    public func shouldRetry(for messageType: String) -> Bool {
+        let count = retryCount[messageType] ?? 0
+        return count < 3
+    }
+}
+
+/// 过滤结果
+public struct FilterResult {
+    public let passed: Bool
+    public let reason: String?
+    
+    public init(passed: Bool, reason: String? = nil) {
+        self.passed = passed
+        self.reason = reason
+    }
+}
+
+/// 消息处理错误信息
+public struct MessageProcessingError {
+    public let message: RealtimeMessage
+    public let error: Error
+    public let timestamp: Date = Date()
+    
+    public init(message: RealtimeMessage, error: Error) {
+        self.message = message
+        self.error = error
+    }
+}
+
+// MARK: - Notification Extensions
+
+extension Notification.Name {
+    public static let messageProcessed = Notification.Name("RealtimeKit.messageProcessed")
+    public static let messageProcessingFailed = Notification.Name("RealtimeKit.messageProcessingFailed")
 }

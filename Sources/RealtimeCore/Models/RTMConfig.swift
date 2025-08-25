@@ -2,7 +2,7 @@ import Foundation
 
 /// RTM服务配置
 /// 需求: 1.1, 1.2
-public struct RTMConfig: Codable {
+public struct RTMConfig: Codable, Sendable {
     /// 应用ID
     public let appId: String
     
@@ -54,7 +54,7 @@ public struct RTMConfig: Codable {
 }
 
 /// RTM服务器区域
-public enum RTMRegion: String, CaseIterable, Codable {
+public enum RTMRegion: String, CaseIterable, Codable, Sendable {
     /// 全球
     case global = "global"
     /// 中国大陆
@@ -84,7 +84,7 @@ public enum RTMRegion: String, CaseIterable, Codable {
 }
 
 /// RTM日志配置
-public struct RTMLogConfig: Codable {
+public struct RTMLogConfig: Codable, Sendable {
     /// 日志级别
     public let logLevel: RTMLogLevel
     
@@ -111,7 +111,7 @@ public struct RTMLogConfig: Codable {
 }
 
 /// RTM日志级别
-public enum RTMLogLevel: String, CaseIterable, Codable {
+public enum RTMLogLevel: String, CaseIterable, Codable, Sendable {
     /// 无日志
     case none = "none"
     /// 错误
@@ -141,7 +141,7 @@ public enum RTMLogLevel: String, CaseIterable, Codable {
 }
 
 /// RTM自定义服务器配置
-public struct RTMCustomServerConfig: Codable {
+public struct RTMCustomServerConfig: Codable, Sendable {
     /// 自定义服务器地址
     public let serverAddress: String
     
@@ -163,7 +163,7 @@ public struct RTMCustomServerConfig: Codable {
 }
 
 /// RTM连接状态
-public enum RTMConnectionState: String, CaseIterable, Codable {
+public enum RTMConnectionState: String, CaseIterable, Codable, Sendable {
     /// 断开连接
     case disconnected = "disconnected"
     /// 连接中
@@ -193,7 +193,7 @@ public enum RTMConnectionState: String, CaseIterable, Codable {
 }
 
 /// RTM连接状态变化原因
-public enum RTMConnectionChangeReason: String, CaseIterable, Codable {
+public enum RTMConnectionChangeReason: String, CaseIterable, Codable, Sendable {
     /// 用户主动登录
     case login = "login"
     /// 登录成功
