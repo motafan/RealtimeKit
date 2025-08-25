@@ -1,6 +1,7 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ConnectionStateManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ErrorRecoveryManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/LocalizationManager.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/MediaRelayManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/RealtimeManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/StreamPushManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/TokenManager.swift
@@ -20,3 +21,9 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/RTMProvider.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/RealtimeCore.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Resources/LocalizedStrings.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/AudioSettingsManager.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/MessageProcessingManager.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/RealtimeStorage.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageBackend.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/UserSessionManager.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/VolumeDetectionManager.swift

@@ -317,6 +317,359 @@ struct LocalizedUIComponentsIntegrationTests {
         #expect(accessibilityHintChinese == "点击确认您的选择", "Chinese accessibility hint should be localized")
     }
     
+    // MARK: - @RealtimeStorage Integration Tests (需求 18.1, 18.10)
+    
+    @Test("UI component state persistence simulation")
+    func testUIComponentStatePersistenceSimulation() async {
+        let manager = await createTestManager()
+        
+        // Simulate UI component with persistent state
+        struct MockPersistentComponent {
+            var displayText: String = ""
+            var localizationKey: String = ""
+            var interactionCount: Int = 0
+            var lastInteractionDate: Date?
+            var currentLanguage: SupportedLanguage = .english
+            
+            @MainActor
+            mutating func setLocalizedText(_ key: String, manager: LocalizationManager) {
+                self.localizationKey = key
+                self.displayText = manager.localizedString(for: key)
+                self.currentLanguage = manager.currentLanguage
+                self.interactionCount += 1
+                self.lastInteractionDate = Date()
+            }
+            
+            @MainActor
+            mutating func updateForLanguageChange(manager: LocalizationManager) {
+                if !localizationKey.isEmpty {
+                    self.displayText = manager.localizedString(for: localizationKey)
+                    self.currentLanguage = manager.currentLanguage
+                    self.interactionCount += 1
+                    self.lastInteractionDate = Date()
+                }
+            }
+        }
+        
+        var mockComponent = MockPersistentComponent()
+        
+        // Initial setup
+        await manager.switchLanguage(to: .english)
+        mockComponent.setLocalizedText("connection.state.connected", manager: manager)
+        
+        #expect(mockComponent.displayText == "Connected")
+        #expect(mockComponent.currentLanguage == .english)
+        #expect(mockComponent.interactionCount == 1)
+        #expect(mockComponent.lastInteractionDate != nil)
+        
+        // Language change
+        await manager.switchLanguage(to: .japanese)
+        mockComponent.updateForLanguageChange(manager: manager)
+        
+        #expect(mockComponent.displayText == "接続済み")
+        #expect(mockComponent.currentLanguage == .japanese)
+        #expect(mockComponent.interactionCount == 2)
+        
+        // Multiple interactions
+        await manager.switchLanguage(to: .korean)
+        mockComponent.updateForLanguageChange(manager: manager)
+        
+        #expect(mockComponent.displayText == "연결됨")
+        #expect(mockComponent.currentLanguage == .korean)
+        #expect(mockComponent.interactionCount == 3)
+    }
+    
+    @Test("Language picker state persistence simulation")
+    func testLanguagePickerStatePersistenceSimulation() async {
+        let manager = await createTestManager()
+        
+        // Simulate LanguagePickerState behavior
+        struct MockLanguagePickerState {
+            var lastSelectedLanguage: SupportedLanguage?
+            var currentDisplayLanguage: SupportedLanguage = .english
+            var selectionCount: Int = 0
+            var lastSelectionDate: Date?
+            var showLanguageCodes: Bool = false
+            var showNativeNames: Bool = true
+            
+            @MainActor
+            mutating func updateSelection(_ language: SupportedLanguage) {
+                self.lastSelectedLanguage = language
+                self.currentDisplayLanguage = language
+                self.selectionCount += 1
+                self.lastSelectionDate = Date()
+            }
+        }
+        
+        var pickerState = MockLanguagePickerState()
+        
+        // Initial state
+        #expect(pickerState.selectionCount == 0)
+        #expect(pickerState.lastSelectedLanguage == nil)
+        
+        // First selection
+        await manager.switchLanguage(to: .japanese)
+        pickerState.updateSelection(.japanese)
+        
+        #expect(pickerState.lastSelectedLanguage == .japanese)
+        #expect(pickerState.currentDisplayLanguage == .japanese)
+        #expect(pickerState.selectionCount == 1)
+        #expect(pickerState.lastSelectionDate != nil)
+        
+        // Second selection
+        await manager.switchLanguage(to: .korean)
+        pickerState.updateSelection(.korean)
+        
+        #expect(pickerState.lastSelectedLanguage == .korean)
+        #expect(pickerState.currentDisplayLanguage == .korean)
+        #expect(pickerState.selectionCount == 2)
+        
+        // Configuration changes
+        pickerState.showLanguageCodes = true
+        pickerState.showNativeNames = false
+        
+        #expect(pickerState.showLanguageCodes == true)
+        #expect(pickerState.showNativeNames == false)
+    }
+    
+    @Test("Navigation view state persistence simulation")
+    func testNavigationViewStatePersistenceSimulation() async {
+        let manager = await createTestManager()
+        
+        // Simulate NavigationViewState behavior
+        struct MockNavigationViewState {
+            var currentLanguage: SupportedLanguage = .english
+            var viewAppearanceCount: Int = 0
+            var lastAppearanceDate: Date?
+            var lastLanguageChangeDate: Date?
+            
+            @MainActor
+            mutating func onViewAppear() {
+                self.viewAppearanceCount += 1
+                self.lastAppearanceDate = Date()
+            }
+            
+            @MainActor
+            mutating func onLanguageChange(_ language: SupportedLanguage) {
+                self.currentLanguage = language
+                self.lastLanguageChangeDate = Date()
+            }
+        }
+        
+        var navigationState = MockNavigationViewState()
+        
+        // Initial state
+        #expect(navigationState.viewAppearanceCount == 0)
+        #expect(navigationState.currentLanguage == .english)
+        
+        // View appearances
+        navigationState.onViewAppear()
+        #expect(navigationState.viewAppearanceCount == 1)
+        #expect(navigationState.lastAppearanceDate != nil)
+        
+        navigationState.onViewAppear()
+        #expect(navigationState.viewAppearanceCount == 2)
+        
+        // Language changes
+        await manager.switchLanguage(to: .chineseSimplified)
+        navigationState.onLanguageChange(.chineseSimplified)
+        
+        #expect(navigationState.currentLanguage == .chineseSimplified)
+        #expect(navigationState.lastLanguageChangeDate != nil)
+        
+        await manager.switchLanguage(to: .japanese)
+        navigationState.onLanguageChange(.japanese)
+        
+        #expect(navigationState.currentLanguage == .japanese)
+    }
+    
+    @Test("Localized list state persistence simulation")
+    func testLocalizedListStatePersistenceSimulation() async {
+        let manager = await createTestManager()
+        
+        // Simulate LocalizedListState behavior
+        struct MockLocalizedListState {
+            var currentLanguage: SupportedLanguage = .english
+            var emptyStateDisplayCount: Int = 0
+            var dataDisplayCount: Int = 0
+            var lastItemCount: Int = 0
+            var lastEmptyStateDate: Date?
+            var lastDataDisplayDate: Date?
+            
+            @MainActor
+            mutating func onEmptyStateDisplay() {
+                self.emptyStateDisplayCount += 1
+                self.lastEmptyStateDate = Date()
+            }
+            
+            @MainActor
+            mutating func onDataDisplay(itemCount: Int) {
+                self.dataDisplayCount += 1
+                self.lastItemCount = itemCount
+                self.lastDataDisplayDate = Date()
+            }
+            
+            @MainActor
+            mutating func onLanguageChange(_ language: SupportedLanguage) {
+                self.currentLanguage = language
+            }
+        }
+        
+        var listState = MockLocalizedListState()
+        
+        // Initial state
+        #expect(listState.emptyStateDisplayCount == 0)
+        #expect(listState.dataDisplayCount == 0)
+        
+        // Empty state display
+        listState.onEmptyStateDisplay()
+        #expect(listState.emptyStateDisplayCount == 1)
+        #expect(listState.lastEmptyStateDate != nil)
+        
+        // Data display
+        listState.onDataDisplay(itemCount: 5)
+        #expect(listState.dataDisplayCount == 1)
+        #expect(listState.lastItemCount == 5)
+        #expect(listState.lastDataDisplayDate != nil)
+        
+        // More data displays
+        listState.onDataDisplay(itemCount: 10)
+        #expect(listState.dataDisplayCount == 2)
+        #expect(listState.lastItemCount == 10)
+        
+        // Language change
+        await manager.switchLanguage(to: .korean)
+        listState.onLanguageChange(.korean)
+        #expect(listState.currentLanguage == .korean)
+    }
+    
+    @Test("UIKit localization manager state persistence")
+    func testUIKitLocalizationManagerStatePersistence() async {
+        // Test the UIKit localization manager state tracking
+        // Note: This is a conceptual test since we can't easily test the actual @RealtimeStorage in unit tests
+        
+        struct MockUIKitLocalizationState {
+            var currentLanguage: SupportedLanguage = .english
+            var registeredViewControllerTypes: Set<String> = []
+            var registrationCount: Int = 0
+            var unregistrationCount: Int = 0
+            var languageChangeCount: Int = 0
+            var componentUpdateCount: Int = 0
+            var lastRegistrationDate: Date?
+            var lastUnregistrationDate: Date?
+            var lastLanguageChangeDate: Date?
+            
+            mutating func registerViewController(_ type: String) {
+                registeredViewControllerTypes.insert(type)
+                registrationCount += 1
+                lastRegistrationDate = Date()
+            }
+            
+            mutating func unregisterViewController(_ type: String) {
+                registeredViewControllerTypes.remove(type)
+                unregistrationCount += 1
+                lastUnregistrationDate = Date()
+            }
+            
+            mutating func onLanguageChange(_ language: SupportedLanguage, componentCount: Int) {
+                currentLanguage = language
+                languageChangeCount += 1
+                componentUpdateCount += componentCount
+                lastLanguageChangeDate = Date()
+            }
+        }
+        
+        var uikitState = MockUIKitLocalizationState()
+        
+        // Initial state
+        #expect(uikitState.registrationCount == 0)
+        #expect(uikitState.registeredViewControllerTypes.isEmpty)
+        
+        // Register view controllers
+        uikitState.registerViewController("TestViewController")
+        uikitState.registerViewController("SettingsViewController")
+        
+        #expect(uikitState.registrationCount == 2)
+        #expect(uikitState.registeredViewControllerTypes.count == 2)
+        #expect(uikitState.registeredViewControllerTypes.contains("TestViewController"))
+        #expect(uikitState.registeredViewControllerTypes.contains("SettingsViewController"))
+        #expect(uikitState.lastRegistrationDate != nil)
+        
+        // Language change
+        let manager = await createTestManager()
+        await manager.switchLanguage(to: .japanese)
+        uikitState.onLanguageChange(.japanese, componentCount: 2)
+        
+        #expect(uikitState.currentLanguage == .japanese)
+        #expect(uikitState.languageChangeCount == 1)
+        #expect(uikitState.componentUpdateCount == 2)
+        #expect(uikitState.lastLanguageChangeDate != nil)
+        
+        // Unregister view controller
+        uikitState.unregisterViewController("TestViewController")
+        
+        #expect(uikitState.unregistrationCount == 1)
+        #expect(uikitState.registeredViewControllerTypes.count == 1)
+        #expect(!uikitState.registeredViewControllerTypes.contains("TestViewController"))
+        #expect(uikitState.registeredViewControllerTypes.contains("SettingsViewController"))
+        #expect(uikitState.lastUnregistrationDate != nil)
+    }
+    
+    @Test("UI component state persistence performance")
+    func testUIComponentStatePersistencePerformance() async {
+        let manager = await createTestManager()
+        
+        // Simulate many UI components with state
+        struct MockComponentWithState {
+            var id: String
+            var localizationKey: String
+            var displayText: String = ""
+            var updateCount: Int = 0
+            var lastUpdateDate: Date?
+            
+            @MainActor
+            mutating func updateForLanguage(_ language: SupportedLanguage, manager: LocalizationManager) {
+                self.displayText = manager.localizedString(for: localizationKey)
+                self.updateCount += 1
+                self.lastUpdateDate = Date()
+            }
+        }
+        
+        // Create many mock components
+        var components: [MockComponentWithState] = []
+        for i in 0..<100 {
+            components.append(MockComponentWithState(
+                id: "component_\(i)",
+                localizationKey: i % 2 == 0 ? "button.ok" : "button.cancel"
+            ))
+        }
+        
+        let startTime = CFAbsoluteTimeGetCurrent()
+        
+        // Update all components for language change
+        await manager.switchLanguage(to: .english)
+        for i in 0..<components.count {
+            components[i].updateForLanguage(.english, manager: manager)
+        }
+        
+        await manager.switchLanguage(to: .chineseSimplified)
+        for i in 0..<components.count {
+            components[i].updateForLanguage(.chineseSimplified, manager: manager)
+        }
+        
+        let endTime = CFAbsoluteTimeGetCurrent()
+        let duration = endTime - startTime
+        
+        #expect(duration < 1.0, "Updating 100 components twice should take less than 1 second")
+        
+        // Verify all components were updated
+        for component in components {
+            #expect(component.updateCount == 2, "Each component should be updated twice")
+            #expect(component.lastUpdateDate != nil, "Each component should have update timestamp")
+            #expect(!component.displayText.isEmpty, "Each component should have display text")
+        }
+    }
+    
     // MARK: - Helper Methods
     
     private func createTestManager() async -> LocalizationManager {

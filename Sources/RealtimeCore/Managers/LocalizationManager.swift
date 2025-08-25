@@ -3,6 +3,7 @@ import Combine
 
 /// Main localization manager for RealtimeKit
 /// Provides centralized language management and localized string access
+/// 需求: 17.2, 17.3, 17.5, 18.1, 18.2
 @MainActor
 public class LocalizationManager: ObservableObject {
     
@@ -20,6 +21,20 @@ public class LocalizationManager: ObservableObject {
     
     /// Whether the manager is ready for use
     @Published public private(set) var isReady: Bool = false
+    
+    // MARK: - Persistent Storage Properties (需求 18.1, 18.2)
+    
+    /// Automatically persisted language preference using @RealtimeStorage
+    @RealtimeStorage("selectedLanguage", namespace: "RealtimeKit.Localization")
+    private var persistedLanguage: SupportedLanguage = .english
+    
+    /// Automatically persisted custom language packs using @RealtimeStorage
+    @RealtimeStorage("customLanguagePacks", namespace: "RealtimeKit.Localization")
+    private var persistedCustomLanguagePacks: [String: [SupportedLanguage: String]] = [:]
+    
+    /// User preferences for localization behavior
+    @RealtimeStorage("localizationPreferences", namespace: "RealtimeKit.Localization")
+    private var userPreferences: LocalizationUserPreferences = LocalizationUserPreferences()
     
     // MARK: - Private Properties
     
@@ -66,8 +81,10 @@ public class LocalizationManager: ObservableObject {
     }
     
     /// Initialize the localization manager
+    /// 需求: 17.2, 17.3, 17.5, 18.1, 18.2
     private func initialize() async {
         await loadBuiltInLocalizations()
+        await loadPersistedCustomLocalizations()
         await detectAndSetInitialLanguage()
         isReady = true
     }
@@ -75,23 +92,34 @@ public class LocalizationManager: ObservableObject {
     // MARK: - Language Detection and Management
     
     /// Detect system language and set as current if supported
+    /// 需求: 17.2, 17.3, 17.5 - 自动语言检测和系统语言适配功能
     private func detectAndSetInitialLanguage() async {
         var targetLanguage: SupportedLanguage = config.fallbackLanguage
         
-        // Check for persisted language preference first
-        if config.persistLanguageSelection {
-            if let savedLanguageRaw = userDefaults.string(forKey: config.storageKey),
-               let savedLanguage = SupportedLanguage(rawValue: savedLanguageRaw) {
-                targetLanguage = savedLanguage
+        // Check for persisted language preference first (using @RealtimeStorage)
+        // 需求: 18.1, 18.2 - 使用 @RealtimeStorage 自动持久化当前语言设置
+        if config.persistLanguageSelection && persistedLanguage != .english {
+            targetLanguage = persistedLanguage
+        }
+        
+        // Auto-detect system language if enabled and user preferences allow it
+        if userPreferences.autoDetectSystemLanguage && config.autoDetectSystemLanguage {
+            let detectedLanguage = detectSystemLanguage()
+            
+            // Only use detected language if no persisted preference exists
+            if persistedLanguage == .english && detectedLanguage != .english {
+                targetLanguage = detectedLanguage
+                userPreferences.lastLanguageDetection = Date()
             }
         }
         
-        // Auto-detect system language if enabled and no saved preference
-        if config.autoDetectSystemLanguage && !config.persistLanguageSelection {
-            targetLanguage = detectSystemLanguage()
-        }
-        
         await setLanguage(targetLanguage, notifyObservers: false)
+    }
+    
+    /// Load persisted custom localizations from @RealtimeStorage
+    /// 需求: 18.1 - 使用 @RealtimeStorage 缓存和持久化自定义语言包
+    private func loadPersistedCustomLocalizations() async {
+        customLocalizations = persistedCustomLanguagePacks
     }
     
     /// Detect the system language
@@ -119,6 +147,7 @@ public class LocalizationManager: ObservableObject {
     /// - Parameters:
     ///   - language: The language to set
     ///   - notifyObservers: Whether to post notification about language change
+    /// 需求: 17.2, 17.3, 18.1, 18.2 - 语言设置和自动持久化
     public func setLanguage(_ language: SupportedLanguage, notifyObservers: Bool = true) async {
         let previousLanguage = currentLanguage
         
@@ -126,16 +155,16 @@ public class LocalizationManager: ObservableObject {
         
         currentLanguage = language
         
-        // Persist language selection if enabled
+        // Persist language selection using @RealtimeStorage (需求 18.1, 18.2)
         if config.persistLanguageSelection {
-            userDefaults.set(language.rawValue, forKey: config.storageKey)
+            persistedLanguage = language
         }
         
         // Update error localization helper
         ErrorLocalizationHelper.updateCurrentLanguage(language)
         
-        // Notify observers if requested
-        if notifyObservers {
+        // Notify observers if requested and user preferences allow it
+        if notifyObservers && userPreferences.showLanguageChangeNotifications {
             NotificationCenter.default.post(
                 name: .realtimeLanguageDidChange,
                 object: self,
@@ -166,14 +195,26 @@ public class LocalizationManager: ObservableObject {
     /// - Parameters:
     ///   - key: The localization key
     ///   - localizations: Dictionary mapping languages to localized strings
+    /// 需求: 17.7, 17.8, 18.1 - 开发者自定义语言包支持和自动持久化
     public func addCustomLocalization(key: String, localizations: [SupportedLanguage: String]) {
         customLocalizations[key] = localizations
+        
+        // Persist custom localizations using @RealtimeStorage (需求 18.1)
+        if userPreferences.cacheCustomLanguagePacks {
+            persistedCustomLanguagePacks = customLocalizations
+        }
     }
     
     /// Remove custom localization for a key
     /// - Parameter key: The localization key to remove
+    /// 需求: 17.7, 17.8, 18.1 - 自定义语言包管理和持久化
     public func removeCustomLocalization(key: String) {
         customLocalizations.removeValue(forKey: key)
+        
+        // Update persisted custom localizations (需求 18.1)
+        if userPreferences.cacheCustomLanguagePacks {
+            persistedCustomLanguagePacks = customLocalizations
+        }
     }
     
     // MARK: - String Retrieval
@@ -206,9 +247,26 @@ public class LocalizationManager: ObservableObject {
             return localizedString
         }
         
-        // Fallback to English if not current language
-        if language != .english {
-            // Check custom English localizations first
+        // Fallback to preferred fallback language if not current language
+        // 需求: 17.4 - 本地化字符串获取和回退机制
+        let fallbackLanguage = userPreferences.preferredFallbackLanguage
+        if language != fallbackLanguage {
+            // Check custom fallback language localizations first
+            if let customLocalizations = customLocalizations[key],
+               let fallbackString = customLocalizations[fallbackLanguage] {
+                return fallbackString
+            }
+            
+            // Check built-in fallback language localizations
+            if let fallbackLocalizations = localizedStrings[fallbackLanguage],
+               let fallbackString = fallbackLocalizations[key] {
+                return fallbackString
+            }
+        }
+        
+        // Final fallback to English if fallback language is not English
+        if fallbackLanguage != .english {
+            // Check custom English localizations
             if let customLocalizations = customLocalizations[key],
                let englishString = customLocalizations[.english] {
                 return englishString
@@ -255,6 +313,7 @@ public class LocalizationManager: ObservableObject {
     ///   - languagePack: Dictionary containing localized strings
     ///   - language: Target language for the pack
     ///   - merge: Whether to merge with existing strings or replace them
+    /// 需求: 17.7, 17.8, 18.1 - 自定义语言包支持和缓存持久化
     public func loadLanguagePack(_ languagePack: [String: String], for language: SupportedLanguage, merge: Bool = true) {
         if merge {
             var existingStrings = localizedStrings[language] ?? [:]
@@ -264,6 +323,21 @@ public class LocalizationManager: ObservableObject {
             localizedStrings[language] = existingStrings
         } else {
             localizedStrings[language] = languagePack
+        }
+        
+        // Cache language pack if enabled and within limits (需求 18.1)
+        if userPreferences.cacheCustomLanguagePacks {
+            // Check cache limits
+            if persistedCustomLanguagePacks.count < userPreferences.maxCachedLanguagePacks {
+                // Add language pack entries to custom localizations for persistence
+                for (key, value) in languagePack {
+                    if customLocalizations[key] == nil {
+                        customLocalizations[key] = [:]
+                    }
+                    customLocalizations[key]?[language] = value
+                }
+                persistedCustomLanguagePacks = customLocalizations
+            }
         }
     }
     
@@ -369,8 +443,79 @@ public class LocalizationManager: ObservableObject {
     }
     
     /// Clear all custom localizations
+    /// 需求: 17.7, 18.1 - 自定义语言包管理和持久化清理
     public func clearCustomLocalizations() {
         customLocalizations.removeAll()
+        
+        // Clear persisted custom localizations (需求 18.1)
+        persistedCustomLanguagePacks.removeAll()
+    }
+    
+    // MARK: - User Preferences Management
+    
+    /// Update user preferences for localization behavior
+    /// 需求: 18.1, 18.2 - 用户偏好自动持久化
+    public func updateUserPreferences(_ preferences: LocalizationUserPreferences) {
+        userPreferences = preferences
+    }
+    
+    /// Get current user preferences
+    /// 需求: 18.1, 18.2 - 用户偏好访问
+    public func getUserPreferences() -> LocalizationUserPreferences {
+        return userPreferences
+    }
+    
+    /// Enable or disable automatic system language detection
+    /// 需求: 17.2, 17.3, 18.1 - 自动语言检测配置
+    public func setAutoDetectSystemLanguage(_ enabled: Bool) {
+        userPreferences.autoDetectSystemLanguage = enabled
+        
+        if enabled {
+            Task {
+                let detectedLanguage = detectSystemLanguage()
+                if detectedLanguage != currentLanguage {
+                    await setLanguage(detectedLanguage)
+                }
+            }
+        }
+    }
+    
+    /// Set preferred fallback language
+    /// 需求: 17.4, 18.1 - 回退语言配置和持久化
+    public func setPreferredFallbackLanguage(_ language: SupportedLanguage) {
+        userPreferences.preferredFallbackLanguage = language
+    }
+    
+    /// Enable or disable language change notifications
+    /// 需求: 17.6, 18.1 - 通知配置和持久化
+    public func setShowLanguageChangeNotifications(_ enabled: Bool) {
+        userPreferences.showLanguageChangeNotifications = enabled
+    }
+    
+    /// Enable or disable custom language pack caching
+    /// 需求: 18.1 - 缓存配置和持久化
+    public func setCacheCustomLanguagePacks(_ enabled: Bool) {
+        userPreferences.cacheCustomLanguagePacks = enabled
+        
+        if !enabled {
+            // Clear cached language packs if caching is disabled
+            persistedCustomLanguagePacks.removeAll()
+        }
+    }
+    
+    /// Set maximum number of cached language packs
+    /// 需求: 18.1 - 缓存限制配置
+    public func setMaxCachedLanguagePacks(_ maxCount: Int) {
+        userPreferences.maxCachedLanguagePacks = max(1, maxCount)
+        
+        // Trim cached language packs if necessary
+        if persistedCustomLanguagePacks.count > maxCount {
+            let keysToRemove = Array(persistedCustomLanguagePacks.keys.prefix(persistedCustomLanguagePacks.count - maxCount))
+            for key in keysToRemove {
+                persistedCustomLanguagePacks.removeValue(forKey: key)
+                customLocalizations.removeValue(forKey: key)
+            }
+        }
     }
 }
 

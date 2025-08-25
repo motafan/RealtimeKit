@@ -72,6 +72,7 @@ public class StreamPushManager: ObservableObject {
     private var retryCount: Int = 0
     private let maxRetryCount: Int = 3
     private let retryDelay: TimeInterval = 5.0
+    private let enableAutoRetry: Bool
     
     // MARK: - Event Handlers
     
@@ -81,8 +82,9 @@ public class StreamPushManager: ObservableObject {
     
     // MARK: - Initialization
     
-    public init(rtcProvider: RTCProvider? = nil) {
+    public init(rtcProvider: RTCProvider? = nil, enableAutoRetry: Bool = true) {
         self.rtcProvider = rtcProvider
+        self.enableAutoRetry = enableAutoRetry
     }
     
     deinit {
@@ -105,7 +107,7 @@ public class StreamPushManager: ObservableObject {
             throw StreamPushError.invalidState(current: state, expected: .stopped)
         }
         
-        guard let provider = rtcProvider else {
+        guard let _ = rtcProvider else {
             throw StreamPushError.providerNotAvailable
         }
         
@@ -123,8 +125,8 @@ public class StreamPushManager: ObservableObject {
         retryCount = 0
         
         do {
-            // 调用底层 Provider 启动转推流
-            try await provider.startStreamPush(config: config)
+            // 调用内部方法启动转推流
+            try await performStreamStart(config: config)
             
             // 启动成功，更新状态
             updateState(.running)
@@ -141,8 +143,10 @@ public class StreamPushManager: ObservableObject {
             lastError = streamError
             onError?(streamError)
             
-            // 尝试自动重试
-            await attemptRetry()
+            // 尝试自动重试（如果启用）
+            if enableAutoRetry {
+                await attemptRetry()
+            }
             
             throw streamError
         }
@@ -310,13 +314,36 @@ public class StreamPushManager: ObservableObject {
         // 如果状态仍然是失败，尝试重新启动
         if state == .failed, let config = currentConfig {
             do {
-                try await startStreamPush(config: config)
+                try await performStreamStart(config: config)
+                
+                // 启动成功，更新状态
+                updateState(.running)
+                startTime = Date()
+                statistics.reset()
+                
+                // 启动统计更新定时器
+                startStatisticsTimer()
+                
             } catch {
-                print("StreamPushManager: Retry failed: \(error)")
-                // 继续尝试下一次重试
-                await attemptRetry()
+                print("StreamPushManager: Retry \(retryCount) failed: \(error)")
+                // 如果还有重试次数，继续重试
+                if retryCount < maxRetryCount {
+                    await attemptRetry()
+                } else {
+                    print("StreamPushManager: All retries exhausted, giving up")
+                }
             }
         }
+    }
+    
+    /// 执行流启动（内部方法，不重置重试计数）
+    private func performStreamStart(config: StreamPushConfig) async throws {
+        guard let provider = rtcProvider else {
+            throw StreamPushError.providerNotAvailable
+        }
+        
+        updateState(.starting)
+        try await provider.startStreamPush(config: config)
     }
     
     /// 清理资源

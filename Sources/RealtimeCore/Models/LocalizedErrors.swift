@@ -65,7 +65,14 @@ public enum LocalizedRealtimeError: Error, LocalizedError, CustomStringConvertib
     // MARK: - LocalizedError Protocol
     
     public var errorDescription: String? {
-        return getLocalizedString(for: localizationKey, arguments: localizationArguments)
+        let description = getLocalizedString(for: localizationKey, arguments: localizationArguments)
+        
+        // Log error when accessed (for analytics and debugging)
+        Task { @MainActor in
+            LocalizedErrorManager.shared.logError(self)
+        }
+        
+        return description
     }
     
     public var failureReason: String? {
@@ -371,39 +378,161 @@ extension LocalizedRealtimeError {
     }
 }
 
+// MARK: - Error Display Preferences
 
+/// User preferences for error message display
+/// 需求: 17.6, 18.1 - 错误消息显示偏好和持久化
+public struct ErrorDisplayPreferences: Codable, Sendable {
+    /// Whether to show detailed error messages
+    public var showDetailedErrors: Bool
+    
+    /// Whether to show recovery suggestions
+    public var showRecoverySuggestions: Bool
+    
+    /// Whether to show failure reasons
+    public var showFailureReasons: Bool
+    
+    /// Whether to use localized error messages
+    public var useLocalizedMessages: Bool
+    
+    /// Preferred language for error messages (overrides system language)
+    public var preferredErrorLanguage: SupportedLanguage?
+    
+    /// Whether to log errors for debugging
+    public var enableErrorLogging: Bool
+    
+    /// Maximum number of recent errors to keep in memory
+    public var maxRecentErrors: Int
+    
+    /// Categories of errors to suppress from display
+    public var suppressedErrorCategories: Set<ErrorCategory>
+    
+    public init(
+        showDetailedErrors: Bool = true,
+        showRecoverySuggestions: Bool = true,
+        showFailureReasons: Bool = true,
+        useLocalizedMessages: Bool = true,
+        preferredErrorLanguage: SupportedLanguage? = nil,
+        enableErrorLogging: Bool = true,
+        maxRecentErrors: Int = 50,
+        suppressedErrorCategories: Set<ErrorCategory> = []
+    ) {
+        self.showDetailedErrors = showDetailedErrors
+        self.showRecoverySuggestions = showRecoverySuggestions
+        self.showFailureReasons = showFailureReasons
+        self.useLocalizedMessages = useLocalizedMessages
+        self.preferredErrorLanguage = preferredErrorLanguage
+        self.enableErrorLogging = enableErrorLogging
+        self.maxRecentErrors = maxRecentErrors
+        self.suppressedErrorCategories = suppressedErrorCategories
+    }
+}
 
 // MARK: - Error Localization Helper
 
 /// Helper class for synchronous error localization
 /// This avoids actor isolation issues with the LocalizedError protocol
+/// 需求: 17.1, 17.6, 18.1 - 本地化错误处理和持久化
 internal struct ErrorLocalizationHelper {
     
     /// Current language for error localization (atomic)
     private static let _currentLanguageQueue = DispatchQueue(label: "ErrorLocalizationHelper.currentLanguage", attributes: .concurrent)
     private static nonisolated(unsafe) var _currentLanguage: SupportedLanguage = .english
     
+    /// Error display preferences (atomic)
+    private static let _preferencesQueue = DispatchQueue(label: "ErrorLocalizationHelper.preferences", attributes: .concurrent)
+    private static nonisolated(unsafe) var _errorDisplayPreferences: ErrorDisplayPreferences = ErrorDisplayPreferences()
+    
+    /// Recent errors for debugging and analytics
+    private static let _recentErrorsQueue = DispatchQueue(label: "ErrorLocalizationHelper.recentErrors", attributes: .concurrent)
+    private static nonisolated(unsafe) var _recentErrors: [LocalizedRealtimeError] = []
+    
     /// Update the current language for error localization
+    /// 需求: 17.6 - 动态语言切换
     static func updateCurrentLanguage(_ language: SupportedLanguage) {
         _currentLanguageQueue.sync(flags: .barrier) {
             _currentLanguage = language
         }
     }
     
+    /// Update error display preferences
+    /// 需求: 18.1 - 使用 @RealtimeStorage 持久化错误消息显示偏好
+    static func updateErrorDisplayPreferences(_ preferences: ErrorDisplayPreferences) {
+        _preferencesQueue.sync(flags: .barrier) {
+            _errorDisplayPreferences = preferences
+        }
+    }
+    
     /// Reset to default language (for testing)
     internal static func resetToDefaultLanguage() {
         updateCurrentLanguage(.english)
+        updateErrorDisplayPreferences(ErrorDisplayPreferences())
     }
     
     /// Get current language (thread-safe)
+    /// 需求: 17.6 - 错误消息的本地化和动态语言切换
     private static func getCurrentLanguage() -> SupportedLanguage {
         return _currentLanguageQueue.sync {
-            return _currentLanguage
+            // Check if user has a preferred error language
+            let preferences = getErrorDisplayPreferences()
+            return preferences.preferredErrorLanguage ?? _currentLanguage
+        }
+    }
+    
+    /// Get error display preferences (thread-safe)
+    private static func getErrorDisplayPreferences() -> ErrorDisplayPreferences {
+        return _preferencesQueue.sync {
+            return _errorDisplayPreferences
+        }
+    }
+    
+    /// Log error for debugging and analytics
+    /// 需求: 17.6 - 错误处理流程集成
+    static func logError(_ error: LocalizedRealtimeError) {
+        let preferences = getErrorDisplayPreferences()
+        
+        guard preferences.enableErrorLogging else { return }
+        
+        // Don't log suppressed error categories
+        guard !preferences.suppressedErrorCategories.contains(error.category) else { return }
+        
+        _recentErrorsQueue.sync(flags: .barrier) {
+            _recentErrors.append(error)
+            
+            // Keep only the most recent errors
+            if _recentErrors.count > preferences.maxRecentErrors {
+                _recentErrors.removeFirst(_recentErrors.count - preferences.maxRecentErrors)
+            }
+        }
+        
+        // Log to console for debugging
+        print("RealtimeKit Error [\(error.category.rawValue)]: \(error.description)")
+    }
+    
+    /// Get recent errors for debugging
+    static func getRecentErrors() -> [LocalizedRealtimeError] {
+        return _recentErrorsQueue.sync {
+            return Array(_recentErrors)
+        }
+    }
+    
+    /// Clear recent errors
+    static func clearRecentErrors() {
+        _recentErrorsQueue.sync(flags: .barrier) {
+            _recentErrors.removeAll()
         }
     }
     
     /// Get localized string for error messages (synchronous)
+    /// 需求: 17.1, 17.6 - 多语言错误消息和动态语言切换
     static func getLocalizedString(for key: String, arguments: [CVarArg] = [], fallbackValue: String? = nil) -> String {
+        let preferences = getErrorDisplayPreferences()
+        
+        // Return non-localized message if localization is disabled
+        guard preferences.useLocalizedMessages else {
+            return fallbackValue ?? key
+        }
+        
         let currentLanguage = getCurrentLanguage()
         
         // Get the localized string from built-in strings
@@ -429,7 +558,188 @@ internal struct ErrorLocalizationHelper {
         return fallbackValue ?? key
     }
     
+    /// Get formatted error message with preferences applied
+    /// 需求: 17.6 - 错误消息显示偏好
+    static func getFormattedErrorMessage(for error: LocalizedRealtimeError) -> String {
+        let preferences = getErrorDisplayPreferences()
+        
+        // Check if this error category is suppressed
+        guard !preferences.suppressedErrorCategories.contains(error.category) else {
+            return ""
+        }
+        
+        var message = error.errorDescription ?? "Unknown error"
+        
+        // Add failure reason if enabled and available
+        if preferences.showFailureReasons, let failureReason = error.failureReason {
+            message += "\n\nReason: \(failureReason)"
+        }
+        
+        // Add recovery suggestion if enabled and available
+        if preferences.showRecoverySuggestions, let recoverySuggestion = error.recoverySuggestion {
+            message += "\n\nSuggestion: \(recoverySuggestion)"
+        }
+        
+        // Add detailed information if enabled
+        if preferences.showDetailedErrors {
+            message += "\n\nCategory: \(error.category.rawValue)"
+            if error.isRecoverable {
+                message += "\nRecoverable: Yes"
+                if let retryDelay = error.retryDelay {
+                    message += " (retry after \(retryDelay)s)"
+                }
+            } else {
+                message += "\nRecoverable: No"
+            }
+        }
+        
+        return message
+    }
+    
     private static func getBuiltInString(for key: String, language: SupportedLanguage) -> String? {
         return LocalizedStrings.builtInStrings[language]?[key]
+    }
+}
+
+// MARK: - Error Manager with @RealtimeStorage Integration
+
+/// Error manager that integrates with LocalizationManager and @RealtimeStorage
+/// 需求: 17.1, 17.6, 18.1 - 本地化错误处理系统和持久化
+@MainActor
+public class LocalizedErrorManager: ObservableObject {
+    
+    /// Singleton instance
+    public static let shared = LocalizedErrorManager()
+    
+    /// Error display preferences with automatic persistence
+    /// 需求: 18.1 - 使用 @RealtimeStorage 持久化错误消息显示偏好
+    @RealtimeStorage("errorDisplayPreferences", namespace: "RealtimeKit.ErrorHandling")
+    public var errorDisplayPreferences: ErrorDisplayPreferences = ErrorDisplayPreferences()
+    
+    /// Recent errors for display and debugging
+    @Published public private(set) var recentErrors: [LocalizedRealtimeError] = []
+    
+    /// Whether error logging is currently active
+    @Published public private(set) var isLoggingActive: Bool = true
+    
+    private init() {
+        // Initialize error localization helper with persisted preferences
+        ErrorLocalizationHelper.updateErrorDisplayPreferences(errorDisplayPreferences)
+        
+        // Set up language change observation
+        NotificationCenter.default.addObserver(
+            forName: .realtimeLanguageDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let currentLanguage = notification.userInfo?[LocalizationNotificationKeys.currentLanguage] as? SupportedLanguage {
+                ErrorLocalizationHelper.updateCurrentLanguage(currentLanguage)
+                Task { @MainActor in
+                    self?.refreshRecentErrors()
+                }
+            }
+        }
+        
+        // Load recent errors
+        refreshRecentErrors()
+    }
+    
+    /// Update error display preferences
+    /// 需求: 18.1 - 自动持久化错误消息显示偏好
+    public func updateErrorDisplayPreferences(_ preferences: ErrorDisplayPreferences) {
+        errorDisplayPreferences = preferences
+        ErrorLocalizationHelper.updateErrorDisplayPreferences(preferences)
+        isLoggingActive = preferences.enableErrorLogging
+        
+        // Refresh recent errors with new preferences
+        refreshRecentErrors()
+    }
+    
+    /// Log an error with localization and preferences applied
+    /// 需求: 17.1, 17.6 - 本地化错误处理和集成
+    public func logError(_ error: LocalizedRealtimeError) {
+        ErrorLocalizationHelper.logError(error)
+        refreshRecentErrors()
+    }
+    
+    /// Get formatted error message for display
+    /// 需求: 17.6 - 错误消息显示偏好
+    public func getFormattedErrorMessage(for error: LocalizedRealtimeError) -> String {
+        return ErrorLocalizationHelper.getFormattedErrorMessage(for: error)
+    }
+    
+    /// Clear all recent errors
+    public func clearRecentErrors() {
+        ErrorLocalizationHelper.clearRecentErrors()
+        recentErrors.removeAll()
+    }
+    
+    /// Enable or disable specific error categories
+    /// 需求: 17.6 - 错误类别管理
+    public func setErrorCategorySuppressed(_ category: ErrorCategory, suppressed: Bool) {
+        var preferences = errorDisplayPreferences
+        if suppressed {
+            preferences.suppressedErrorCategories.insert(category)
+        } else {
+            preferences.suppressedErrorCategories.remove(category)
+        }
+        updateErrorDisplayPreferences(preferences)
+    }
+    
+    /// Check if an error category is suppressed
+    public func isErrorCategorySuppressed(_ category: ErrorCategory) -> Bool {
+        return errorDisplayPreferences.suppressedErrorCategories.contains(category)
+    }
+    
+    /// Set preferred error language
+    /// 需求: 17.6 - 错误消息语言偏好
+    public func setPreferredErrorLanguage(_ language: SupportedLanguage?) {
+        var preferences = errorDisplayPreferences
+        preferences.preferredErrorLanguage = language
+        updateErrorDisplayPreferences(preferences)
+    }
+    
+    /// Enable or disable detailed error messages
+    public func setShowDetailedErrors(_ enabled: Bool) {
+        var preferences = errorDisplayPreferences
+        preferences.showDetailedErrors = enabled
+        updateErrorDisplayPreferences(preferences)
+    }
+    
+    /// Enable or disable recovery suggestions
+    public func setShowRecoverySuggestions(_ enabled: Bool) {
+        var preferences = errorDisplayPreferences
+        preferences.showRecoverySuggestions = enabled
+        updateErrorDisplayPreferences(preferences)
+    }
+    
+    /// Enable or disable failure reasons
+    public func setShowFailureReasons(_ enabled: Bool) {
+        var preferences = errorDisplayPreferences
+        preferences.showFailureReasons = enabled
+        updateErrorDisplayPreferences(preferences)
+    }
+    
+    /// Enable or disable error logging
+    public func setErrorLoggingEnabled(_ enabled: Bool) {
+        var preferences = errorDisplayPreferences
+        preferences.enableErrorLogging = enabled
+        updateErrorDisplayPreferences(preferences)
+    }
+    
+    /// Set maximum number of recent errors to keep
+    public func setMaxRecentErrors(_ maxCount: Int) {
+        var preferences = errorDisplayPreferences
+        preferences.maxRecentErrors = max(1, maxCount)
+        updateErrorDisplayPreferences(preferences)
+    }
+    
+    /// Refresh recent errors from the helper
+    private func refreshRecentErrors() {
+        recentErrors = ErrorLocalizationHelper.getRecentErrors()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }

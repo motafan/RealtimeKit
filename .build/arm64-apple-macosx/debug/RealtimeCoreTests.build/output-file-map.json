@@ -2,6 +2,13 @@
   "": {
     "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/master.swiftdeps"
   },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsManagerTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsManagerTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsManagerTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsManagerTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsManagerTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsManagerTests.dia"
+  },
   "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsStorageTests.swift": {
     "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsStorageTests.d",
     "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsStorageTests.swift.o",
@@ -65,6 +72,48 @@
     "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/LocalizedUIComponentsTests.swiftdeps",
     "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/LocalizedUIComponentsTests.dia"
   },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayConfigTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayConfigTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayConfigTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayConfigTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayConfigTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayConfigTests.dia"
+  },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayManagerTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayManagerTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayManagerTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayManagerTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayManagerTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MediaRelayManagerTests.dia"
+  },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessingManagerTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessingManagerTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessingManagerTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessingManagerTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessingManagerTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/MessageProcessingManagerTests.dia"
+  },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeStorageTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/RealtimeStorageTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/RealtimeStorageTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/RealtimeStorageTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/RealtimeStorageTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/RealtimeStorageTests.dia"
+  },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StorageBackendTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageBackendTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageBackendTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageBackendTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageBackendTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageBackendTests.dia"
+  },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StorageManagerTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageManagerTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageManagerTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageManagerTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageManagerTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StorageManagerTests.dia"
+  },
   "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushConfigTests.swift": {
     "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushConfigTests.d",
     "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushConfigTests.swift.o",
@@ -93,12 +142,26 @@
     "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.swiftdeps",
     "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.dia"
   },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionManagerTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionManagerTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionManagerTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionManagerTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionManagerTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionManagerTests.dia"
+  },
   "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift": {
     "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.d",
     "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.swift.o",
     "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests~partial.swiftmodule",
     "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.swiftdeps",
     "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.dia"
+  },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeDetectionManagerTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeDetectionManagerTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeDetectionManagerTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeDetectionManagerTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeDetectionManagerTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeDetectionManagerTests.dia"
   },
   "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeIndicatorManagerTests.swift": {
     "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeIndicatorManagerTests.d",

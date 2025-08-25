@@ -317,8 +317,32 @@ private struct AssociatedKeys {
 
 // MARK: - Language Change Notification Helper
 
-/// Helper class for managing language change notifications in UIKit
-public class LocalizationNotificationManager {
+/// Helper class for managing language change notifications in UIKit with persistent state
+/// 需求: 17.6, 18.1, 18.10 - 语言变化通知和 UI 自动更新机制，状态持久化
+@MainActor
+public class LocalizationNotificationManager: ObservableObject {
+    
+    /// Singleton instance
+    public static let shared = LocalizationNotificationManager()
+    
+    /// UIKit component localization state with automatic persistence
+    /// 需求: 18.1, 18.10 - 使用 @RealtimeStorage 持久化 UI 组件的本地化状态
+    @RealtimeStorage("uikitLocalizationState", namespace: "RealtimeKit.UI.UIKit")
+    public var uikitState: UIKitLocalizationState = UIKitLocalizationState()
+    
+    /// Registered view controllers for automatic updates
+    @Published public private(set) var registeredViewControllers: Set<String> = []
+    
+    private init() {
+        // Set up language change observation
+        NotificationCenter.default.addObserver(
+            forName: .realtimeLanguageDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleLanguageChange(notification)
+        }
+    }
     
     /// Manually trigger language change update for all registered UI components
     public static func updateAllLocalizedComponents() {
@@ -329,12 +353,141 @@ public class LocalizationNotificationManager {
     /// - Parameter viewController: The view controller to register
     public static func registerViewController(_ viewController: UIViewController) {
         viewController.registerForLanguageChangeNotifications()
+        
+        // Update persistent state
+        let identifier = String(describing: type(of: viewController))
+        shared.registeredViewControllers.insert(identifier)
+        shared.uikitState.registeredViewControllerTypes.insert(identifier)
+        shared.uikitState.registrationCount += 1
+        shared.uikitState.lastRegistrationDate = Date()
     }
     
     /// Unregister a view controller from localization updates
     /// - Parameter viewController: The view controller to unregister
     public static func unregisterViewController(_ viewController: UIViewController) {
         NotificationCenter.default.removeObserver(viewController, name: .realtimeLanguageDidChange, object: nil)
+        
+        // Update persistent state
+        let identifier = String(describing: type(of: viewController))
+        shared.registeredViewControllers.remove(identifier)
+        shared.uikitState.registeredViewControllerTypes.remove(identifier)
+        shared.uikitState.unregistrationCount += 1
+        shared.uikitState.lastUnregistrationDate = Date()
+    }
+    
+    /// Get statistics about UIKit localization usage
+    public func getLocalizationStatistics() -> UIKitLocalizationStatistics {
+        return UIKitLocalizationStatistics(
+            registeredViewControllers: registeredViewControllers.count,
+            totalRegistrations: uikitState.registrationCount,
+            totalUnregistrations: uikitState.unregistrationCount,
+            languageChangeCount: uikitState.languageChangeCount,
+            lastLanguageChange: uikitState.lastLanguageChangeDate,
+            componentUpdateCount: uikitState.componentUpdateCount
+        )
+    }
+    
+    private func handleLanguageChange(_ notification: Notification) {
+        // Update persistent state
+        uikitState.languageChangeCount += 1
+        uikitState.lastLanguageChangeDate = Date()
+        
+        if let currentLanguage = notification.userInfo?[LocalizationNotificationKeys.currentLanguage] as? SupportedLanguage {
+            uikitState.currentLanguage = currentLanguage
+        }
+        
+        // Update component count
+        uikitState.componentUpdateCount += registeredViewControllers.count
+    }
+}
+
+/// Persistent state for UIKit localization management
+/// 需求: 18.1 - UI 组件本地化状态持久化
+public struct UIKitLocalizationState: Codable, Sendable {
+    /// Current language for UIKit components
+    public var currentLanguage: SupportedLanguage = .english
+    
+    /// Set of registered view controller types
+    public var registeredViewControllerTypes: Set<String> = []
+    
+    /// Total number of view controller registrations
+    public var registrationCount: Int = 0
+    
+    /// Total number of view controller unregistrations
+    public var unregistrationCount: Int = 0
+    
+    /// Number of language changes processed
+    public var languageChangeCount: Int = 0
+    
+    /// Number of component updates performed
+    public var componentUpdateCount: Int = 0
+    
+    /// Date of last view controller registration
+    public var lastRegistrationDate: Date?
+    
+    /// Date of last view controller unregistration
+    public var lastUnregistrationDate: Date?
+    
+    /// Date of last language change
+    public var lastLanguageChangeDate: Date?
+    
+    public init(
+        currentLanguage: SupportedLanguage = .english,
+        registeredViewControllerTypes: Set<String> = [],
+        registrationCount: Int = 0,
+        unregistrationCount: Int = 0,
+        languageChangeCount: Int = 0,
+        componentUpdateCount: Int = 0,
+        lastRegistrationDate: Date? = nil,
+        lastUnregistrationDate: Date? = nil,
+        lastLanguageChangeDate: Date? = nil
+    ) {
+        self.currentLanguage = currentLanguage
+        self.registeredViewControllerTypes = registeredViewControllerTypes
+        self.registrationCount = registrationCount
+        self.unregistrationCount = unregistrationCount
+        self.languageChangeCount = languageChangeCount
+        self.componentUpdateCount = componentUpdateCount
+        self.lastRegistrationDate = lastRegistrationDate
+        self.lastUnregistrationDate = lastUnregistrationDate
+        self.lastLanguageChangeDate = lastLanguageChangeDate
+    }
+}
+
+/// Statistics about UIKit localization usage
+public struct UIKitLocalizationStatistics: Codable, Sendable {
+    /// Number of currently registered view controllers
+    public let registeredViewControllers: Int
+    
+    /// Total number of registrations
+    public let totalRegistrations: Int
+    
+    /// Total number of unregistrations
+    public let totalUnregistrations: Int
+    
+    /// Number of language changes processed
+    public let languageChangeCount: Int
+    
+    /// Date of last language change
+    public let lastLanguageChange: Date?
+    
+    /// Number of component updates performed
+    public let componentUpdateCount: Int
+    
+    public init(
+        registeredViewControllers: Int,
+        totalRegistrations: Int,
+        totalUnregistrations: Int,
+        languageChangeCount: Int,
+        lastLanguageChange: Date?,
+        componentUpdateCount: Int
+    ) {
+        self.registeredViewControllers = registeredViewControllers
+        self.totalRegistrations = totalRegistrations
+        self.totalUnregistrations = totalUnregistrations
+        self.languageChangeCount = languageChangeCount
+        self.lastLanguageChange = lastLanguageChange
+        self.componentUpdateCount = componentUpdateCount
     }
 }
 

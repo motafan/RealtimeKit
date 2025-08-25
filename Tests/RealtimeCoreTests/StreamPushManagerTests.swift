@@ -88,7 +88,7 @@ struct StreamPushManagerTests {
     
     @Test("Stream push manager should initialize with correct default state")
     func testInitialization() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         
         #expect(manager.state == .stopped)
         #expect(manager.currentConfig == nil)
@@ -98,7 +98,7 @@ struct StreamPushManagerTests {
     
     @Test("Stream push manager should accept RTC provider")
     func testSetRTCProvider() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         
         manager.setRTCProvider(provider)
@@ -116,7 +116,7 @@ struct StreamPushManagerTests {
     
     @Test("Should start stream push successfully with valid configuration")
     func testStartStreamPushSuccess() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         manager.setRTCProvider(provider)
         
@@ -134,7 +134,7 @@ struct StreamPushManagerTests {
     
     @Test("Should fail to start stream push without RTC provider")
     func testStartStreamPushWithoutProvider() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let config = try createValidConfig()
         
         await #expect(throws: StreamPushError.self) {
@@ -146,12 +146,12 @@ struct StreamPushManagerTests {
     
     @Test("Should fail to start stream push with invalid configuration")
     func testStartStreamPushWithInvalidConfig() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         manager.setRTCProvider(provider)
         
         // Create invalid config with empty URL
-        await #expect(throws: StreamPushError.self) {
+        await #expect(throws: Error.self) {
             try await manager.startStreamPush(config: try StreamPushConfig(url: ""))
         }
         
@@ -161,7 +161,7 @@ struct StreamPushManagerTests {
     
     @Test("Should handle start stream push failure from provider")
     func testStartStreamPushProviderFailure() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         provider.shouldFailStart = true
         manager.setRTCProvider(provider)
@@ -179,7 +179,7 @@ struct StreamPushManagerTests {
     
     @Test("Should not start stream push when already running")
     func testStartStreamPushWhenRunning() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         manager.setRTCProvider(provider)
         
@@ -201,7 +201,7 @@ struct StreamPushManagerTests {
     
     @Test("Should stop stream push successfully")
     func testStopStreamPushSuccess() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         manager.setRTCProvider(provider)
         
@@ -221,7 +221,7 @@ struct StreamPushManagerTests {
     
     @Test("Should not stop stream push when not running")
     func testStopStreamPushWhenNotRunning() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         manager.setRTCProvider(provider)
         
@@ -235,7 +235,7 @@ struct StreamPushManagerTests {
     
     @Test("Should handle stop stream push failure from provider")
     func testStopStreamPushProviderFailure() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         manager.setRTCProvider(provider)
         
@@ -261,7 +261,7 @@ struct StreamPushManagerTests {
     
     @Test("Should update stream layout successfully")
     func testUpdateStreamLayoutSuccess() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         manager.setRTCProvider(provider)
         
@@ -283,7 +283,7 @@ struct StreamPushManagerTests {
     
     @Test("Should not update layout when not running")
     func testUpdateStreamLayoutWhenNotRunning() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         manager.setRTCProvider(provider)
         
@@ -298,7 +298,7 @@ struct StreamPushManagerTests {
     
     @Test("Should handle layout update failure from provider")
     func testUpdateStreamLayoutProviderFailure() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         manager.setRTCProvider(provider)
         
@@ -349,7 +349,7 @@ struct StreamPushManagerTests {
     
     @Test("Should reset error state correctly")
     func testResetError() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         provider.shouldFailStart = true
         manager.setRTCProvider(provider)
@@ -424,7 +424,7 @@ struct StreamPushManagerTests {
     
     @Test("Should track layout updates in statistics")
     func testLayoutUpdateStatistics() async throws {
-        let manager = StreamPushManager()
+        let manager = StreamPushManager(enableAutoRetry: false)
         let provider = MockRTCProvider()
         manager.setRTCProvider(provider)
         

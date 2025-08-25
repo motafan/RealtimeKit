@@ -304,6 +304,189 @@ struct LocalizedErrorsTests {
         #expect(error1.localizationKey != error3.localizationKey)
     }
     
+    // MARK: - @RealtimeStorage Integration Tests (需求 18.1)
+    
+    @Test("Error display preferences persistence")
+    func testErrorDisplayPreferencesPersistence() async {
+        let errorManager = LocalizedErrorManager.shared
+        
+        // Update preferences
+        var preferences = errorManager.errorDisplayPreferences
+        preferences.showDetailedErrors = false
+        preferences.showRecoverySuggestions = false
+        preferences.preferredErrorLanguage = .japanese
+        preferences.maxRecentErrors = 25
+        preferences.suppressedErrorCategories = [.network, .audio]
+        
+        errorManager.updateErrorDisplayPreferences(preferences)
+        
+        // Verify preferences are updated
+        let updatedPreferences = errorManager.errorDisplayPreferences
+        #expect(updatedPreferences.showDetailedErrors == false)
+        #expect(updatedPreferences.showRecoverySuggestions == false)
+        #expect(updatedPreferences.preferredErrorLanguage == .japanese)
+        #expect(updatedPreferences.maxRecentErrors == 25)
+        #expect(updatedPreferences.suppressedErrorCategories.contains(.network))
+        #expect(updatedPreferences.suppressedErrorCategories.contains(.audio))
+    }
+    
+    @Test("Error category suppression")
+    func testErrorCategorySuppression() async {
+        let errorManager = LocalizedErrorManager.shared
+        
+        // Initially no categories should be suppressed
+        #expect(!errorManager.isErrorCategorySuppressed(.network))
+        
+        // Suppress network errors
+        errorManager.setErrorCategorySuppressed(.network, suppressed: true)
+        #expect(errorManager.isErrorCategorySuppressed(.network))
+        
+        // Un-suppress network errors
+        errorManager.setErrorCategorySuppressed(.network, suppressed: false)
+        #expect(!errorManager.isErrorCategorySuppressed(.network))
+    }
+    
+    @Test("Preferred error language setting")
+    func testPreferredErrorLanguageSetting() async {
+        let errorManager = LocalizedErrorManager.shared
+        let localizationManager = await createTestManager()
+        
+        // Set preferred error language to Japanese
+        errorManager.setPreferredErrorLanguage(.japanese)
+        #expect(errorManager.errorDisplayPreferences.preferredErrorLanguage == .japanese)
+        
+        // Even if system language is English, errors should use Japanese
+        await localizationManager.switchLanguage(to: .english)
+        
+        let error = LocalizedRealtimeError.networkUnavailable
+        let message = errorManager.getFormattedErrorMessage(for: error)
+        
+        // The message should be in Japanese due to preferred error language
+        #expect(message.contains("ネットワーク") || message.contains("利用できません"), 
+                "Error message should be in Japanese: \(message)")
+        
+        // Clear preferred language
+        errorManager.setPreferredErrorLanguage(nil)
+        #expect(errorManager.errorDisplayPreferences.preferredErrorLanguage == nil)
+    }
+    
+    @Test("Error logging and recent errors management")
+    func testErrorLoggingAndRecentErrorsManagement() async {
+        let errorManager = LocalizedErrorManager.shared
+        
+        // Clear any existing errors
+        errorManager.clearRecentErrors()
+        #expect(errorManager.recentErrors.isEmpty)
+        
+        // Enable logging
+        errorManager.setErrorLoggingEnabled(true)
+        #expect(errorManager.isLoggingActive)
+        
+        // Log some errors
+        let errors: [LocalizedRealtimeError] = [
+            .networkUnavailable,
+            .connectionTimeout,
+            .audioDeviceUnavailable
+        ]
+        
+        for error in errors {
+            errorManager.logError(error)
+        }
+        
+        // Check that errors were logged
+        #expect(errorManager.recentErrors.count == 3)
+        
+        // Set max recent errors to 2
+        errorManager.setMaxRecentErrors(2)
+        
+        // Log another error
+        errorManager.logError(.tokenExpired)
+        
+        // Should only keep the most recent 2 errors
+        #expect(errorManager.recentErrors.count <= 2)
+        
+        // Disable logging
+        errorManager.setErrorLoggingEnabled(false)
+        #expect(!errorManager.isLoggingActive)
+        
+        // Clear errors
+        errorManager.clearRecentErrors()
+        #expect(errorManager.recentErrors.isEmpty)
+    }
+    
+    @Test("Formatted error message with preferences")
+    func testFormattedErrorMessageWithPreferences() async {
+        let errorManager = LocalizedErrorManager.shared
+        let localizationManager = await createTestManager()
+        await localizationManager.switchLanguage(to: .english)
+        
+        let error = LocalizedRealtimeError.connectionFailed(reason: "Server unreachable")
+        
+        // Test with all details enabled
+        errorManager.setShowDetailedErrors(true)
+        errorManager.setShowRecoverySuggestions(true)
+        errorManager.setShowFailureReasons(true)
+        
+        let detailedMessage = errorManager.getFormattedErrorMessage(for: error)
+        #expect(detailedMessage.contains("Category:"), "Should include category information")
+        #expect(detailedMessage.contains("Recoverable:"), "Should include recoverability information")
+        
+        // Test with minimal details
+        errorManager.setShowDetailedErrors(false)
+        errorManager.setShowRecoverySuggestions(false)
+        errorManager.setShowFailureReasons(false)
+        
+        let minimalMessage = errorManager.getFormattedErrorMessage(for: error)
+        #expect(!minimalMessage.contains("Category:"), "Should not include category information")
+        #expect(!minimalMessage.contains("Recoverable:"), "Should not include recoverability information")
+    }
+    
+    @Test("Suppressed error categories formatting")
+    func testSuppressedErrorCategoriesFormatting() async {
+        let errorManager = LocalizedErrorManager.shared
+        
+        // Suppress network errors
+        errorManager.setErrorCategorySuppressed(.network, suppressed: true)
+        
+        let networkError = LocalizedRealtimeError.networkUnavailable
+        let message = errorManager.getFormattedErrorMessage(for: networkError)
+        
+        // Suppressed errors should return empty message
+        #expect(message.isEmpty, "Suppressed error should return empty message")
+        
+        // Un-suppress and test again
+        errorManager.setErrorCategorySuppressed(.network, suppressed: false)
+        let unsuppressedMessage = errorManager.getFormattedErrorMessage(for: networkError)
+        #expect(!unsuppressedMessage.isEmpty, "Unsuppressed error should return message")
+    }
+    
+    @Test("Error preferences convenience methods")
+    func testErrorPreferencesConvenienceMethods() async {
+        let errorManager = LocalizedErrorManager.shared
+        
+        // Test individual preference setters
+        errorManager.setShowDetailedErrors(false)
+        #expect(errorManager.errorDisplayPreferences.showDetailedErrors == false)
+        
+        errorManager.setShowRecoverySuggestions(false)
+        #expect(errorManager.errorDisplayPreferences.showRecoverySuggestions == false)
+        
+        errorManager.setShowFailureReasons(false)
+        #expect(errorManager.errorDisplayPreferences.showFailureReasons == false)
+        
+        errorManager.setErrorLoggingEnabled(false)
+        #expect(errorManager.errorDisplayPreferences.enableErrorLogging == false)
+        
+        errorManager.setMaxRecentErrors(100)
+        #expect(errorManager.errorDisplayPreferences.maxRecentErrors == 100)
+        
+        // Reset to defaults
+        errorManager.setShowDetailedErrors(true)
+        errorManager.setShowRecoverySuggestions(true)
+        errorManager.setShowFailureReasons(true)
+        errorManager.setErrorLoggingEnabled(true)
+    }
+    
     // MARK: - Integration Tests
     
     @Test("Error integration with notification system")
@@ -338,6 +521,34 @@ struct LocalizedErrorsTests {
         
         #expect(receivedNotification, "Language change notification should be received")
         #expect(initialMessage != newMessage, "Error message should change with language")
+    }
+    
+    @Test("Error manager integration with localization manager")
+    func testErrorManagerIntegrationWithLocalizationManager() async {
+        let localizationManager = await createTestManager()
+        let errorManager = LocalizedErrorManager.shared
+        
+        // Clear any existing errors
+        errorManager.clearRecentErrors()
+        
+        // Switch language and verify error manager responds
+        await localizationManager.switchLanguage(to: .japanese)
+        
+        // Give time for notification processing
+        try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+        
+        let error = LocalizedRealtimeError.connectionTimeout
+        let message = errorManager.getFormattedErrorMessage(for: error)
+        
+        // Should be in Japanese
+        #expect(message.contains("タイムアウト"), "Error should be localized to Japanese: \(message)")
+        
+        // Switch back to English
+        await localizationManager.switchLanguage(to: .english)
+        try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+        
+        let englishMessage = errorManager.getFormattedErrorMessage(for: error)
+        #expect(englishMessage.contains("timeout"), "Error should be localized to English: \(englishMessage)")
     }
     
     // MARK: - Helper Methods

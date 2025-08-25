@@ -231,6 +231,24 @@ RealtimeKit 是一个统一的 Swift Package，用于集成多家第三方 RTM (
 7. WHEN 开发者自定义 THEN 系统 SHALL 支持开发者添加自定义语言包和本地化字符串
 8. WHEN 格式化消息 THEN 系统 SHALL 支持带参数的本地化字符串格式化（如用户名、时间等动态内容）
 
+### Requirement 18
+
+**User Story:** 作为一个应用开发者，我希望有一个类似 SwiftUI AppStorage 的自动状态持久化和恢复机制，这样我就能让整个项目的状态数据自动保存和恢复，无需手动管理存储逻辑。
+
+#### Acceptance Criteria
+
+1. WHEN 使用持久化属性 THEN 系统 SHALL 提供类似 @AppStorage 的属性包装器用于自动状态持久化
+2. WHEN 状态值变化 THEN 系统 SHALL 自动将变化保存到持久化存储（UserDefaults 或 Keychain）
+3. WHEN 应用启动 THEN 系统 SHALL 自动从持久化存储恢复所有标记的状态值
+4. WHEN 支持数据类型 THEN 系统 SHALL 支持基础类型（String, Int, Bool, Double）和复杂类型（Codable 对象、数组、字典）
+5. WHEN 配置存储策略 THEN 系统 SHALL 支持选择存储后端（UserDefaults 用于一般数据，Keychain 用于敏感数据）
+6. WHEN 处理存储键冲突 THEN 系统 SHALL 提供命名空间机制避免不同模块间的键名冲突
+7. WHEN 数据迁移 THEN 系统 SHALL 支持版本化存储和数据迁移策略
+8. WHEN 性能优化 THEN 系统 SHALL 使用批量写入和延迟写入机制优化存储性能
+9. WHEN 错误处理 THEN 系统 SHALL 提供存储失败时的降级处理和错误恢复机制
+10. WHEN 跨框架使用 THEN 系统 SHALL 在 UIKit 和 SwiftUI 中提供一致的持久化 API
+11. WHEN 测试支持 THEN 系统 SHALL 提供 Mock 存储后端用于单元测试和集成测试
+
 ## 测试要求
 
 ### 1. Swift Testing 框架

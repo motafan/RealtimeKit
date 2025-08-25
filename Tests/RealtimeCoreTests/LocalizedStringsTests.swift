@@ -265,6 +265,148 @@ struct LocalizedStringsTests {
         #expect(manager.localizedString(for: "complex.key") == "English Custom", "Should fallback to English")
     }
     
+    // MARK: - @RealtimeStorage Integration Tests (需求 18.1)
+    
+    @Test("Custom language pack persistence with RealtimeStorage")
+    func testCustomLanguagePackPersistenceWithRealtimeStorage() async {
+        let manager = await createTestManager()
+        
+        // Enable custom language pack caching
+        manager.setCacheCustomLanguagePacks(true)
+        
+        // Add custom language pack
+        let customPack = [
+            "persistent.greeting": "Hello from Storage",
+            "persistent.farewell": "Goodbye from Storage"
+        ]
+        
+        manager.loadLanguagePack(customPack, for: .english, merge: true)
+        
+        // Verify strings are available
+        #expect(manager.localizedString(for: "persistent.greeting") == "Hello from Storage")
+        #expect(manager.localizedString(for: "persistent.farewell") == "Goodbye from Storage")
+        
+        // Test that the language pack is cached (in real usage, this would persist across app restarts)
+        let preferences = manager.getUserPreferences()
+        #expect(preferences.cacheCustomLanguagePacks == true, "Caching should be enabled")
+    }
+    
+    @Test("Language pack caching limits with RealtimeStorage")
+    func testLanguagePackCachingLimitsWithRealtimeStorage() async {
+        let manager = await createTestManager()
+        
+        // Set a low cache limit
+        manager.setMaxCachedLanguagePacks(3)
+        manager.setCacheCustomLanguagePacks(true)
+        
+        // Add multiple language packs
+        for i in 1...5 {
+            let pack = ["cache.test.\(i)": "Cached Value \(i)"]
+            manager.loadLanguagePack(pack, for: .english, merge: true)
+        }
+        
+        // All should be available in memory (the limit applies to persistence)
+        for i in 1...5 {
+            let value = manager.localizedString(for: "cache.test.\(i)")
+            #expect(value == "Cached Value \(i)", "All values should be available in memory")
+        }
+        
+        // Verify cache limit setting
+        let preferences = manager.getUserPreferences()
+        #expect(preferences.maxCachedLanguagePacks == 3, "Cache limit should be set to 3")
+    }
+    
+    @Test("Disable language pack caching")
+    func testDisableLanguagePackCaching() async {
+        let manager = await createTestManager()
+        
+        // Initially enable caching
+        manager.setCacheCustomLanguagePacks(true)
+        
+        // Add a language pack
+        let pack = ["cache.disable.test": "Should not be cached"]
+        manager.loadLanguagePack(pack, for: .english, merge: true)
+        
+        // Disable caching
+        manager.setCacheCustomLanguagePacks(false)
+        
+        // Verify caching is disabled
+        let preferences = manager.getUserPreferences()
+        #expect(preferences.cacheCustomLanguagePacks == false, "Caching should be disabled")
+        
+        // The string should still be available in memory
+        #expect(manager.localizedString(for: "cache.disable.test") == "Should not be cached")
+    }
+    
+    @Test("Custom localization with RealtimeStorage persistence")
+    func testCustomLocalizationWithRealtimeStoragePersistence() async {
+        let manager = await createTestManager()
+        
+        // Enable caching
+        manager.setCacheCustomLanguagePacks(true)
+        
+        // Add custom localization
+        manager.addCustomLocalization(key: "storage.test.key", localizations: [
+            .english: "English Storage Test",
+            .japanese: "日本語ストレージテスト",
+            .korean: "한국어 저장소 테스트"
+        ])
+        
+        // Test in different languages
+        await manager.switchLanguage(to: .english)
+        #expect(manager.localizedString(for: "storage.test.key") == "English Storage Test")
+        
+        await manager.switchLanguage(to: .japanese)
+        #expect(manager.localizedString(for: "storage.test.key") == "日本語ストレージテスト")
+        
+        await manager.switchLanguage(to: .korean)
+        #expect(manager.localizedString(for: "storage.test.key") == "한국어 저장소 테스트")
+        
+        // Remove custom localization
+        manager.removeCustomLocalization(key: "storage.test.key")
+        
+        // Should fallback to key name
+        #expect(manager.localizedString(for: "storage.test.key") == "storage.test.key")
+    }
+    
+    @Test("Language pack JSON import/export with persistence")
+    func testLanguagePackJSONImportExportWithPersistence() async throws {
+        let manager = await createTestManager()
+        
+        // Enable caching
+        manager.setCacheCustomLanguagePacks(true)
+        
+        // Create a comprehensive language pack
+        let languagePack = [
+            "json.import.greeting": "Hello from JSON",
+            "json.import.farewell": "Goodbye from JSON",
+            "json.import.formatted": "User %@ has %d messages"
+        ]
+        
+        // Convert to JSON and import
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let jsonData = try encoder.encode(languagePack)
+        
+        try manager.loadLanguagePack(from: jsonData, for: .english, merge: true)
+        
+        // Test imported strings
+        #expect(manager.localizedString(for: "json.import.greeting") == "Hello from JSON")
+        #expect(manager.localizedString(for: "json.import.farewell") == "Goodbye from JSON")
+        
+        // Test formatted string
+        let formatted = manager.localizedString(for: "json.import.formatted", arguments: "John", 5)
+        #expect(formatted == "User John has 5 messages")
+        
+        // Export the language pack
+        let exportedData = try manager.exportLanguagePack(for: .english)
+        let exportedString = String(data: exportedData, encoding: .utf8)!
+        
+        // Verify exported content contains our custom strings
+        #expect(exportedString.contains("json.import.greeting"), "Exported JSON should contain custom keys")
+        #expect(exportedString.contains("Hello from JSON"), "Exported JSON should contain custom values")
+    }
+    
     // MARK: - Performance Tests
     
     @Test("String retrieval performance")
@@ -284,6 +426,29 @@ struct LocalizedStringsTests {
         let duration = endTime.timeIntervalSince(startTime)
         
         #expect(duration < 1.0, "String retrieval should be fast (completed in \(duration) seconds)")
+    }
+    
+    @Test("Language pack loading performance")
+    func testLanguagePackLoadingPerformance() async {
+        let manager = await createTestManager()
+        
+        // Create a large language pack
+        var largePack: [String: String] = [:]
+        for i in 0..<1000 {
+            largePack["performance.key.\(i)"] = "Performance Value \(i)"
+        }
+        
+        let startTime = Date()
+        manager.loadLanguagePack(largePack, for: .english, merge: true)
+        let endTime = Date()
+        
+        let duration = endTime.timeIntervalSince(startTime)
+        #expect(duration < 0.5, "Large language pack loading should be fast (completed in \(duration) seconds)")
+        
+        // Verify a few random keys
+        #expect(manager.localizedString(for: "performance.key.0") == "Performance Value 0")
+        #expect(manager.localizedString(for: "performance.key.500") == "Performance Value 500")
+        #expect(manager.localizedString(for: "performance.key.999") == "Performance Value 999")
     }
     
     // MARK: - Helper Methods

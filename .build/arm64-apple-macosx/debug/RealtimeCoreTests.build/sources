@@ -1,3 +1,4 @@
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsStorageTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ConnectionStateManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/CoreModelsTests.swift
@@ -7,9 +8,17 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/LocalizedUIComponentsCompilationTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/LocalizedUIComponentsIntegrationTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/LocalizedUIComponentsTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayConfigTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayManagerTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessingManagerTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeStorageTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StorageBackendTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StorageManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushConfigTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerSimpleTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeDetectionManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeIndicatorManagerTests.swift

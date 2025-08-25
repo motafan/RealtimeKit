@@ -95,3 +95,43 @@ public struct LocalizationNotificationKeys {
     public static let previousLanguage = "previousLanguage"
     public static let currentLanguage = "currentLanguage"
 }
+
+// MARK: - User Preferences
+
+/// User preferences for localization behavior
+/// 需求: 18.1, 18.2 - 自动状态持久化
+public struct LocalizationUserPreferences: Codable, Sendable {
+    /// Whether to automatically detect system language changes
+    public var autoDetectSystemLanguage: Bool
+    
+    /// Whether to show language change notifications
+    public var showLanguageChangeNotifications: Bool
+    
+    /// Preferred fallback language when translation is missing
+    public var preferredFallbackLanguage: SupportedLanguage
+    
+    /// Whether to cache custom language packs
+    public var cacheCustomLanguagePacks: Bool
+    
+    /// Maximum number of custom language packs to cache
+    public var maxCachedLanguagePacks: Int
+    
+    /// Last language detection timestamp
+    public var lastLanguageDetection: Date?
+    
+    public init(
+        autoDetectSystemLanguage: Bool = true,
+        showLanguageChangeNotifications: Bool = true,
+        preferredFallbackLanguage: SupportedLanguage = .english,
+        cacheCustomLanguagePacks: Bool = true,
+        maxCachedLanguagePacks: Int = 10,
+        lastLanguageDetection: Date? = nil
+    ) {
+        self.autoDetectSystemLanguage = autoDetectSystemLanguage
+        self.showLanguageChangeNotifications = showLanguageChangeNotifications
+        self.preferredFallbackLanguage = preferredFallbackLanguage
+        self.cacheCustomLanguagePacks = cacheCustomLanguagePacks
+        self.maxCachedLanguagePacks = maxCachedLanguagePacks
+        self.lastLanguageDetection = lastLanguageDetection
+    }
+}

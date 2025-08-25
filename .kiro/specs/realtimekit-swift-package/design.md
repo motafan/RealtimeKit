@@ -876,7 +876,610 @@ public class VolumeIndicatorManager: ObservableObject {
 }
 ```
 
-### 5. 本地化支持系统设计 (需求 17)
+### 5. 自动状态持久化和恢复机制设计 (需求 18)
+
+#### 核心持久化架构
+
+```mermaid
+graph TB
+    subgraph "应用层"
+        A[SwiftUI Views] 
+        B[UIKit Controllers]
+    end
+    
+    subgraph "持久化属性包装器层"
+        C[@RealtimeStorage]
+        D[@SecureRealtimeStorage]
+    end
+    
+    subgraph "存储管理层"
+        E[StorageManager]
+        F[StorageBackend Protocol]
+    end
+    
+    subgraph "存储后端层"
+        G[UserDefaultsBackend]
+        H[KeychainBackend]
+        I[MockStorageBackend]
+    end
+    
+    subgraph "数据序列化层"
+        J[StorageEncoder]
+        K[StorageDecoder]
+    end
+    
+    A --> C
+    B --> C
+    C --> E
+    D --> E
+    E --> F
+    F --> G
+    F --> H
+    F --> I
+    E --> J
+    E --> K
+```
+
+#### 属性包装器设计
+
+```swift
+// 主要的持久化属性包装器 (需求 18.1, 18.2)
+@propertyWrapper
+public struct RealtimeStorage<Value: Codable>: DynamicProperty {
+    private let key: String
+    private let defaultValue: Value
+    private let backend: StorageBackend
+    private let namespace: String
+    
+    @State private var storedValue: Value
+    
+    public var wrappedValue: Value {
+        get { storedValue }
+        nonmutating set {
+            storedValue = newValue
+            Task {
+                await backend.store(newValue, forKey: namespacedKey)
+            }
+        }
+    }
+    
+    public var projectedValue: Binding<Value> {
+        Binding(
+            get: { wrappedValue },
+            set: { wrappedValue = $0 }
+        )
+    }
+    
+    private var namespacedKey: String {
+        "\(namespace).\(key)"
+    }
+    
+    public init(
+        wrappedValue defaultValue: Value,
+        _ key: String,
+        backend: StorageBackend = UserDefaultsBackend.shared,
+        namespace: String = "RealtimeKit"
+    ) {
+        self.key = key
+        self.defaultValue = defaultValue
+        self.backend = backend
+        self.namespace = namespace
+        
+        // 初始化时从存储中恢复值 (需求 18.3)
+        let namespacedKey = "\(namespace).\(key)"
+        if let stored: Value = backend.retrieve(forKey: namespacedKey) {
+            self._storedValue = State(initialValue: stored)
+        } else {
+            self._storedValue = State(initialValue: defaultValue)
+        }
+    }
+}
+
+// 安全存储属性包装器 (需求 18.5)
+@propertyWrapper
+public struct SecureRealtimeStorage<Value: Codable>: DynamicProperty {
+    private let key: String
+    private let defaultValue: Value
+    private let namespace: String
+    
+    @State private var storedValue: Value
+    
+    public var wrappedValue: Value {
+        get { storedValue }
+        nonmutating set {
+            storedValue = newValue
+            Task {
+                await KeychainBackend.shared.store(newValue, forKey: namespacedKey)
+            }
+        }
+    }
+    
+    public var projectedValue: Binding<Value> {
+        Binding(
+            get: { wrappedValue },
+            set: { wrappedValue = $0 }
+        )
+    }
+    
+    private var namespacedKey: String {
+        "\(namespace).\(key)"
+    }
+    
+    public init(
+        wrappedValue defaultValue: Value,
+        _ key: String,
+        namespace: String = "RealtimeKit.Secure"
+    ) {
+        self.key = key
+        self.defaultValue = defaultValue
+        self.namespace = namespace
+        
+        let namespacedKey = "\(namespace).\(key)"
+        if let stored: Value = KeychainBackend.shared.retrieve(forKey: namespacedKey) {
+            self._storedValue = State(initialValue: stored)
+        } else {
+            self._storedValue = State(initialValue: defaultValue)
+        }
+    }
+}
+```
+
+#### 存储后端协议和实现
+
+```swift
+// 存储后端协议 (需求 18.5)
+public protocol StorageBackend: Actor {
+    func store<T: Codable>(_ value: T, forKey key: String) async
+    func retrieve<T: Codable>(forKey key: String) -> T?
+    func remove(forKey key: String) async
+    func removeAll(withPrefix prefix: String) async
+    func keys(withPrefix prefix: String) async -> [String]
+}
+
+// UserDefaults 后端实现
+public actor UserDefaultsBackend: StorageBackend {
+    public static let shared = UserDefaultsBackend()
+    
+    private let userDefaults: UserDefaults
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
+    
+    private init(userDefaults: UserDefaults = .standard) {
+        self.userDefaults = userDefaults
+    }
+    
+    public func store<T: Codable>(_ value: T, forKey key: String) async {
+        do {
+            let data = try encoder.encode(value)
+            userDefaults.set(data, forKey: key)
+        } catch {
+            print("Failed to store value for key \(key): \(error)")
+        }
+    }
+    
+    public func retrieve<T: Codable>(forKey key: String) -> T? {
+        guard let data = userDefaults.data(forKey: key) else { return nil }
+        
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            print("Failed to retrieve value for key \(key): \(error)")
+            return nil
+        }
+    }
+    
+    public func remove(forKey key: String) async {
+        userDefaults.removeObject(forKey: key)
+    }
+    
+    public func removeAll(withPrefix prefix: String) async {
+        let allKeys = userDefaults.dictionaryRepresentation().keys
+        let keysToRemove = allKeys.filter { $0.hasPrefix(prefix) }
+        
+        for key in keysToRemove {
+            userDefaults.removeObject(forKey: key)
+        }
+    }
+    
+    public func keys(withPrefix prefix: String) async -> [String] {
+        let allKeys = userDefaults.dictionaryRepresentation().keys
+        return Array(allKeys.filter { $0.hasPrefix(prefix) })
+    }
+}
+
+// Keychain 后端实现 (需求 18.5)
+public actor KeychainBackend: StorageBackend {
+    public static let shared = KeychainBackend()
+    
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
+    private let service = "RealtimeKit"
+    
+    private init() {}
+    
+    public func store<T: Codable>(_ value: T, forKey key: String) async {
+        do {
+            let data = try encoder.encode(value)
+            
+            let query: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: service,
+                kSecAttrAccount as String: key,
+                kSecValueData as String: data
+            ]
+            
+            // 删除现有项目
+            SecItemDelete(query as CFDictionary)
+            
+            // 添加新项目
+            let status = SecItemAdd(query as CFDictionary, nil)
+            if status != errSecSuccess {
+                print("Failed to store value in keychain for key \(key): \(status)")
+            }
+        } catch {
+            print("Failed to encode value for keychain storage: \(error)")
+        }
+    }
+    
+    public func retrieve<T: Codable>(forKey key: String) -> T? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        
+        guard status == errSecSuccess,
+              let data = result as? Data else {
+            return nil
+        }
+        
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            print("Failed to decode value from keychain: \(error)")
+            return nil
+        }
+    }
+    
+    public func remove(forKey key: String) async {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key
+        ]
+        
+        SecItemDelete(query as CFDictionary)
+    }
+    
+    public func removeAll(withPrefix prefix: String) async {
+        // Keychain 不支持前缀查询，需要维护一个键列表
+        let allKeys = await keys(withPrefix: prefix)
+        for key in allKeys {
+            await remove(forKey: key)
+        }
+    }
+    
+    public func keys(withPrefix prefix: String) async -> [String] {
+        // 简化实现：返回空数组
+        // 实际实现需要维护一个键的索引
+        return []
+    }
+}
+```
+
+#### 存储管理器设计
+
+```swift
+// 中央存储管理器 (需求 18.6, 18.7, 18.8)
+@MainActor
+public class StorageManager: ObservableObject {
+    public static let shared = StorageManager()
+    
+    @Published public private(set) var migrationStatus: MigrationStatus = .notRequired
+    @Published public private(set) var performanceMetrics: StoragePerformanceMetrics = StoragePerformanceMetrics()
+    
+    private var batchOperations: [BatchOperation] = []
+    private var batchTimer: Timer?
+    private let batchInterval: TimeInterval = 0.5 // 500ms 批量写入间隔
+    
+    private init() {
+        setupBatchProcessing()
+    }
+    
+    // 批量操作管理 (需求 18.8)
+    private func setupBatchProcessing() {
+        batchTimer = Timer.scheduledTimer(withTimeInterval: batchInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                await self?.processBatchOperations()
+            }
+        }
+    }
+    
+    private func processBatchOperations() async {
+        guard !batchOperations.isEmpty else { return }
+        
+        let operations = batchOperations
+        batchOperations.removeAll()
+        
+        let startTime = Date()
+        
+        for operation in operations {
+            switch operation {
+            case .store(let value, let key, let backend):
+                await backend.store(value, forKey: key)
+            case .remove(let key, let backend):
+                await backend.remove(forKey: key)
+            }
+        }
+        
+        let duration = Date().timeIntervalSince(startTime)
+        performanceMetrics.recordBatchOperation(duration: duration, operationCount: operations.count)
+    }
+    
+    // 命名空间管理 (需求 18.6)
+    public func createNamespace(_ name: String) -> StorageNamespace {
+        return StorageNamespace(name: name, manager: self)
+    }
+    
+    // 数据迁移支持 (需求 18.7)
+    public func migrateData(from oldVersion: String, to newVersion: String) async throws {
+        migrationStatus = .inProgress
+        
+        do {
+            let migrationPlan = try createMigrationPlan(from: oldVersion, to: newVersion)
+            try await executeMigrationPlan(migrationPlan)
+            migrationStatus = .completed
+        } catch {
+            migrationStatus = .failed(error)
+            throw error
+        }
+    }
+    
+    private func createMigrationPlan(from oldVersion: String, to newVersion: String) throws -> MigrationPlan {
+        // 根据版本差异创建迁移计划
+        return MigrationPlan(
+            fromVersion: oldVersion,
+            toVersion: newVersion,
+            steps: [] // 实际实现中会包含具体的迁移步骤
+        )
+    }
+    
+    private func executeMigrationPlan(_ plan: MigrationPlan) async throws {
+        for step in plan.steps {
+            try await step.execute()
+        }
+    }
+}
+
+// 命名空间封装 (需求 18.6)
+public struct StorageNamespace {
+    let name: String
+    private let manager: StorageManager
+    
+    init(name: String, manager: StorageManager) {
+        self.name = name
+        self.manager = manager
+    }
+    
+    public func key(_ key: String) -> String {
+        return "\(name).\(key)"
+    }
+}
+
+// 批量操作类型
+private enum BatchOperation {
+    case store(Any, String, StorageBackend)
+    case remove(String, StorageBackend)
+}
+
+// 迁移状态
+public enum MigrationStatus {
+    case notRequired
+    case inProgress
+    case completed
+    case failed(Error)
+}
+
+// 性能指标
+public struct StoragePerformanceMetrics {
+    var totalBatchOperations: Int = 0
+    var averageBatchDuration: TimeInterval = 0
+    var totalOperationsProcessed: Int = 0
+    
+    mutating func recordBatchOperation(duration: TimeInterval, operationCount: Int) {
+        totalBatchOperations += 1
+        totalOperationsProcessed += operationCount
+        averageBatchDuration = (averageBatchDuration * Double(totalBatchOperations - 1) + duration) / Double(totalBatchOperations)
+    }
+}
+
+// 迁移计划
+public struct MigrationPlan {
+    let fromVersion: String
+    let toVersion: String
+    let steps: [MigrationStep]
+}
+
+public protocol MigrationStep {
+    func execute() async throws
+}
+```
+
+#### 使用示例和集成
+
+```swift
+// 在 RealtimeManager 中的使用示例 (需求 18.10)
+@MainActor
+public class RealtimeManager: ObservableObject {
+    // 使用持久化属性包装器
+    @RealtimeStorage("audioSettings") 
+    private var persistedAudioSettings: AudioSettings = .default
+    
+    @RealtimeStorage("userSession", namespace: "RealtimeKit.Session") 
+    private var persistedUserSession: UserSession?
+    
+    @SecureRealtimeStorage("authToken") 
+    private var secureAuthToken: String = ""
+    
+    @RealtimeStorage("connectionHistory") 
+    private var connectionHistory: [ConnectionRecord] = []
+    
+    // 计算属性提供对外接口
+    public var audioSettings: AudioSettings {
+        get { persistedAudioSettings }
+        set { persistedAudioSettings = newValue }
+    }
+    
+    public var currentSession: UserSession? {
+        get { persistedUserSession }
+        set { persistedUserSession = newValue }
+    }
+    
+    // 自动恢复机制 (需求 18.3)
+    public func initialize() async {
+        // 属性包装器会自动从存储中恢复值
+        // 无需手动调用恢复方法
+        
+        // 应用恢复的设置到底层 Provider
+        if let session = currentSession {
+            try? await restoreSession(session)
+        }
+        
+        try? await applyAudioSettings(audioSettings)
+    }
+    
+    // 错误处理和降级 (需求 18.9)
+    private func handleStorageError(_ error: Error) {
+        print("Storage error occurred: \(error)")
+        
+        // 降级到内存存储
+        // 实际实现中会切换到 MockStorageBackend
+    }
+}
+
+// SwiftUI 中的使用示例
+struct AudioControlView: View {
+    @RealtimeStorage("volumeLevel") private var volumeLevel: Double = 0.5
+    @RealtimeStorage("isMuted") private var isMuted: Bool = false
+    
+    var body: some View {
+        VStack {
+            Slider(value: $volumeLevel, in: 0...1)
+            Toggle("Mute", isOn: $isMuted)
+        }
+        // 值的变化会自动持久化
+    }
+}
+
+// UIKit 中的使用示例 (需求 18.10)
+class AudioControlViewController: UIViewController {
+    @RealtimeStorage("volumeLevel") private var volumeLevel: Double = 0.5
+    @RealtimeStorage("isMuted") private var isMuted: Bool = false
+    
+    @IBOutlet weak var volumeSlider: UISlider!
+    @IBOutlet weak var muteSwitch: UISwitch!
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // 恢复持久化的值
+        volumeSlider.value = Float(volumeLevel)
+        muteSwitch.isOn = isMuted
+    }
+    
+    @IBAction func volumeChanged(_ sender: UISlider) {
+        volumeLevel = Double(sender.value) // 自动持久化
+    }
+    
+    @IBAction func muteToggled(_ sender: UISwitch) {
+        isMuted = sender.isOn // 自动持久化
+    }
+}
+```
+
+#### 测试支持设计 (需求 18.11)
+
+```swift
+// Mock 存储后端用于测试
+public actor MockStorageBackend: StorageBackend {
+    public static let shared = MockStorageBackend()
+    
+    private var storage: [String: Data] = [:]
+    
+    public func store<T: Codable>(_ value: T, forKey key: String) async {
+        do {
+            let data = try JSONEncoder().encode(value)
+            storage[key] = data
+        } catch {
+            print("Mock storage encode error: \(error)")
+        }
+    }
+    
+    public func retrieve<T: Codable>(forKey key: String) -> T? {
+        guard let data = storage[key] else { return nil }
+        
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            print("Mock storage decode error: \(error)")
+            return nil
+        }
+    }
+    
+    public func remove(forKey key: String) async {
+        storage.removeValue(forKey: key)
+    }
+    
+    public func removeAll(withPrefix prefix: String) async {
+        let keysToRemove = storage.keys.filter { $0.hasPrefix(prefix) }
+        for key in keysToRemove {
+            storage.removeValue(forKey: key)
+        }
+    }
+    
+    public func keys(withPrefix prefix: String) async -> [String] {
+        return Array(storage.keys.filter { $0.hasPrefix(prefix) })
+    }
+    
+    // 测试辅助方法
+    public func clear() async {
+        storage.removeAll()
+    }
+    
+    public func getAllKeys() async -> [String] {
+        return Array(storage.keys)
+    }
+}
+
+// 测试用例示例
+@Test("RealtimeStorage property wrapper persistence")
+func testRealtimeStoragePersistence() async {
+    // 使用 Mock 后端进行测试
+    let mockBackend = MockStorageBackend.shared
+    await mockBackend.clear()
+    
+    struct TestData: Codable, Equatable {
+        let name: String
+        let value: Int
+    }
+    
+    let testData = TestData(name: "test", value: 42)
+    
+    // 存储数据
+    await mockBackend.store(testData, forKey: "test.data")
+    
+    // 验证数据被正确存储和检索
+    let retrieved: TestData? = await mockBackend.retrieve(forKey: "test.data")
+    #expect(retrieved == testData)
+}
+```
+
+### 6. 本地化支持系统设计 (需求 17)
 
 #### LocalizationManager 设计
 ```swift

@@ -155,6 +155,8 @@ public struct AudioSettings: Codable, Equatable, Sendable {
 public enum AudioSettingsError: Error, LocalizedError {
     case invalidVolume(Int, validRange: ClosedRange<Int>)
     case incompatibleVersion(Int, supportedVersion: Int)
+    case storageError(Error)
+    case migrationFailed(Error)
     
     public var errorDescription: String? {
         switch self {
@@ -162,6 +164,10 @@ public enum AudioSettingsError: Error, LocalizedError {
             return "音量值 \(volume) 超出有效范围 \(validRange)"
         case .incompatibleVersion(let version, let supportedVersion):
             return "设置版本 \(version) 不兼容，支持的版本: \(supportedVersion)"
+        case .storageError(let error):
+            return "存储错误: \(error.localizedDescription)"
+        case .migrationFailed(let error):
+            return "数据迁移失败: \(error.localizedDescription)"
         }
     }
 }

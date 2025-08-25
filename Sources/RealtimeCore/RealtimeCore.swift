@@ -543,7 +543,7 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
 // MARK: - Error Categories and Severity
 
 /// Error categories for classification
-public enum ErrorCategory: String, CaseIterable, Sendable {
+public enum ErrorCategory: String, CaseIterable, Codable, Sendable {
     case network = "network"
     case permission = "permission"
     case configuration = "configuration"

@@ -188,7 +188,7 @@ public enum VolumeEvent: Equatable, Sendable {
 
 
 /// 音量检测配置 (需求 6.1, 6.2, 6.6)
-public struct VolumeDetectionConfig: Codable, Sendable {
+public struct VolumeDetectionConfig: Codable, Sendable, Equatable {
     /// 检测间隔（毫秒）(需求 6.1)
     public let detectionInterval: Int
     
