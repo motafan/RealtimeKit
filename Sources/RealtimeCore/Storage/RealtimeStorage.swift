@@ -4,7 +4,7 @@ import SwiftUI
 /// 自动状态持久化属性包装器
 /// 需求: 18.1, 18.2, 18.3, 18.10
 @propertyWrapper
-public struct RealtimeStorage<Value: Codable>: DynamicProperty {
+public struct RealtimeStorage<Value: Codable & Sendable>: DynamicProperty {
     private let key: String
     private let defaultValue: Value
     private let storage: RealtimeStorageProvider
@@ -48,7 +48,7 @@ public struct RealtimeStorage<Value: Codable>: DynamicProperty {
 }
 
 /// 实时存储提供者协议
-public protocol RealtimeStorageProvider {
+public protocol RealtimeStorageProvider: Sendable {
     func getValue<T: Codable>(for key: String, defaultValue: T) -> T
     func setValue<T: Codable>(_ value: T, for key: String)
     func hasValue(for key: String) -> Bool
@@ -95,7 +95,7 @@ extension UserDefaults: RealtimeStorageProvider {
 /// 安全存储属性包装器，用于敏感数据
 /// 需求: 18.2, 18.5
 @propertyWrapper
-public struct SecureRealtimeStorage<Value: Codable>: DynamicProperty {
+public struct SecureRealtimeStorage<Value: Codable & Sendable>: DynamicProperty {
     private let key: String
     private let defaultValue: Value
     private let storage: SecureStorageProvider
@@ -143,7 +143,7 @@ public struct SecureRealtimeStorage<Value: Codable>: DynamicProperty {
 public protocol SecureStorageProvider: RealtimeStorageProvider {}
 
 /// Keychain 存储提供者实现
-public class KeychainStorageProvider: SecureStorageProvider {
+public final class KeychainStorageProvider: SecureStorageProvider, @unchecked Sendable {
     private let service: String
     private let accessGroup: String?
     private let encoder = JSONEncoder()
@@ -274,7 +274,7 @@ public class KeychainStorageProvider: SecureStorageProvider {
 
 /// 存储绑定，提供额外的存储操作和 SwiftUI Binding 支持
 /// 需求: 18.3, 18.10
-public struct RealtimeStorageBinding<Value: Codable> {
+public struct RealtimeStorageBinding<Value: Codable & Sendable>: Sendable {
     private let key: String
     private let defaultValue: Value
     private let storage: RealtimeStorageProvider
@@ -307,8 +307,12 @@ public struct RealtimeStorageBinding<Value: Codable> {
     /// 获取 SwiftUI Binding
     public var binding: Binding<Value> {
         Binding(
-            get: { storage.getValue(for: key, defaultValue: defaultValue) },
-            set: { storage.setValue($0, for: key) }
+            get: { [key, defaultValue, storage] in
+                storage.getValue(for: key, defaultValue: defaultValue)
+            },
+            set: { [key, storage] newValue in
+                storage.setValue(newValue, for: key)
+            }
         )
     }
     

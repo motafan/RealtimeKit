@@ -2,6 +2,28 @@ import Testing
 import Foundation
 @testable import RealtimeCore
 
+// Simple atomic wrapper for testing
+private final class Atomic<T>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: T
+    
+    init(_ value: T) {
+        self.value = value
+    }
+    
+    func load() -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
+    
+    func store(_ newValue: T) {
+        lock.lock()
+        defer { lock.unlock() }
+        value = newValue
+    }
+}
+
 @Suite("LocalizationManager Tests")
 @MainActor
 struct LocalizationManagerTests {
@@ -358,13 +380,13 @@ struct LocalizationManagerTests {
         manager.setShowLanguageChangeNotifications(false)
         #expect(manager.getUserPreferences().showLanguageChangeNotifications == false)
         
-        var notificationReceived = false
+        let notificationReceived = Atomic(false)
         let observer = NotificationCenter.default.addObserver(
             forName: .realtimeLanguageDidChange,
             object: nil,
             queue: nil
         ) { _ in
-            notificationReceived = true
+            notificationReceived.store(true)
         }
         
         defer {
@@ -375,14 +397,14 @@ struct LocalizationManagerTests {
         await manager.switchLanguage(to: .japanese)
         
         try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-        #expect(notificationReceived == false, "Notification should be disabled")
+        #expect(notificationReceived.load() == false, "Notification should be disabled")
         
         // Re-enable notifications
         manager.setShowLanguageChangeNotifications(true)
         await manager.switchLanguage(to: .korean)
         
         try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-        #expect(notificationReceived == true, "Notification should be enabled")
+        #expect(notificationReceived.load() == true, "Notification should be enabled")
     }
     
     @Test("Custom language pack caching limits")

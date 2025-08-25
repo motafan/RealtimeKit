@@ -107,7 +107,7 @@ public class StreamPushManager: ObservableObject {
             throw StreamPushError.invalidState(current: state, expected: .stopped)
         }
         
-        guard let _ = rtcProvider else {
+        guard rtcProvider != nil else {
             throw StreamPushError.providerNotAvailable
         }
         

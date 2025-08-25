@@ -15,8 +15,8 @@ struct StorageManagerTests {
         let manager = StorageManager.shared
         
         #expect(manager.isInitialized)
-        #expect(manager.defaultStorage != nil)
-        #expect(manager.secureStorage != nil)
+        #expect(manager.defaultStorage is UserDefaults)
+        #expect(manager.secureStorage is KeychainStorageProvider)
     }
     
     // MARK: - Provider Registration Tests
@@ -324,7 +324,7 @@ struct StorageManagerTests {
 
 // MARK: - Mock Storage Provider
 
-private class MockStorageProvider: RealtimeStorageProvider {
+private final class MockStorageProvider: RealtimeStorageProvider, @unchecked Sendable {
     private var storage: [String: Data] = [:]
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -359,7 +359,7 @@ private class MockStorageProvider: RealtimeStorageProvider {
 
 // MARK: - Failing Storage Provider (for error testing)
 
-private class FailingStorageProvider: RealtimeStorageProvider {
+private final class FailingStorageProvider: RealtimeStorageProvider, @unchecked Sendable {
     func getValue<T: Codable>(for key: String, defaultValue: T) -> T {
         return defaultValue
     }

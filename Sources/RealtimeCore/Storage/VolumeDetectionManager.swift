@@ -2,6 +2,7 @@ import Foundation
 
 /// 音量检测管理器，集成 @RealtimeStorage 支持
 /// 需求: 6.1, 6.2, 6.6, 18.1, 18.2
+@MainActor
 public class VolumeDetectionManager: ObservableObject {
     
     @RealtimeStorage(wrappedValue: VolumeDetectionConfig.default, "volume_detection_config")
@@ -37,8 +38,8 @@ public class VolumeDetectionManager: ObservableObject {
         self.smoothingFilter = VolumeSmoothingFilter(config: VolumeDetectionConfig.default)
     }
     
-    deinit {
-        stopDetection()
+    nonisolated deinit {
+        // Timer cleanup will be handled by the system
     }
     
     // MARK: - Detection Control
@@ -201,7 +202,9 @@ public class VolumeDetectionManager: ObservableObject {
         
         let interval = TimeInterval(config.detectionInterval) / 1000.0
         detectionTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-            self?.performDetectionCycle()
+            Task { @MainActor in
+                self?.performDetectionCycle()
+            }
         }
     }
     

@@ -148,7 +148,7 @@ struct VolumeDetectionManagerTests {
         manager.enableDetection()
         
         // 更新配置以排除本地用户
-        var config = manager.config
+        let config = manager.config
         let newConfig = VolumeDetectionConfig(
             detectionInterval: config.detectionInterval,
             speakingThreshold: config.speakingThreshold,

@@ -302,7 +302,7 @@ struct RealtimeStorageTests {
     
     // MARK: - Test Helper Classes
     
-    class FailingStorageProvider: RealtimeStorageProvider {
+    final class FailingStorageProvider: RealtimeStorageProvider, @unchecked Sendable {
         func getValue<T: Codable>(for key: String, defaultValue: T) -> T {
             return defaultValue // 总是返回默认值
         }
@@ -320,7 +320,7 @@ struct RealtimeStorageTests {
         }
     }
     
-    class InvalidDataStorageProvider: RealtimeStorageProvider {
+    final class InvalidDataStorageProvider: RealtimeStorageProvider, @unchecked Sendable {
         func getValue<T: Codable>(for key: String, defaultValue: T) -> T {
             return defaultValue // 总是返回默认值，模拟解码失败
         }
