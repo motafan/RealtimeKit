@@ -1,5 +1,14 @@
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ConnectionStateManager.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/ErrorRecoveryManager.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/LocalizationManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/RealtimeManager.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/StreamPushManager.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/TokenManager.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeEventProcessor.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeIndicatorManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/CoreModels.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/LocalizationModels.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/LocalizedErrors.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTCConfig.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTCRoom.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTMConfig.swift
@@ -10,3 +19,4 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/RTCProvider.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Protocols/RTMProvider.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/RealtimeCore.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Resources/LocalizedStrings.swift

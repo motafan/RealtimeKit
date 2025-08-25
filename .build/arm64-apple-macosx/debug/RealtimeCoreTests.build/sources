@@ -1,3 +1,15 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsStorageTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ConnectionStateManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/CoreModelsTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/LocalizationManagerTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/LocalizedErrorsTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/LocalizedStringsTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/LocalizedUIComponentsCompilationTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/LocalizedUIComponentsIntegrationTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/LocalizedUIComponentsTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushConfigTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerSimpleTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeIndicatorManagerTests.swift

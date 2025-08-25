@@ -269,11 +269,9 @@ struct AudioSettingsStorageTests {
         #expect(!storage.hasStoredSettings())
         
         // 保存设置后应该有修改时间
-        let beforeSave = Date()
-        try await Task.sleep(nanoseconds: 10_000_000) // 0.01秒
+        let beforeSave = Date().addingTimeInterval(-1) // 1秒前
         storage.saveAudioSettings(createTestAudioSettings())
-        try await Task.sleep(nanoseconds: 10_000_000) // 0.01秒
-        let afterSave = Date()
+        let afterSave = Date().addingTimeInterval(1) // 1秒后
         
         let modifiedTime = storage.getLastModifiedTime()
         #expect(modifiedTime != nil)

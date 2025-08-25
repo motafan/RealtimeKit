@@ -258,8 +258,8 @@ struct UserSessionStorageTests {
         let savedSession = storage.loadUserSession()
         #expect(savedSession != nil)
         
-        // 等待一小段时间
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+        // 等待足够长的时间确保时间戳不同
+        try await Task.sleep(nanoseconds: 1_000_000_000) // 1秒
         
         // 更新最后活跃时间
         storage.updateLastActiveTime(for: savedSession!)

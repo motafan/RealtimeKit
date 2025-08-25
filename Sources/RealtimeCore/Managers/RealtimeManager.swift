@@ -27,10 +27,12 @@ public class RealtimeManager: ObservableObject {
     
     private let settingsStorage = AudioSettingsStorage()
     private let sessionStorage = UserSessionStorage()
+    private let tokenManager = TokenManager()
     
     private var rtcProvider: RTCProvider?
     private var rtmProvider: RTMProvider?
     internal var currentConfig: RealtimeConfig?
+    private var currentProvider: ProviderType?
     
     // MARK: - Initialization
     
@@ -39,10 +41,16 @@ public class RealtimeManager: ObservableObject {
         restorePersistedSettings()
     }
     
+    deinit {
+        // 清理通知观察者
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     // MARK: - Configuration
     
     public func configure(provider: ProviderType, config: RealtimeConfig) async throws {
         currentConfig = config
+        currentProvider = provider
         
         // 创建服务商实例
         let factory = createProviderFactory(for: provider)
@@ -55,6 +63,9 @@ public class RealtimeManager: ObservableObject {
         
         // 设置事件处理
         setupEventHandlers()
+        
+        // 设置 Token 管理
+        setupTokenManagement()
         
         // 应用持久化设置
         try await applyPersistedSettings()
@@ -257,6 +268,53 @@ public class RealtimeManager: ObservableObject {
         print("禁用音量指示器")
     }
     
+    // MARK: - Token Management
+    
+    /// 设置 Token 续期处理器 (需求 9.2)
+    /// - Parameter handler: Token 续期处理器，返回新的 Token
+    public func setupTokenRenewal(handler: @escaping @Sendable () async throws -> String) {
+        guard let provider = currentProvider else {
+            print("TokenManager: 未配置服务商，无法设置 Token 续期处理器")
+            return
+        }
+        
+        tokenManager.setupTokenRenewal(provider: provider, handler: handler)
+    }
+    
+    /// 立即执行 Token 续期
+    public func renewTokenImmediately() async {
+        guard let provider = currentProvider else {
+            print("TokenManager: 未配置服务商，无法执行 Token 续期")
+            return
+        }
+        
+        await tokenManager.renewTokenImmediately(provider: provider)
+    }
+    
+    /// 获取当前服务商的 Token 状态
+    /// - Returns: Token 状态，如果未配置则返回 nil
+    public func getCurrentTokenState() -> TokenState? {
+        guard let provider = currentProvider else { return nil }
+        return tokenManager.getTokenState(for: provider)
+    }
+    
+    /// 配置 Token 续期重试策略
+    /// - Parameter configuration: 重试配置
+    public func configureTokenRetryStrategy(configuration: RetryConfiguration) {
+        guard let provider = currentProvider else {
+            print("TokenManager: 未配置服务商，无法设置重试策略")
+            return
+        }
+        
+        tokenManager.configureRetryStrategy(for: provider, configuration: configuration)
+    }
+    
+    /// 获取 Token 续期统计信息
+    /// - Returns: 续期统计信息
+    public func getTokenRenewalStats() -> TokenRenewalStats {
+        return tokenManager.renewalStats
+    }
+    
     // MARK: - Private Methods
     
     private func createProviderFactory(for type: ProviderType) -> ProviderFactory {
@@ -285,6 +343,80 @@ public class RealtimeManager: ObservableObject {
             Task { @MainActor in
                 self?.handleVolumeEvent(event)
             }
+        }
+    }
+    
+    /// 设置 Token 管理 (需求 9.1, 9.2, 9.5)
+    private func setupTokenManagement() {
+        guard let provider = currentProvider else { return }
+        
+        // 设置 RTC Provider 的 Token 过期处理器
+        rtcProvider?.onTokenWillExpire { [weak self] expiresIn in
+            Task { @MainActor in
+                await self?.tokenManager.handleTokenExpiration(
+                    provider: provider,
+                    expiresIn: expiresIn
+                )
+            }
+        }
+        
+        // 设置 RTM Provider 的 Token 过期处理器
+        rtmProvider?.onTokenWillExpire { [weak self] in
+            Task { @MainActor in
+                // RTM Provider 没有提供剩余时间，使用默认值
+                await self?.tokenManager.handleTokenExpiration(
+                    provider: provider,
+                    expiresIn: 60 // 默认 60 秒
+                )
+            }
+        }
+        
+        // 监听 Token 续期通知
+        NotificationCenter.default.addObserver(
+            forName: .tokenRenewed,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            // 提取通知数据以避免并发问题
+            if let userInfo = notification.userInfo,
+               let provider = userInfo["provider"] as? ProviderType,
+               let newToken = userInfo["token"] as? String {
+                Task { @MainActor in
+                    await self?.handleTokenRenewalNotification(provider: provider, newToken: newToken)
+                }
+            }
+        }
+        
+        print("TokenManager: 已设置 \(provider.displayName) 的 Token 管理")
+    }
+    
+    /// 处理 Token 续期通知
+    /// - Parameters:
+    ///   - provider: 服务商类型
+    ///   - newToken: 新的 Token
+    private func handleTokenRenewalNotification(provider: ProviderType, newToken: String) async {
+        
+        do {
+            // 更新 RTC Provider Token
+            try await rtcProvider?.renewToken(newToken)
+            
+            // 更新 RTM Provider Token
+            try await rtmProvider?.renewToken(newToken)
+            
+            print("TokenManager: \(provider.displayName) Token 更新成功")
+            
+        } catch {
+            print("TokenManager: \(provider.displayName) Token 更新失败: \(error)")
+            
+            // 发送失败通知
+            NotificationCenter.default.post(
+                name: .tokenRenewalFailed,
+                object: self,
+                userInfo: [
+                    "provider": provider,
+                    "error": error
+                ]
+            )
         }
     }
     

@@ -15,17 +15,17 @@ public enum UserRole: String, CaseIterable, Codable, Sendable {
     /// 主持人角色 - 具有房间管理权限，可以发布音频流
     case moderator = "moderator"
     
-    /// 获取角色的中文显示名称
+    /// 获取角色的本地化显示名称
     public var displayName: String {
         switch self {
         case .broadcaster:
-            return "主播"
+            return ErrorLocalizationHelper.getLocalizedString(for: "user.role.broadcaster")
         case .audience:
-            return "观众"
+            return ErrorLocalizationHelper.getLocalizedString(for: "user.role.audience")
         case .coHost:
-            return "连麦嘉宾"
+            return ErrorLocalizationHelper.getLocalizedString(for: "user.role.cohost")
         case .moderator:
-            return "主持人"
+            return ErrorLocalizationHelper.getLocalizedString(for: "user.role.moderator")
         }
     }
     

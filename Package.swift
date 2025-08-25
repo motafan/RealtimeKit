@@ -116,7 +116,9 @@ let package = Package(
             name: "RealtimeCoreTests",
             dependencies: [
                 "RealtimeCore", 
-                "RealtimeMocking"
+                "RealtimeMocking",
+                "RealtimeUIKit",
+                "RealtimeSwiftUI"
             ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency")
