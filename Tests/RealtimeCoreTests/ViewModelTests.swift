@@ -6,12 +6,12 @@ import Combine
 
 /// ViewModel 层单元测试和数据流测试
 /// 需求: 11.3, 11.5, 17.3, 18.10 - ViewModel 的单元测试和数据流测试
-@available(macOS 11.0, iOS 14.0, *)
 struct ViewModelTests {
     
     // MARK: - BaseRealtimeViewModel Tests
     
     @Test("BaseRealtimeViewModel 初始化测试")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testBaseRealtimeViewModelInitialization() async throws {
         let viewModel = TestableBaseViewModel()
@@ -25,6 +25,7 @@ struct ViewModelTests {
     }
     
     @Test("BaseRealtimeViewModel 加载状态管理")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testBaseRealtimeViewModelLoadingState() async throws {
         let viewModel = TestableBaseViewModel()
@@ -42,10 +43,11 @@ struct ViewModelTests {
     }
     
     @Test("BaseRealtimeViewModel 错误处理")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testBaseRealtimeViewModelErrorHandling() async throws {
         let viewModel = TestableBaseViewModel()
-        let testError = RealtimeError.connectionFailed("Test error")
+        let testError = RealtimeError.connectionFailed(reason: "Test error")
         
         // 测试设置错误
         viewModel.setError(testError)
@@ -61,6 +63,7 @@ struct ViewModelTests {
     }
     
     @Test("BaseRealtimeViewModel 刷新功能")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testBaseRealtimeViewModelRefresh() async throws {
         let viewModel = TestableBaseViewModel()
@@ -85,6 +88,7 @@ struct ViewModelTests {
     // MARK: - ConnectionViewModel Tests
     
     @Test("ConnectionViewModel 初始化测试")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testConnectionViewModelInitialization() async throws {
         let viewModel = ConnectionViewModel()
@@ -99,6 +103,7 @@ struct ViewModelTests {
     }
     
     @Test("ConnectionViewModel 连接状态变化")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testConnectionViewModelStateChanges() async throws {
         let viewModel = ConnectionViewModel()
@@ -124,6 +129,7 @@ struct ViewModelTests {
     }
     
     @Test("ConnectionViewModel 重连逻辑")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testConnectionViewModelReconnectLogic() async throws {
         let viewModel = ConnectionViewModel()
@@ -137,6 +143,7 @@ struct ViewModelTests {
     }
     
     @Test("ConnectionEvent 模型测试")
+    @available(macOS 11.0, iOS 14.0, *)
     func testConnectionEventModel() async throws {
         let event = ConnectionEvent(
             fromState: .disconnected,
@@ -152,6 +159,7 @@ struct ViewModelTests {
     }
     
     @Test("ConnectionQuality 枚举测试", arguments: ConnectionQuality.allCases)
+    @available(macOS 11.0, iOS 14.0, *)
     func testConnectionQualityEnum(quality: ConnectionQuality) async throws {
         // 测试显示名称
         #expect(!quality.displayName.isEmpty)
@@ -161,7 +169,8 @@ struct ViewModelTests {
         
         // 测试颜色映射
         let color = quality.color
-        #expect(color != nil)
+        // Color is non-optional, so we just verify it exists
+        #expect(color == color) // Basic existence check
         
         // 测试特定颜色
         switch quality {
@@ -181,6 +190,7 @@ struct ViewModelTests {
     // MARK: - AudioViewModel Tests
     
     @Test("AudioViewModel 初始化测试")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testAudioViewModelInitialization() async throws {
         let viewModel = AudioViewModel()
@@ -202,15 +212,16 @@ struct ViewModelTests {
     }
     
     @Test("AudioViewModel 音量统计计算")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testAudioViewModelVolumeStatistics() async throws {
         let viewModel = AudioViewModel()
         
         // 模拟音量数据
         let volumeInfos = [
-            UserVolumeInfo(userId: "user1", volume: 0.5, isSpeaking: true),
-            UserVolumeInfo(userId: "user2", volume: 0.8, isSpeaking: false),
-            UserVolumeInfo(userId: "user3", volume: 0.3, isSpeaking: true)
+            UserVolumeInfo(userId: "user1", volumeFloat: 0.5, isSpeaking: true),
+            UserVolumeInfo(userId: "user2", volumeFloat: 0.8, isSpeaking: false),
+            UserVolumeInfo(userId: "user3", volumeFloat: 0.3, isSpeaking: true)
         ]
         
         // 直接设置数据进行测试（实际应该通过 RealtimeManager 更新）
@@ -224,6 +235,7 @@ struct ViewModelTests {
     }
     
     @Test("AudioViewModel 用户查询方法")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testAudioViewModelUserQueries() async throws {
         let viewModel = AudioViewModel()
@@ -237,6 +249,7 @@ struct ViewModelTests {
     // MARK: - UserSessionViewModel Tests
     
     @Test("UserSessionViewModel 初始化测试")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testUserSessionViewModelInitialization() async throws {
         let viewModel = UserSessionViewModel()
@@ -258,6 +271,7 @@ struct ViewModelTests {
     }
     
     @Test("UserSessionViewModel 会话时长格式化")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testUserSessionViewModelDurationFormatting() async throws {
         let viewModel = UserSessionViewModel()
@@ -285,6 +299,7 @@ struct ViewModelTests {
     }
     
     @Test("UserSessionViewModel 角色权限检查")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testUserSessionViewModelRolePermissions() async throws {
         let viewModel = UserSessionViewModel()
@@ -303,6 +318,7 @@ struct ViewModelTests {
     }
     
     @Test("UserSessionViewModel 会话统计")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testUserSessionViewModelSessionStats() async throws {
         let viewModel = UserSessionViewModel()
@@ -317,6 +333,7 @@ struct ViewModelTests {
     // MARK: - Combine 数据流测试
     
     @Test("ViewModel Combine 数据流测试")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testViewModelCombineDataFlow() async throws {
         let viewModel = ConnectionViewModel()
@@ -335,7 +352,7 @@ struct ViewModelTests {
             }
         
         // 触发状态变化
-        let testError = RealtimeError.connectionFailed("Test")
+        let testError = RealtimeError.connectionFailed(reason: "Test")
         viewModel.setError(testError)
         
         // 验证数据流
@@ -351,6 +368,7 @@ struct ViewModelTests {
     // MARK: - 持久化状态测试
     
     @Test("ViewModel 持久化状态测试")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testViewModelPersistentState() async throws {
         let viewModel = ConnectionViewModel()
@@ -373,15 +391,16 @@ struct ViewModelTests {
     // MARK: - 错误处理测试
     
     @Test("ViewModel 错误处理测试")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testViewModelErrorHandling() async throws {
         let viewModel = AudioViewModel()
         
         // 测试各种错误类型
         let errors: [RealtimeError] = [
-            .audioControlFailed("Test audio error"),
-            .connectionFailed("Test connection error"),
-            .authenticationFailed("Test auth error")
+            .audioStreamFailed(reason: "Test audio error"),
+            .connectionFailed(reason: "Test connection error"),
+            .authenticationError("Test auth error")
         ]
         
         for error in errors {
@@ -397,6 +416,7 @@ struct ViewModelTests {
     // MARK: - 性能测试
     
     @Test("ViewModel 性能测试")
+    @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     func testViewModelPerformance() async throws {
         let viewModel = AudioViewModel()
@@ -408,7 +428,7 @@ struct ViewModelTests {
         for i in 0..<1000 {
             let volumeInfo = UserVolumeInfo(
                 userId: "user-\(i)",
-                volume: Float.random(in: 0...1),
+                volumeFloat: Float.random(in: 0...1),
                 isSpeaking: Bool.random()
             )
             // 这里应该通过 RealtimeManager 更新，简化测试
@@ -434,7 +454,7 @@ private class TestableBaseViewModel: BaseRealtimeViewModel {
         refreshCallCount += 1
         
         if shouldThrowError {
-            throw RealtimeError.connectionFailed("Test error")
+            throw RealtimeError.connectionFailed(reason: "Test error")
         }
         
         // 模拟异步操作
