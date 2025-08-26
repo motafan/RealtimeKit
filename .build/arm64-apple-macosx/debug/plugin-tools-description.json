@@ -685,6 +685,10 @@
       "inputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AdaptiveLayoutTests.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AgoraProviderTests.swift"
         },
         {
@@ -769,6 +773,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIIntegrationTests.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift"
         },
         {
@@ -782,6 +790,10 @@
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ViewModelTests.swift"
         },
         {
           "kind" : "file",
@@ -824,6 +836,7 @@
       "moduleName" : "RealtimeCoreTests",
       "moduleOutputPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules/RealtimeCoreTests.swiftmodule",
       "objects" : [
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AdaptiveLayoutTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AgoraProviderTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsManagerTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AudioSettingsStorageTests.swift.o",
@@ -845,10 +858,12 @@
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushConfigTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushManagerSimpleTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushManagerTests.swift.o",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIIntegrationTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UIKitIntegrationTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionManagerTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.swift.o",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ViewModelTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeDetectionManagerTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeIndicatorManagerTests.swift.o"
       ],
@@ -909,6 +924,10 @@
       ],
       "outputFileMapPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/output-file-map.json",
       "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AdaptiveLayoutTests.swift.o"
+        },
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AgoraProviderTests.swift.o"
@@ -995,6 +1014,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIIntegrationTests.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.swift.o"
         },
         {
@@ -1011,6 +1034,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ViewModelTests.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeDetectionManagerTests.swift.o"
         },
         {
@@ -1024,6 +1051,7 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AdaptiveLayoutTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AgoraProviderTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsManagerTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsStorageTests.swift",
@@ -1045,10 +1073,12 @@
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushConfigTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerSimpleTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIIntegrationTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitIntegrationTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionManagerTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ViewModelTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeDetectionManagerTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeIndicatorManagerTests.swift"
       ],
@@ -1489,11 +1519,19 @@
       "inputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/AdaptiveLayouts.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/LocalizedComponents.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/RealtimeSwiftUI.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/RealtimeViewModels.swift"
         },
         {
           "kind" : "file",
@@ -1512,8 +1550,10 @@
       "moduleName" : "RealtimeSwiftUI",
       "moduleOutputPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules/RealtimeSwiftUI.swiftmodule",
       "objects" : [
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/AdaptiveLayouts.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/LocalizedComponents.swift.o",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeSwiftUI.swift.o"
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeSwiftUI.swift.o",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeViewModels.swift.o"
       ],
       "otherArguments" : [
         "-target",
@@ -1575,6 +1615,10 @@
       "outputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/AdaptiveLayouts.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/LocalizedComponents.swift.o"
         },
         {
@@ -1583,13 +1627,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeViewModels.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules/RealtimeSwiftUI.swiftmodule"
         }
       ],
       "prepareForIndexing" : false,
       "sources" : [
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/AdaptiveLayouts.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/LocalizedComponents.swift",
-        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/RealtimeSwiftUI.swift"
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/RealtimeSwiftUI.swift",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/RealtimeViewModels.swift"
       ],
       "tempsPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build",
       "wholeModuleOptimization" : false
@@ -1889,6 +1939,7 @@
       "-package-name",
       "realtimekit",
       "-c",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AdaptiveLayoutTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AgoraProviderTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsManagerTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsStorageTests.swift",
@@ -1910,10 +1961,12 @@
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushConfigTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerSimpleTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIIntegrationTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitIntegrationTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionManagerTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ViewModelTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeDetectionManagerTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeIndicatorManagerTests.swift",
       "-I",
@@ -2248,8 +2301,10 @@
       "-package-name",
       "realtimekit",
       "-c",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/AdaptiveLayouts.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/LocalizedComponents.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/RealtimeSwiftUI.swift",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/RealtimeViewModels.swift",
       "-I",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules",
       "-target",
@@ -2628,6 +2683,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AdaptiveLayoutTests.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AgoraProviderTests.swift"
         },
         {
@@ -2712,6 +2771,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIIntegrationTests.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift"
         },
         {
@@ -2725,6 +2788,10 @@
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ViewModelTests.swift"
         },
         {
           "kind" : "file",
@@ -2930,6 +2997,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AdaptiveLayoutTests.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AgoraProviderTests.swift.o"
         },
         {
@@ -3014,6 +3085,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIIntegrationTests.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.swift.o"
         },
         {
@@ -3027,6 +3102,10 @@
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ViewModelTests.swift.o"
         },
         {
           "kind" : "file",
@@ -3050,11 +3129,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/AdaptiveLayouts.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/LocalizedComponents.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeSwiftUI.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeViewModels.swift.o"
         },
         {
           "kind" : "file",
@@ -3104,11 +3191,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/AdaptiveLayouts.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/LocalizedComponents.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/RealtimeSwiftUI.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/RealtimeViewModels.swift"
         }
       ],
       "outputFilePath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/sources"

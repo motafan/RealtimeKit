@@ -2,6 +2,13 @@
   "": {
     "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/master.swiftdeps"
   },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/AdaptiveLayouts.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/AdaptiveLayouts.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/AdaptiveLayouts.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/AdaptiveLayouts~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/AdaptiveLayouts.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/AdaptiveLayouts.dia"
+  },
   "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/LocalizedComponents.swift": {
     "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/LocalizedComponents.d",
     "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/LocalizedComponents.swift.o",
@@ -15,5 +22,12 @@
     "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeSwiftUI~partial.swiftmodule",
     "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeSwiftUI.swiftdeps",
     "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeSwiftUI.dia"
+  },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeSwiftUI/RealtimeViewModels.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeViewModels.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeViewModels.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeViewModels~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeViewModels.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/RealtimeViewModels.dia"
   }
 }

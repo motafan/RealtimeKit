@@ -1,3 +1,4 @@
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AdaptiveLayoutTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AgoraProviderTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsStorageTests.swift
@@ -19,9 +20,11 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushConfigTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerSimpleTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIIntegrationTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitIntegrationTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ViewModelTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeDetectionManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeIndicatorManagerTests.swift

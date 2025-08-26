@@ -63,6 +63,34 @@ public enum ConnectionState: String, CaseIterable, Codable, Sendable {
             return false
         }
     }
+    
+    /// 获取本地化键
+    public var localizationKey: String {
+        switch self {
+        case .disconnected:
+            return "connection.state.disconnected"
+        case .connecting:
+            return "connection.state.connecting"
+        case .connected:
+            return "connection.state.connected"
+        case .reconnecting:
+            return "connection.state.reconnecting"
+        case .failed:
+            return "connection.state.failed"
+        case .suspended:
+            return "connection.state.suspended"
+        }
+    }
+    
+    /// 检查是否应该显示动画
+    public var shouldAnimate: Bool {
+        switch self {
+        case .connecting, .reconnecting:
+            return true
+        case .disconnected, .connected, .failed, .suspended:
+            return false
+        }
+    }
 }
 
 /// 推流状态枚举

@@ -2,6 +2,13 @@
   "": {
     "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/master.swiftdeps"
   },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AdaptiveLayoutTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AdaptiveLayoutTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AdaptiveLayoutTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AdaptiveLayoutTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AdaptiveLayoutTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AdaptiveLayoutTests.dia"
+  },
   "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AgoraProviderTests.swift": {
     "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AgoraProviderTests.d",
     "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/AgoraProviderTests.swift.o",
@@ -149,6 +156,13 @@
     "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushManagerTests.swiftdeps",
     "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushManagerTests.dia"
   },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIIntegrationTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIIntegrationTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIIntegrationTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIIntegrationTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIIntegrationTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/SwiftUIIntegrationTests.dia"
+  },
   "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift": {
     "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.d",
     "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.swift.o",
@@ -176,6 +190,13 @@
     "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests~partial.swiftmodule",
     "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.swiftdeps",
     "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.dia"
+  },
+  "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ViewModelTests.swift": {
+    "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ViewModelTests.d",
+    "object": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ViewModelTests.swift.o",
+    "swiftmodule": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ViewModelTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ViewModelTests.swiftdeps",
+    "diagnostics": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/ViewModelTests.dia"
   },
   "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeDetectionManagerTests.swift": {
     "dependencies": "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeDetectionManagerTests.d",

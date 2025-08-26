@@ -4,7 +4,7 @@ import RealtimeCore
 // MARK: - SwiftUI Localized Components
 
 /// A SwiftUI Text view that automatically localizes its content
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 11.0, *)
 public struct LocalizedText: View {
     private let key: String
     private let arguments: [CVarArg]
@@ -40,7 +40,7 @@ public struct LocalizedText: View {
 }
 
 /// A SwiftUI Button with localized title
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 11.0, *)
 public struct LocalizedButton<Label: View>: View {
     private let key: String?
     private let arguments: [CVarArg]
@@ -99,7 +99,7 @@ public struct LocalizedButton<Label: View>: View {
 }
 
 /// A SwiftUI TextField with localized placeholder
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 11.0, *)
 public struct LocalizedTextField: View {
     private let placeholderKey: String
     private let placeholderArguments: [CVarArg]
@@ -221,7 +221,7 @@ public struct LocalizedAlert {
 
 /// A SwiftUI picker for selecting language with persistent state
 /// 需求: 17.3, 18.1, 18.10 - 本地化 UI 组件和状态持久化
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 16.0, macOS 13.0, *)
 public struct LanguagePicker: View {
     @StateObject private var localizationManager = LocalizationManager.shared
     @State private var selectedLanguage: SupportedLanguage
@@ -315,7 +315,7 @@ public struct LanguagePickerState: Codable, Sendable {
 
 /// A SwiftUI NavigationView with localized title and persistent state
 /// 需求: 17.3, 18.1, 18.10 - 本地化 UI 组件和状态持久化
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 16.0, macOS 13.0, *)
 public struct LocalizedNavigationView<Content: View>: View {
     private let titleKey: String
     private let titleArguments: [CVarArg]
@@ -396,7 +396,7 @@ public struct NavigationViewState: Codable, Sendable {
 
 /// A SwiftUI List with localized empty state
 /// 需求: 17.3, 18.1 - 本地化 UI 组件和状态持久化
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 16.0, macOS 13.0, *)
 public struct LocalizedList<Data: RandomAccessCollection, ID: Hashable, RowContent: View>: View {
     private let data: Data
     private let id: KeyPath<Data.Element, ID>
@@ -574,7 +574,7 @@ private struct LocalizedStateModifier<T: Codable>: ViewModifier {
 // MARK: - Preview Helpers
 
 #if DEBUG
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 11.0, *)
 extension LocalizedText {
     /// Preview helper for LocalizedText
     public static var previews: some View {
@@ -588,7 +588,7 @@ extension LocalizedText {
     }
 }
 
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 11.0, *)
 extension LocalizedButton where Label == Text {
     /// Preview helper for LocalizedButton
     public static var previews: some View {
