@@ -453,6 +453,38 @@ public struct MessageValidator {
         return errors.isEmpty ? .valid : .invalid(errors)
     }
     
+    /// 验证消息内容（排除过期检查）
+    public static func validateExcludingExpiration(_ message: RealtimeMessage) -> MessageValidationResult {
+        var errors: [MessageValidationError] = []
+        
+        // 验证基本字段
+        if message.senderId.isEmpty {
+            errors.append(.emptySenderId)
+        }
+        
+        if message.content.isEmpty {
+            errors.append(.emptyContent)
+        }
+        
+        // 验证消息类型和内容匹配
+        if !isContentMatchingType(message.content, type: message.type) {
+            errors.append(.contentTypeMismatch)
+        }
+        
+        // 跳过过期时间验证
+        
+        // 验证点对点消息和频道消息的互斥性
+        if message.receiverId != nil && message.channelId != nil {
+            errors.append(.invalidRecipient)
+        }
+        
+        if message.receiverId == nil && message.channelId == nil {
+            errors.append(.missingRecipient)
+        }
+        
+        return errors.isEmpty ? .valid : .invalid(errors)
+    }
+    
     private static func isContentMatchingType(_ content: MessageContent, type: RealtimeMessageType) -> Bool {
         switch (content, type) {
         case (.text, .text), (.image, .image), (.audio, .audio), (.video, .video), (.file, .file), (.system, .system), (.custom, .custom):
@@ -508,7 +540,7 @@ public enum MessageValidationError: String, CaseIterable, Error, Sendable {
 
 /// RTM消息模型
 /// 需求: 1.2, 1.3
-public struct RTMMessage: Codable, Identifiable {
+public struct RTMMessage: Codable, Identifiable, Sendable {
     /// 消息唯一标识符
     public let id: String
     
@@ -555,7 +587,7 @@ public struct RTMMessage: Codable, Identifiable {
 }
 
 /// RTM消息类型
-public enum RTMMessageType: String, CaseIterable, Codable {
+public enum RTMMessageType: String, CaseIterable, Codable, Sendable {
     /// 文本消息
     case text = "text"
     /// 图片消息
@@ -585,7 +617,7 @@ public enum RTMMessageType: String, CaseIterable, Codable {
 }
 
 /// RTM消息状态
-public enum RTMMessageStatus: String, CaseIterable, Codable {
+public enum RTMMessageStatus: String, CaseIterable, Codable, Sendable {
     /// 发送中
     case sending = "sending"
     /// 已发送

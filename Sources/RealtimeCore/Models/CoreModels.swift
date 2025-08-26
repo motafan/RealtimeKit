@@ -8,43 +8,7 @@ import AppKit
 /// 核心数据模型
 /// 需求: 1.2, 1.3
 
-// MARK: - Provider Feature
-
-/// 服务商功能特性
-public enum ProviderFeature: String, CaseIterable, Codable, Sendable {
-    case audioStreaming = "audio_streaming"
-    case videoStreaming = "video_streaming"
-    case streamPush = "stream_push"
-    case mediaRelay = "media_relay"
-    case volumeIndicator = "volume_indicator"
-    case messageProcessing = "message_processing"
-    
-    public var displayName: String {
-        switch self {
-        case .audioStreaming:
-            return "音频流"
-        case .videoStreaming:
-            return "视频流"
-        case .streamPush:
-            return "推流"
-        case .mediaRelay:
-            return "媒体中继"
-        case .volumeIndicator:
-            return "音量指示器"
-        case .messageProcessing:
-            return "消息处理"
-        }
-    }
-}
-
-// MARK: - Provider Factory Protocol
-
-/// 服务商工厂协议
-public protocol ProviderFactory {
-    func createRTCProvider() -> RTCProvider
-    func createRTMProvider() -> RTMProvider
-    func supportedFeatures() -> Set<ProviderFeature>
-}
+// Note: ProviderFeature and ProviderFactory are defined in ProviderTypes.swift
 
 // MARK: - Audio Settings
 

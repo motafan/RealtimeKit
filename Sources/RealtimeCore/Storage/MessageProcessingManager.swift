@@ -78,15 +78,6 @@ public class MessageProcessingManager: ObservableObject {
             throw MessageProcessorError.processorAlreadyRegistered(processor.processorName)
         }
         
-        // 初始化处理器
-        Task {
-            do {
-                try await processor.initialize()
-            } catch {
-                throw MessageProcessorError.initializationFailed("处理器 \(processor.processorName) 初始化失败: \(error.localizedDescription)")
-            }
-        }
-        
         // 注册处理器
         processors[processor.processorName] = processor
         
@@ -95,6 +86,15 @@ public class MessageProcessingManager: ObservableObject {
         
         // 更新发布的属性
         registeredProcessors = Array(processors.keys).sorted()
+        
+        // 异步初始化处理器
+        Task {
+            do {
+                try await processor.initialize()
+            } catch {
+                print("处理器 \(processor.processorName) 初始化失败: \(error.localizedDescription)")
+            }
+        }
         
         // 触发事件
         onProcessorRegistered?(processor)
@@ -298,22 +298,20 @@ public class MessageProcessingManager: ObservableObject {
     private func processMessageThroughPipeline(_ message: RealtimeMessage) async throws -> MessageProcessingResult {
         var currentMessage = message
         
-        // 1. 消息验证阶段
-        if config.enableValidation {
-            let validationResult = await validateMessage(currentMessage)
-            guard validationResult.isValid else {
-                onValidationFailed?(currentMessage, validationResult.errors)
-                processingStats.totalFailed += 1
-                return .failed(MessageProcessorError.invalidMessageType)
-            }
-        }
-        
-        // 2. 消息过滤阶段
+        // 1. 消息过滤阶段（在验证之前进行，以便过滤过期消息等）
         if config.enableFiltering {
             let filterResult = await filterMessage(currentMessage)
             if !filterResult.passed {
-                processingStats.totalSkipped += 1
                 return .skipped
+            }
+        }
+        
+        // 2. 消息验证阶段（跳过过期检查，因为已经在过滤阶段处理）
+        if config.enableValidation {
+            let validationResult = await validateMessageExcludingExpiration(currentMessage)
+            guard validationResult.isValid else {
+                onValidationFailed?(currentMessage, validationResult.errors)
+                return .failed(MessageProcessorError.invalidMessageType)
             }
         }
         
@@ -330,47 +328,59 @@ public class MessageProcessingManager: ObservableObject {
     private func processMessageThroughChain(_ message: RealtimeMessage) async throws -> MessageProcessingResult {
         var currentMessage = message
         var lastResult: MessageProcessingResult = .skipped
+        var processedCount = 0
+        
+        // 获取支持该消息类型的处理器
+        let supportedProcessors = processingChain.filter { $0.canProcess(currentMessage) }
+        
+        guard !supportedProcessors.isEmpty else {
+            // 没有支持的处理器，直接跳过
+            return .skipped
+        }
         
         // 按优先级顺序处理
-        for processor in processingChain {
-            if processor.canProcess(currentMessage) {
-                do {
-                    let result = try await processor.process(currentMessage)
-                    
-                    switch result {
-                    case .processed(let processedMessage):
-                        if let processed = processedMessage {
-                            currentMessage = processed
-                        }
-                        lastResult = result
-                        processingStats.totalProcessed += 1
-                        
-                        // 如果配置为单处理器模式，处理完成后退出
-                        if config.singleProcessorMode {
-                            return lastResult
-                        }
-                        
-                    case .failed(let error):
-                        let errorResult = await processor.handleProcessingError(error, for: currentMessage)
-                        if case .retry(let delay) = errorResult {
-                            return .retry(after: delay)
-                        }
-                        return errorResult
-                        
-                    case .skipped:
-                        continue
-                        
-                    case .retry(let delay):
-                        return .retry(after: delay)
+        for processor in supportedProcessors {
+            do {
+                let result = try await processor.process(currentMessage)
+                
+                switch result {
+                case .processed(let processedMessage):
+                    if let processed = processedMessage {
+                        currentMessage = processed
                     }
-                } catch {
+                    lastResult = result
+                    processedCount += 1
+                    
+                    // 如果配置为单处理器模式，处理完成后退出
+                    if config.singleProcessorMode {
+                        return lastResult
+                    }
+                    
+                case .failed(let error):
                     let errorResult = await processor.handleProcessingError(error, for: currentMessage)
                     if case .retry(let delay) = errorResult {
                         return .retry(after: delay)
                     }
                     return errorResult
+                    
+                case .skipped:
+                    continue
+                    
+                case .retry(let delay):
+                    return .retry(after: delay)
                 }
+            } catch {
+                let errorResult = await processor.handleProcessingError(error, for: currentMessage)
+                if case .retry(let delay) = errorResult {
+                    return .retry(after: delay)
+                }
+                return errorResult
             }
+        }
+        
+        // 如果至少有一个处理器成功处理了消息，返回成功结果
+        if processedCount > 0 {
+            return .processed(currentMessage)
         }
         
         return lastResult
@@ -380,6 +390,25 @@ public class MessageProcessingManager: ObservableObject {
     private func validateMessage(_ message: RealtimeMessage) async -> MessageValidationResult {
         // 使用内置验证器
         let builtinResult = MessageValidator.validate(message)
+        guard builtinResult.isValid else {
+            return builtinResult
+        }
+        
+        // 使用自定义验证器
+        for validator in validators {
+            let result = await validator.validate(message)
+            if !result.isValid {
+                return result
+            }
+        }
+        
+        return .valid
+    }
+    
+    /// 验证消息（排除过期检查）
+    private func validateMessageExcludingExpiration(_ message: RealtimeMessage) async -> MessageValidationResult {
+        // 使用内置验证器（排除过期检查）
+        let builtinResult = MessageValidator.validateExcludingExpiration(message)
         guard builtinResult.isValid else {
             return builtinResult
         }
@@ -424,6 +453,7 @@ public class MessageProcessingManager: ObservableObject {
     private func handleProcessingResult(_ result: MessageProcessingResult, for message: RealtimeMessage) async {
         switch result {
         case .processed(let processedMessage):
+            processingStats.totalProcessed += 1
             let finalMessage = processedMessage ?? message.withStatus(.processed)
             addToHistory(finalMessage)
             onMessageProcessed?(finalMessage)

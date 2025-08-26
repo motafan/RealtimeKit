@@ -61,25 +61,68 @@ public enum ProviderType: String, CaseIterable, Codable, Sendable {
     }
 }
 
+/// 服务商功能特性
+/// 需求: 2.2
+public enum ProviderFeature: String, CaseIterable, Codable, Sendable {
+    case audioStreaming = "audio_streaming"
+    case videoStreaming = "video_streaming"
+    case streamPush = "stream_push"
+    case mediaRelay = "media_relay"
+    case volumeIndicator = "volume_indicator"
+    case messageProcessing = "message_processing"
+    
+    public var displayName: String {
+        switch self {
+        case .audioStreaming:
+            return ErrorLocalizationHelper.getLocalizedString(for: "provider.feature.audio_streaming")
+        case .videoStreaming:
+            return ErrorLocalizationHelper.getLocalizedString(for: "provider.feature.video_streaming")
+        case .streamPush:
+            return ErrorLocalizationHelper.getLocalizedString(for: "provider.feature.stream_push")
+        case .mediaRelay:
+            return ErrorLocalizationHelper.getLocalizedString(for: "provider.feature.media_relay")
+        case .volumeIndicator:
+            return ErrorLocalizationHelper.getLocalizedString(for: "provider.feature.volume_indicator")
+        case .messageProcessing:
+            return ErrorLocalizationHelper.getLocalizedString(for: "provider.feature.message_processing")
+        }
+    }
+}
+
+/// 服务商工厂协议
+/// 需求: 2.2
+public protocol ProviderFactory {
+    /// 创建 RTC Provider 实例
+    func createRTCProvider() -> RTCProvider
+    
+    /// 创建 RTM Provider 实例
+    func createRTMProvider() -> RTMProvider
+    
+    /// 获取支持的功能特性
+    func supportedFeatures() -> Set<ProviderFeature>
+}
+
 /// Mock 服务商工厂实现
 /// 需求: 2.2, 12.4, 16.3
-internal class MockProviderFactory: ProviderFactory {
-    func createRTCProvider() -> RTCProvider {
-        return MockRTCProvider()
+public class MockProviderFactory: ProviderFactory {
+    public init() {}
+    
+    public func createRTCProvider() -> RTCProvider {
+        return InternalMockRTCProvider()
     }
     
-    func createRTMProvider() -> RTMProvider {
-        return MockRTMProvider()
+    public func createRTMProvider() -> RTMProvider {
+        return InternalMockRTMProvider()
     }
     
-    func supportedFeatures() -> Set<ProviderFeature> {
+    public func supportedFeatures() -> Set<ProviderFeature> {
         return Set(ProviderFeature.allCases) // Mock 支持所有功能
     }
 }
 
-/// Mock RTC Provider 实现
+/// Internal Mock RTC Provider 实现
 /// 需求: 12.4, 16.3
-internal class MockRTCProvider: RTCProvider {
+internal class InternalMockRTCProvider: RTCProvider {
     private var isInitialized = false
     private var currentRoom: RTCRoom?
     private var microphoneMuted = false
@@ -264,9 +307,9 @@ internal class MockRTCProvider: RTCProvider {
     }
 }
 
-/// Mock RTM Provider 实现
+/// Internal Mock RTM Provider 实现
 /// 需求: 12.4, 16.3
-internal class MockRTMProvider: RTMProvider {
+internal class InternalMockRTMProvider: RTMProvider {
     private var isInitialized = false
     private var loggedIn = false
     private var joinedChannels: Set<String> = []

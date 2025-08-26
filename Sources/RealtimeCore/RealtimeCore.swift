@@ -61,6 +61,11 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
     case messageProcessingFailed(reason: String?)
     case invalidMessageFormat
     
+    // MARK: - Provider Switching Errors
+    case allProvidersFailed(originalError: Error, message: String?)
+    case providerSwitchInProgress
+    case providerHealthCheckFailed(ProviderType)
+    
     // MARK: - Generic Errors
     case unknown(reason: String?)
     case operationCancelled
@@ -102,8 +107,11 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
              .roomNotFound, .userNotFound, .microphonePermissionDenied,
              .streamPushConfigurationInvalid, .mediaRelayConfigurationInvalid,
              .streamPushAlreadyActive, .mediaRelayChannelLimitExceeded,
-             .processorNotFound, .unknown, .operationTimeout:
+             .processorNotFound, .unknown, .operationTimeout,
+             .allProvidersFailed, .providerHealthCheckFailed:
             return true
+        case .providerSwitchInProgress:
+            return false
         }
     }
     
@@ -139,7 +147,8 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
         case .insufficientPermissions, .permissionDenied, .invalidRoleTransition, .microphonePermissionDenied:
             return .permission
         case .configurationError, .providerNotAvailable, .invalidParameter, .invalidConfiguration,
-             .authenticationError, .tokenExpired, .tokenRenewalFailed, .invalidToken:
+             .authenticationError, .tokenExpired, .tokenRenewalFailed, .invalidToken,
+             .allProvidersFailed, .providerSwitchInProgress, .providerHealthCheckFailed:
             return .configuration
         case .noActiveSession, .sessionAlreadyActive, .userAlreadyInRoom, .roomNotFound, .userNotFound:
             return .session
@@ -163,14 +172,15 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
              .authenticationError, .invalidToken,
              .insufficientPermissions, .permissionDenied,
              .streamPushNotSupported, .mediaRelayNotSupported,
-             .internalError:
+             .internalError, .allProvidersFailed:
             return .critical
         case .connectionError, .networkError, .connectionFailed,
              .tokenExpired, .tokenRenewalFailed,
              .invalidRoleTransition, .sessionAlreadyActive,
              .audioDeviceUnavailable, .microphonePermissionDenied,
              .streamPushFailed, .mediaRelayFailed,
-             .processorAlreadyRegistered, .invalidMessageFormat:
+             .processorAlreadyRegistered, .invalidMessageFormat,
+             .providerHealthCheckFailed:
             return .high
         case .networkUnavailable, .connectionTimeout,
              .noActiveSession, .userAlreadyInRoom, .roomNotFound, .userNotFound,
@@ -178,7 +188,7 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
              .streamPushConfigurationInvalid, .streamPushAlreadyActive,
              .mediaRelayConfigurationInvalid, .mediaRelayChannelLimitExceeded,
              .processorNotFound, .messageProcessingFailed,
-             .operationTimeout:
+             .operationTimeout, .providerSwitchInProgress:
             return .medium
         case .invalidParameter, .operationCancelled, .unknown:
             return .low
@@ -299,6 +309,14 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
         case .invalidMessageFormat:
             return "error.invalid.message.format"
             
+        // Provider Switching Errors
+        case .allProvidersFailed:
+            return "error.all.providers.failed"
+        case .providerSwitchInProgress:
+            return "error.provider.switch.in.progress"
+        case .providerHealthCheckFailed:
+            return "error.provider.health.check.failed"
+            
         // Generic Errors
         case .unknown:
             return "error.unknown"
@@ -353,6 +371,10 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
             return [messageType]
         case .messageProcessingFailed(let reason):
             return reason != nil ? [reason!] : []
+        case .allProvidersFailed(_, let message):
+            return message != nil ? [message!] : []
+        case .providerHealthCheckFailed(let provider):
+            return [provider.displayName]
         case .unknown(let reason):
             return reason != nil ? [reason!] : []
         case .internalError(let code, let description):
@@ -438,6 +460,12 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
             return "Message processing failed" + (reason != nil ? ": \(reason!)" : "")
         case .invalidMessageFormat:
             return "Invalid message format"
+        case .allProvidersFailed(_, let message):
+            return "All providers failed" + (message != nil ? ": \(message!)" : "")
+        case .providerSwitchInProgress:
+            return "Provider switch in progress"
+        case .providerHealthCheckFailed(let provider):
+            return "Provider health check failed: \(provider.displayName)"
         case .unknown(let reason):
             return "Unknown error" + (reason != nil ? ": \(reason!)" : "")
         case .operationCancelled:
@@ -526,6 +554,12 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
             return lhsReason == rhsReason
         case (.invalidMessageFormat, .invalidMessageFormat):
             return true
+        case (.allProvidersFailed(_, let lhsMessage), .allProvidersFailed(_, let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.providerSwitchInProgress, .providerSwitchInProgress):
+            return true
+        case (.providerHealthCheckFailed(let lhsProvider), .providerHealthCheckFailed(let rhsProvider)):
+            return lhsProvider == rhsProvider
         case (.unknown(let lhsReason), .unknown(let rhsReason)):
             return lhsReason == rhsReason
         case (.operationCancelled, .operationCancelled):

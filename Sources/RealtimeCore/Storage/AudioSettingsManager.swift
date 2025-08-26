@@ -71,11 +71,9 @@ public class AudioSettingsManager: ObservableObject {
                     }
                     
                     if let legacySettings = legacySettings {
-                        // 只有在新存储中没有数据时才迁移
-                        if !$settings.hasValue() {
-                            settings = legacySettings
-                            print("Migrated audio settings from legacy storage")
-                        }
+                        // 迁移数据到新存储
+                        settings = legacySettings
+                        print("Migrated audio settings from legacy storage")
                         
                         // 清理旧数据
                         UserDefaults.standard.removeObject(forKey: legacyKey)

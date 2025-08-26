@@ -1,0 +1,133 @@
+/* 
+   Localizable.strings (Korean)
+   RealtimeKit
+   
+   Korean localization strings for RealtimeKit
+*/
+
+// Connection States
+"connection.state.disconnected" = "연결 해제됨";
+"connection.state.connecting" = "연결 중";
+"connection.state.connected" = "연결됨";
+"connection.state.reconnecting" = "재연결 중";
+"connection.state.failed" = "연결 실패";
+
+// Network Status
+"network.status.unknown" = "알 수 없는 네트워크";
+"network.status.unavailable" = "네트워크 사용 불가";
+"network.status.wifi" = "WiFi";
+"network.status.cellular" = "셀룰러";
+"network.status.limited" = "제한된 네트워크";
+
+// User Roles
+"user.role.broadcaster" = "방송자";
+"user.role.audience" = "시청자";
+"user.role.cohost" = "공동 호스트";
+"user.role.moderator" = "진행자";
+
+// Audio Controls
+"audio.microphone.muted" = "마이크가 음소거되었습니다";
+"audio.microphone.unmuted" = "마이크가 켜졌습니다";
+"audio.stream.stopped" = "오디오 스트림이 중지되었습니다";
+"audio.stream.active" = "오디오 스트림이 활성화되었습니다";
+"audio.volume.mixing" = "믹싱 볼륨: %d%%";
+"audio.volume.playback" = "재생 볼륨: %d%%";
+"audio.volume.recording" = "녹음 볼륨: %d%%";
+
+// Volume Indicator
+"volume.speaking.started" = "%@ 님이 말하기 시작했습니다";
+"volume.speaking.stopped" = "%@ 님이 말하기를 중단했습니다";
+"volume.dominant.speaker" = "주 발표자: %@";
+"volume.no.speaker" = "아무도 말하고 있지 않습니다";
+
+// Stream Push
+"stream.push.starting" = "스트림 푸시를 시작하고 있습니다...";
+"stream.push.active" = "스트림 푸시가 활성화되었습니다";
+"stream.push.stopped" = "스트림 푸시가 중지되었습니다";
+"stream.push.failed" = "스트림 푸시에 실패했습니다";
+
+// Media Relay
+"media.relay.starting" = "미디어 릴레이를 시작하고 있습니다...";
+"media.relay.active" = "미디어 릴레이가 %d개 채널에서 활성화되었습니다";
+"media.relay.stopped" = "미디어 릴레이가 중지되었습니다";
+"media.relay.failed" = "미디어 릴레이에 실패했습니다";
+
+// Token Management
+"token.expiring.soon" = "토큰이 %d초 후에 만료됩니다";
+"token.expired" = "토큰이 만료되었습니다";
+"token.renewed" = "토큰 갱신에 성공했습니다";
+"token.renewal.failed" = "토큰 갱신에 실패했습니다";
+
+// Error Messages - Network
+"error.network.unavailable" = "네트워크를 사용할 수 없습니다";
+"error.connection.timeout" = "연결 시간 초과";
+"error.connection.failed" = "연결 실패";
+
+// Error Messages - Permission
+"error.permission.denied" = "권한이 거부되었습니다";
+"error.insufficient.permissions" = "역할에 대한 권한이 부족합니다: %@";
+"error.invalid.role.transition" = "%@에서 %@로 전환할 수 없습니다";
+"error.microphone.permission.denied" = "마이크 권한이 거부되었습니다";
+
+// Error Messages - Configuration
+"error.invalid.configuration" = "잘못된 구성";
+"error.provider.unavailable" = "서비스 제공업체를 사용할 수 없습니다: %@";
+"error.invalid.token" = "잘못된 토큰";
+"error.token.expired" = "토큰이 만료되었습니다";
+"error.token.renewal.failed" = "토큰 갱신 실패";
+
+// Error Messages - Session
+"error.no.active.session" = "활성 세션이 없습니다";
+"error.session.already.active" = "세션이 이미 활성화되어 있습니다";
+"error.user.already.in.room" = "사용자가 이미 방에 있습니다";
+"error.room.not.found" = "방을 찾을 수 없습니다: %@";
+"error.user.not.found" = "사용자를 찾을 수 없습니다: %@";
+
+// Error Messages - Audio
+"error.audio.device.unavailable" = "오디오 장치를 사용할 수 없습니다";
+"error.audio.stream.failed" = "오디오 스트림 실패";
+"error.volume.detection.failed" = "볼륨 감지 실패";
+
+// Error Messages - Stream Push
+"error.stream.push.not.supported" = "스트림 푸시가 지원되지 않습니다";
+"error.stream.push.configuration.invalid" = "스트림 푸시 구성이 잘못되었습니다";
+"error.stream.push.failed" = "스트림 푸시 실패";
+"error.stream.push.already.active" = "스트림 푸시가 이미 활성화되어 있습니다";
+
+// Error Messages - Media Relay
+"error.media.relay.not.supported" = "미디어 릴레이가 지원되지 않습니다";
+"error.media.relay.configuration.invalid" = "미디어 릴레이 구성이 잘못되었습니다";
+"error.media.relay.failed" = "미디어 릴레이 실패";
+"error.media.relay.channel.limit.exceeded" = "미디어 릴레이 채널 제한을 초과했습니다";
+
+// Error Messages - Message Processing
+"error.processor.already.registered" = "메시지 프로세서가 이미 등록되어 있습니다: %@";
+"error.processor.not.found" = "메시지 프로세서를 찾을 수 없습니다: %@";
+"error.message.processing.failed" = "메시지 처리 실패";
+"error.invalid.message.format" = "잘못된 메시지 형식";
+
+// Error Messages - Localization
+"error.localization.key.not.found" = "로컬라이제이션 키를 찾을 수 없습니다: %@";
+"error.language.pack.load.failed" = "언어 팩 로드 실패";
+"error.unsupported.language" = "지원되지 않는 언어: %@";
+
+// Error Messages - Generic
+"error.unknown" = "알 수 없는 오류";
+"error.operation.cancelled" = "작업이 취소되었습니다";
+"error.operation.timeout" = "작업 시간 초과";
+"error.internal" = "내부 오류 (코드: %d)";
+
+// General UI
+"button.ok" = "확인";
+"button.cancel" = "취소";
+"button.retry" = "다시 시도";
+"button.close" = "닫기";
+"button.settings" = "설정";
+"button.join" = "참가";
+"button.leave" = "나가기";
+
+// Settings
+"settings.language" = "언어";
+"settings.audio" = "오디오 설정";
+"settings.video" = "비디오 설정";
+"settings.advanced" = "고급 설정";

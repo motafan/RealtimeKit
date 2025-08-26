@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "RealtimeKit",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v13),
         .macOS(.v10_15)
@@ -55,9 +56,6 @@ let package = Package(
                 "RealtimeUIKit",
                 "RealtimeSwiftUI",
                 "RealtimeAgora"
-            ],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
         
@@ -65,27 +63,21 @@ let package = Package(
         .target(
             name: "RealtimeCore",
             dependencies: [],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
+            resources: [
+                .process("Resources")
             ]
         ),
         
         // UIKit integration module
         .target(
             name: "RealtimeUIKit",
-            dependencies: ["RealtimeCore"],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
-            ]
+            dependencies: ["RealtimeCore"]
         ),
         
         // SwiftUI integration module
         .target(
             name: "RealtimeSwiftUI",
-            dependencies: ["RealtimeCore"],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
-            ]
+            dependencies: ["RealtimeCore"]
         ),
         
         // Agora provider implementation
@@ -96,19 +88,13 @@ let package = Package(
                 // Add Agora SDK dependencies when ready:
                 // .product(name: "AgoraRtcKit", package: "AgoraRtcEngine_iOS"),
                 // .product(name: "AgoraRtmKit", package: "AgoraRtmKit_iOS")
-            ],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
         
         // Mock provider for testing
         .target(
             name: "RealtimeMocking",
-            dependencies: ["RealtimeCore"],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
-            ]
+            dependencies: ["RealtimeCore"]
         ),
         
         // Test targets using built-in Swift Testing framework
@@ -117,11 +103,9 @@ let package = Package(
             dependencies: [
                 "RealtimeCore", 
                 "RealtimeMocking",
+                "RealtimeAgora",
                 "RealtimeUIKit",
                 "RealtimeSwiftUI"
-            ],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
         .testTarget(
@@ -129,9 +113,6 @@ let package = Package(
             dependencies: [
                 "RealtimeCore", 
                 "RealtimeMocking"
-            ],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
             ]
         )
     ]

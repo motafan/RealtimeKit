@@ -132,11 +132,10 @@ public class RealtimeManager: ObservableObject {
     
     // MARK: - Private Properties - Provider Management (需求 2.3)
     
-    private var rtcProvider: RTCProvider?
-    private var rtmProvider: RTMProvider?
+    internal var rtcProvider: RTCProvider?
+    internal var rtmProvider: RTMProvider?
     internal var currentConfig: RealtimeConfig?
-    private var providerFactories: [ProviderType: ProviderFactory] = [:]
-    private var fallbackChain: [ProviderType] = [.mock] // 默认降级链
+    private let providerSwitchManager = ProviderSwitchManager()
     
     // MARK: - Initialization
     
@@ -174,10 +173,8 @@ public class RealtimeManager: ObservableObject {
     ///   - type: 服务商类型
     ///   - factory: 服务商工厂实例
     public func registerProviderFactory(_ type: ProviderType, factory: ProviderFactory) {
-        providerFactories[type] = factory
-        if !availableProviders.contains(type) {
-            availableProviders.append(type)
-        }
+        providerSwitchManager.registerProvider(type, factory: factory)
+        availableProviders = providerSwitchManager.availableProviders
         print("已注册服务商工厂: \(type.displayName)")
     }
     
@@ -185,27 +182,26 @@ public class RealtimeManager: ObservableObject {
     /// - Parameter type: 服务商类型
     /// - Returns: 服务商工厂实例，如果未注册则返回 nil
     public func getProviderFactory(for type: ProviderType) -> ProviderFactory? {
-        return providerFactories[type]
+        return providerSwitchManager.getProviderFactory(for: type)
     }
     
     /// 获取服务商支持的功能特性
     /// - Parameter type: 服务商类型
     /// - Returns: 支持的功能特性集合
     public func getSupportedFeatures(for type: ProviderType) -> Set<ProviderFeature> {
-        return providerFactories[type]?.supportedFeatures() ?? []
+        return providerSwitchManager.getSupportedFeatures(for: type)
     }
     
     /// 设置服务商降级链
     /// - Parameter chain: 降级链，按优先级排序
     public func setFallbackChain(_ chain: [ProviderType]) {
-        fallbackChain = chain.filter { availableProviders.contains($0) }
-        print("设置降级链: \(fallbackChain.map { $0.displayName }.joined(separator: " -> "))")
+        providerSwitchManager.setFallbackChain(chain)
+        print("设置降级链: \(chain.map { $0.displayName }.joined(separator: " -> "))")
     }
     
     /// 设置默认服务商工厂
     private func setupDefaultProviderFactories() {
-        // 注册 Mock 工厂用于测试和降级
-        registerProviderFactory(.mock, factory: MockProviderFactory())
+        // Mock 工厂已在 ProviderSwitchManager 中注册
     }
     
     /// 设置本地化管理器监听 (需求: 17.2)
@@ -778,7 +774,7 @@ public class RealtimeManager: ObservableObject {
         currentConfig = config
         
         // 使用工厂模式创建服务商实例 (需求 2.2)
-        guard let factory = providerFactories[provider] else {
+        guard let factory = providerSwitchManager.getProviderFactory(for: provider) else {
             throw RealtimeError.providerNotAvailable(provider)
         }
         
@@ -813,76 +809,28 @@ public class RealtimeManager: ObservableObject {
     ///   - newProvider: 新的服务商类型
     ///   - preserveSession: 是否保持会话状态
     public func switchProvider(to newProvider: ProviderType, preserveSession: Bool = true) async throws {
-        guard availableProviders.contains(newProvider) else {
-            throw RealtimeError.providerNotAvailable(newProvider)
-        }
-        
-        guard newProvider != currentProvider else {
-            print("已经在使用服务商: \(newProvider.displayName)")
-            return
-        }
-        
         switchingInProgress = true
         defer { switchingInProgress = false }
         
-        // 保存当前状态
-        let currentSession = self.currentSession
-        let currentAudioSettings = self.audioSettings
-        
         do {
-            // 执行服务商切换
-            try await performProviderSwitch(to: newProvider, preserveSession: preserveSession)
+            try await providerSwitchManager.switchProvider(
+                to: newProvider,
+                preserveSession: preserveSession
+            )
             
-            // 恢复状态
-            if preserveSession, let session = currentSession {
-                try await restoreSession(session)
-            }
-            
-            try await applyAudioSettings(currentAudioSettings)
-            
-            print("服务商切换成功: \(currentProvider.displayName) -> \(newProvider.displayName)")
+            // 更新当前服务商状态
+            currentProvider = providerSwitchManager.currentProvider
             
         } catch {
             print("服务商切换失败: \(error)")
-            
-            // 尝试降级处理 (需求 2.4)
-            try await attemptFallback(originalError: error)
+            throw error
         }
-    }
-    
-    /// 执行服务商切换
-    private func performProviderSwitch(to newProvider: ProviderType, preserveSession: Bool) async throws {
-        guard let config = currentConfig else {
-            throw RealtimeError.configurationError("缺少配置信息")
-        }
-        
-        // 断开当前连接
-        if connectionState == .connected {
-            try await rtcProvider?.leaveRoom()
-            connectionState = .disconnected
-        }
-        
-        // 配置新的服务商
-        try await configure(provider: newProvider, config: config)
     }
     
     /// 尝试降级处理 (需求 2.4)
     private func attemptFallback(originalError: Error) async throws {
-        for fallbackProvider in fallbackChain {
-            if fallbackProvider != currentProvider && availableProviders.contains(fallbackProvider) {
-                do {
-                    print("尝试降级到服务商: \(fallbackProvider.displayName)")
-                    try await switchProvider(to: fallbackProvider, preserveSession: true)
-                    return
-                } catch {
-                    print("降级到 \(fallbackProvider.displayName) 失败: \(error)")
-                    continue
-                }
-            }
-        }
-        
-        // 所有降级选项都失败，抛出原始错误
-        throw originalError
+        try await providerSwitchManager.attemptFallback(originalError: originalError)
+        currentProvider = providerSwitchManager.currentProvider
     }
     
     /// 集成所有子管理器 (需求 3.1)
@@ -2428,6 +2376,12 @@ public class RealtimeManager: ObservableObject {
     internal func restoreSession(_ session: UserSession) async throws {
         currentSession = session
         sessionStorage.saveUserSession(session)
+    }
+    
+    /// 为重新配置清除会话（内部使用）
+    internal func clearSessionForReconfiguration() async {
+        currentSession = nil
+        // 不清除持久化存储，因为这只是临时清除
     }
 }
 

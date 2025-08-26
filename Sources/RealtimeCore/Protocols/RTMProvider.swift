@@ -158,23 +158,23 @@ public protocol RTMProvider: AnyObject {
     
     /// 设置令牌过期处理器
     /// - Parameter handler: 令牌即将过期时的回调
-    func onTokenWillExpire(_ handler: @escaping () -> Void)
+    func onTokenWillExpire(_ handler: @escaping @Sendable () -> Void)
     
     // MARK: - 事件处理器
     
     /// 设置连接状态变化处理器
     /// - Parameter handler: 连接状态变化的回调
-    func onConnectionStateChanged(_ handler: @escaping (RTMConnectionState, RTMConnectionChangeReason) -> Void)
-    
+    func onConnectionStateChanged(_ handler: @escaping @Sendable (RTMConnectionState, RTMConnectionChangeReason) -> Void)
+
     /// 设置点对点消息接收处理器
     /// - Parameter handler: 接收点对点消息的回调
-    func onPeerMessageReceived(_ handler: @escaping (RTMMessage, String) -> Void)
-    
+    func onPeerMessageReceived(_ handler: @escaping @Sendable (RTMMessage, String) -> Void)
+
     /// 设置频道消息接收处理器
     /// - Parameter handler: 接收频道消息的回调
-    func onChannelMessageReceived(_ handler: @escaping (RTMMessage, RTMChannelMember, String) -> Void)
-    
+    func onChannelMessageReceived(_ handler: @escaping @Sendable (RTMMessage, RTMChannelMember, String) -> Void)
+
     /// 设置用户在线状态变化处理器
     /// - Parameter handler: 用户在线状态变化的回调
-    func onPeersOnlineStatusChanged(_ handler: @escaping ([String: Bool]) -> Void)
+    func onPeersOnlineStatusChanged(_ handler: @escaping @Sendable ([String: Bool]) -> Void)
 }

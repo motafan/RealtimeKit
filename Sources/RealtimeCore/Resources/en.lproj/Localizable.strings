@@ -1,0 +1,204 @@
+/* 
+   Localizable.strings (English)
+   RealtimeKit
+   
+   English localization strings for RealtimeKit
+*/
+
+// Connection States
+"connection.state.disconnected" = "Disconnected";
+"connection.state.connecting" = "Connecting";
+"connection.state.connected" = "Connected";
+"connection.state.reconnecting" = "Reconnecting";
+"connection.state.failed" = "Connection Failed";
+
+// Network Status
+"network.status.unknown" = "Unknown Network";
+"network.status.unavailable" = "Network Unavailable";
+"network.status.wifi" = "WiFi";
+"network.status.cellular" = "Cellular";
+"network.status.limited" = "Limited Network";
+
+// User Roles
+"user.role.broadcaster" = "Broadcaster";
+"user.role.audience" = "Audience";
+"user.role.cohost" = "Co-host";
+"user.role.moderator" = "Moderator";
+
+// Audio Controls
+"audio.microphone.muted" = "Microphone Muted";
+"audio.microphone.unmuted" = "Microphone Unmuted";
+"audio.stream.stopped" = "Audio Stream Stopped";
+"audio.stream.active" = "Audio Stream Active";
+"audio.volume.mixing" = "Mixing Volume: %d%%";
+"audio.volume.playback" = "Playback Volume: %d%%";
+"audio.volume.recording" = "Recording Volume: %d%%";
+
+// Volume Indicator
+"volume.speaking.started" = "%@ started speaking";
+"volume.speaking.stopped" = "%@ stopped speaking";
+"volume.dominant.speaker" = "Main speaker: %@";
+"volume.no.speaker" = "No one is speaking";
+
+// Stream Push
+"stream.push.starting" = "Starting stream push...";
+"stream.push.active" = "Stream push active";
+"stream.push.stopped" = "Stream push stopped";
+"stream.push.failed" = "Stream push failed";
+
+// Media Relay
+"media.relay.starting" = "Starting media relay...";
+"media.relay.active" = "Media relay active to %d channels";
+"media.relay.stopped" = "Media relay stopped";
+"media.relay.failed" = "Media relay failed";
+
+// Token Management
+"token.expiring.soon" = "Token expires in %d seconds";
+"token.expired" = "Token has expired";
+"token.renewed" = "Token renewed successfully";
+"token.renewal.failed" = "Token renewal failed";
+
+// Error Messages - Network
+"error.network.unavailable" = "Network unavailable";
+"error.connection.timeout" = "Connection timeout";
+"error.connection.failed" = "Connection failed";
+
+// Error Messages - Permission
+"error.permission.denied" = "Permission denied";
+"error.insufficient.permissions" = "Insufficient permissions for role: %@";
+"error.invalid.role.transition" = "Cannot switch from %@ to %@";
+"error.microphone.permission.denied" = "Microphone permission denied";
+
+// Error Messages - Configuration
+"error.invalid.configuration" = "Invalid configuration";
+"error.provider.unavailable" = "Service provider unavailable: %@";
+"error.invalid.token" = "Invalid token";
+"error.token.expired" = "Token has expired";
+"error.token.renewal.failed" = "Token renewal failed";
+
+// Error Messages - Session
+"error.no.active.session" = "No active session";
+"error.session.already.active" = "Session already active";
+"error.user.already.in.room" = "User already in room";
+"error.room.not.found" = "Room not found: %@";
+"error.user.not.found" = "User not found: %@";
+
+// Error Messages - Audio
+"error.audio.device.unavailable" = "Audio device unavailable";
+"error.audio.stream.failed" = "Audio stream failed";
+"error.volume.detection.failed" = "Volume detection failed";
+
+// Error Messages - Stream Push
+"error.stream.push.not.supported" = "Stream push not supported";
+"error.stream.push.configuration.invalid" = "Stream push configuration invalid";
+"error.stream.push.failed" = "Stream push failed";
+"error.stream.push.already.active" = "Stream push already active";
+
+// Error Messages - Media Relay
+"error.media.relay.not.supported" = "Media relay not supported";
+"error.media.relay.configuration.invalid" = "Media relay configuration invalid";
+"error.media.relay.failed" = "Media relay failed";
+"error.media.relay.channel.limit.exceeded" = "Media relay channel limit exceeded";
+
+// Error Messages - Message Processing
+"error.processor.already.registered" = "Message processor already registered for type: %@";
+"error.processor.not.found" = "Message processor not found for type: %@";
+"error.message.processing.failed" = "Message processing failed";
+"error.invalid.message.format" = "Invalid message format";
+
+// Error Messages - Localization
+"error.localization.key.not.found" = "Localization key not found: %@";
+"error.language.pack.load.failed" = "Language pack load failed";
+"error.unsupported.language" = "Unsupported language: %@";
+
+// Provider Features
+"provider.feature.audio_streaming" = "Audio Streaming";
+"provider.feature.video_streaming" = "Video Streaming";
+"provider.feature.stream_push" = "Stream Push";
+"provider.feature.media_relay" = "Media Relay";
+"provider.feature.volume_indicator" = "Volume Indicator";
+"provider.feature.message_processing" = "Message Processing";
+
+// Provider Names
+"provider.agora" = "Agora";
+"provider.tencent" = "Tencent Cloud";
+"provider.zego" = "ZEGO";
+"provider.mock" = "Mock Provider";
+
+// Provider Descriptions
+"provider.agora.description" = "Agora Real-Time Communication Platform";
+"provider.tencent.description" = "Tencent Cloud Real-Time Communication";
+"provider.zego.description" = "ZEGO Real-Time Communication";
+"provider.mock.description" = "Mock Provider for Testing";
+
+// Provider Status
+"provider.status.current" = "Current";
+"provider.status.available" = "Available";
+"provider.status.unhealthy" = "Unhealthy";
+"provider.status.not_registered" = "Not Registered";
+
+// Provider Switching
+"provider.switch.message" = "Switching from %@ to %@";
+"provider.fallback.message" = "%@ failed, falling back to %@";
+
+// Error Messages - Provider Switching
+"error.all.providers.failed" = "All providers failed";
+"error.provider.switch.in.progress" = "Provider switch in progress";
+"error.provider.health.check.failed" = "Provider health check failed: %@";
+"error.provider.unhealthy" = "Provider is unhealthy: %@";
+"error.no_fallback_providers" = "No fallback providers available";
+"error.all_fallback_failed" = "All fallback providers failed: %@";
+"error.recovery.try_different_provider" = "Try using a different provider";
+
+// Error Messages - Generic
+"error.unknown" = "Unknown error";
+"error.operation.cancelled" = "Operation cancelled";
+"error.operation.timeout" = "Operation timeout";
+"error.internal" = "Internal error (code: %d)";
+
+// Error Messages - Provider Specific (Agora)
+"error.agora.invalid_app_id" = "Invalid Agora App ID";
+"error.agora.invalid_user_id" = "Invalid user ID";
+"error.agora.invalid_channel_id" = "Invalid channel ID";
+"error.agora.invalid_room_id" = "Invalid room ID";
+"error.agora.invalid_peer_id" = "Invalid peer ID";
+"error.agora.invalid_parameters" = "Invalid parameters";
+"error.agora.not_connected" = "Not connected to Agora service";
+"error.provider.not_initialized" = "Provider not initialized";
+"error.rtm.not_logged_in" = "Not logged in to RTM service";
+"error.rtm.not_in_channel" = "Not in channel";
+"error.rtm.empty_message" = "Message cannot be empty";
+"error.token.invalid_token" = "Invalid token";
+"error.stream.invalid_url" = "Invalid stream URL";
+"error.stream.not_active" = "Stream not active";
+"error.media_relay.no_destinations" = "No destination channels specified";
+"error.media_relay.not_active" = "Media relay not active";
+"error.media_relay.channel_not_found" = "Channel not found in relay";
+"error.volume.invalid_config" = "Invalid volume detection configuration";
+"error.volume.not_enabled" = "Volume indicator not enabled";
+
+// General UI
+"button.ok" = "OK";
+"button.cancel" = "Cancel";
+"button.retry" = "Retry";
+"button.close" = "Close";
+"button.settings" = "Settings";
+"button.join" = "Join";
+"button.leave" = "Leave";
+
+// Settings
+"settings.language" = "Language";
+"settings.audio" = "Audio Settings";
+"settings.video" = "Video Settings";
+"settings.advanced" = "Advanced Settings";
+
+// Room and User Management
+"room.user.count" = "Users: %d";
+"connection.duration" = "Connected for %d seconds";
+
+// Accessibility
+"accessibility.button.ok" = "OK Button";
+"accessibility.hint.tap.to.confirm" = "Tap to confirm your selection";
+
+// Test keys (English only for fallback testing)
+"test.english.only" = "English Only Text";

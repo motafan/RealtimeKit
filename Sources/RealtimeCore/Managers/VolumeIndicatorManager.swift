@@ -229,11 +229,17 @@ public class VolumeIndicatorManager: ObservableObject {
             } else if volumeFloat < config.silenceThreshold {
                 // 音量低于静音阈值
                 if speakingState.isSpeaking {
-                    let speakingDuration = currentTime.timeIntervalSince(speakingState.lastVolumeTime ?? currentTime) * 1000
-                    if speakingDuration > Double(config.silenceDurationThreshold) {
-                        speakingState.isSpeaking = false
+                    // 如果之前在说话，检查静音持续时间
+                    if speakingState.silenceStartTime == nil {
                         speakingState.silenceStartTime = currentTime
                     }
+                    let silenceDuration = currentTime.timeIntervalSince(speakingState.silenceStartTime!) * 1000
+                    if silenceDuration > Double(config.silenceDurationThreshold) {
+                        speakingState.isSpeaking = false
+                    }
+                } else {
+                    // 如果之前就不在说话，保持静音状态
+                    speakingState.silenceStartTime = speakingState.silenceStartTime ?? currentTime
                 }
                 isSpeaking = speakingState.isSpeaking
             } else {

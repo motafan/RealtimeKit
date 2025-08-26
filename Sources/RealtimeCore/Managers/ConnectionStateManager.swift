@@ -291,7 +291,7 @@ public class ConnectionStateManager: ObservableObject {
     private func startConnectionTimeout() {
         connectionTimeoutTask?.cancel()
         
-        connectionTimeoutTask = Task {
+        connectionTimeoutTask = Task { @MainActor in
             do {
                 try await Task.sleep(nanoseconds: UInt64(config.connectionTimeoutInterval * 1_000_000_000))
                 

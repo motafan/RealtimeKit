@@ -1,3 +1,4 @@
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AgoraProviderTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/AudioSettingsStorageTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ConnectionStateManagerTests.swift
@@ -11,6 +12,7 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayConfigTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessingManagerTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ProviderFactoryTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeStorageTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StorageBackendTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StorageManagerTests.swift

@@ -94,7 +94,8 @@ struct MessageProcessingManagerTests {
         let textMessage = RealtimeMessage(
             type: .text,
             content: .text("  Hello World  "),
-            senderId: "user123"
+            senderId: "user123",
+            receiverId: "user456"
         )
         
         // 处理消息
@@ -113,13 +114,15 @@ struct MessageProcessingManagerTests {
         let highPriorityProcessor = CustomMessageProcessor(
             name: "HighPriorityProcessor",
             supportedTypes: ["text"],
-            priority: 200
+            priority: 200,
+            customHandler: nil
         )
         
         let lowPriorityProcessor = CustomMessageProcessor(
             name: "LowPriorityProcessor", 
             supportedTypes: ["text"],
-            priority: 50
+            priority: 50,
+            customHandler: nil
         )
         
         try processingManager.registerProcessor(lowPriorityProcessor)
@@ -146,7 +149,8 @@ struct MessageProcessingManagerTests {
         let spamMessage = RealtimeMessage(
             type: .text,
             content: .text("这是一条垃圾广告消息"),
-            senderId: "spammer123"
+            senderId: "spammer123",
+            receiverId: "user456"
         )
         
         // 处理消息
@@ -168,6 +172,7 @@ struct MessageProcessingManagerTests {
             type: .text,
             content: .text("这是一条过期消息"),
             senderId: "user123",
+            receiverId: "user456",
             expirationTime: Date().addingTimeInterval(-3600) // 1小时前过期
         )
         
@@ -192,7 +197,8 @@ struct MessageProcessingManagerTests {
         let message = RealtimeMessage(
             type: .text,
             content: .text("hello world"),
-            senderId: "user123"
+            senderId: "user123",
+            receiverId: "user456"
         )
         
         await processingManager.processMessage(message)
@@ -213,7 +219,8 @@ struct MessageProcessingManagerTests {
         let message = RealtimeMessage(
             type: .text,
             content: .text("Test message"),
-            senderId: "user123"
+            senderId: "user123",
+            receiverId: "user456"
         )
         
         await processingManager.processMessage(message)
@@ -234,7 +241,8 @@ struct MessageProcessingManagerTests {
         let emptyMessage = RealtimeMessage(
             type: .text,
             content: .text(""),
-            senderId: "user123"
+            senderId: "user123",
+            receiverId: "user456"
         )
         
         await processingManager.processMessage(emptyMessage)
@@ -254,7 +262,8 @@ struct MessageProcessingManagerTests {
         let allowedMessage = RealtimeMessage(
             type: .text,
             content: .text("Allowed message"),
-            senderId: "user123"
+            senderId: "user123",
+            receiverId: "user456"
         )
         
         await processingManager.processMessage(allowedMessage)
@@ -264,7 +273,8 @@ struct MessageProcessingManagerTests {
         let deniedMessage = RealtimeMessage(
             type: .text,
             content: .text("Denied message"),
-            senderId: "hacker999"
+            senderId: "hacker999",
+            receiverId: "user456"
         )
         
         await processingManager.processMessage(deniedMessage)
@@ -281,17 +291,19 @@ struct MessageProcessingManagerTests {
         let errorProcessor = CustomMessageProcessor(
             name: "ErrorProcessor",
             supportedTypes: ["text"],
-            priority: 100
-        ) { message in
-            throw MessageProcessorError.processingTimeout
-        }
+            priority: 100,
+            customHandler: { message in
+                throw MessageProcessorError.processingTimeout
+            }
+        )
         
         try processingManager.registerProcessor(errorProcessor)
         
         let message = RealtimeMessage(
             type: .text,
             content: .text("Test message"),
-            senderId: "user123"
+            senderId: "user123",
+            receiverId: "user456"
         )
         
         await processingManager.processMessage(message)
@@ -339,7 +351,8 @@ struct MessageProcessingManagerTests {
             let message = RealtimeMessage(
                 type: .text,
                 content: .text("Message \(i)"),
-                senderId: "user123"
+                senderId: "user123",
+                receiverId: "user456"
             )
             await processingManager.processMessage(message)
         }
@@ -368,7 +381,8 @@ struct MessageProcessingManagerTests {
                     let message = RealtimeMessage(
                         type: .text,
                         content: .text("Concurrent message \(i)"),
-                        senderId: "user\(i)"
+                        senderId: "user\(i)",
+                        receiverId: "user456"
                     )
                     await processingManager.processMessage(message)
                 }
@@ -401,10 +415,10 @@ struct MessageProcessingManagerTests {
         
         // 处理各种类型的消息
         let messages = [
-            RealtimeMessage(type: .text, content: .text("hello world"), senderId: "user1"),
-            RealtimeMessage(type: .text, content: .text("这是垃圾广告"), senderId: "spammer"),
-            RealtimeMessage(type: .system, content: .system(SystemContent(message: "用户加入", systemType: .userJoined)), senderId: "system"),
-            RealtimeMessage(type: .text, content: .text(""), senderId: "user2") // 空消息
+            RealtimeMessage(type: .text, content: .text("hello world"), senderId: "user1", receiverId: "user456"),
+            RealtimeMessage(type: .text, content: .text("这是垃圾广告"), senderId: "spammer", receiverId: "user456"),
+            RealtimeMessage(type: .system, content: .system(SystemContent(message: "用户加入", systemType: .userJoined)), senderId: "system", receiverId: "user456"),
+            RealtimeMessage(type: .text, content: .text(""), senderId: "user2", receiverId: "user456") // 空消息
         ]
         
         for message in messages {
@@ -433,7 +447,8 @@ struct ConcreteProcessorTests {
         let message = RealtimeMessage(
             type: .text,
             content: .text("  Hello    World  "),
-            senderId: "user123"
+            senderId: "user123",
+            receiverId: "user456"
         )
         
         let result = try await processor.process(message)
@@ -463,7 +478,8 @@ struct ConcreteProcessorTests {
         let message = RealtimeMessage(
             type: .system,
             content: .system(systemContent),
-            senderId: "system"
+            senderId: "system",
+            receiverId: "user456"
         )
         
         let result = try await processor.process(message)
@@ -493,7 +509,8 @@ struct ConcreteProcessorTests {
         let message = RealtimeMessage(
             type: .image,
             content: .image(imageContent),
-            senderId: "user123"
+            senderId: "user123",
+            receiverId: "user456"
         )
         
         let result = try await processor.process(message)
@@ -522,7 +539,8 @@ struct ConcreteProcessorTests {
         let message = RealtimeMessage(
             type: .custom,
             content: .custom(customContent),
-            senderId: "user123"
+            senderId: "user123",
+            receiverId: "user456"
         )
         
         let result = try await processor.process(message)

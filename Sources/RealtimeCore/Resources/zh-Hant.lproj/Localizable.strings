@@ -1,0 +1,133 @@
+/* 
+   Localizable.strings (Chinese Traditional)
+   RealtimeKit
+   
+   Chinese Traditional localization strings for RealtimeKit
+*/
+
+// Connection States
+"connection.state.disconnected" = "已斷開連接";
+"connection.state.connecting" = "連接中";
+"connection.state.connected" = "已連接";
+"connection.state.reconnecting" = "重新連接中";
+"connection.state.failed" = "連接失敗";
+
+// Network Status
+"network.status.unknown" = "未知網絡";
+"network.status.unavailable" = "網絡不可用";
+"network.status.wifi" = "WiFi";
+"network.status.cellular" = "蜂窩網絡";
+"network.status.limited" = "受限網絡";
+
+// User Roles
+"user.role.broadcaster" = "主播";
+"user.role.audience" = "觀眾";
+"user.role.cohost" = "連麥嘉賓";
+"user.role.moderator" = "主持人";
+
+// Audio Controls
+"audio.microphone.muted" = "麥克風已靜音";
+"audio.microphone.unmuted" = "麥克風已開啟";
+"audio.stream.stopped" = "音頻流已停止";
+"audio.stream.active" = "音頻流已激活";
+"audio.volume.mixing" = "混音音量：%d%%";
+"audio.volume.playback" = "播放音量：%d%%";
+"audio.volume.recording" = "錄製音量：%d%%";
+
+// Volume Indicator
+"volume.speaking.started" = "%@ 開始說話";
+"volume.speaking.stopped" = "%@ 停止說話";
+"volume.dominant.speaker" = "主講人：%@";
+"volume.no.speaker" = "沒有人在說話";
+
+// Stream Push
+"stream.push.starting" = "正在啟動轉推流...";
+"stream.push.active" = "轉推流已激活";
+"stream.push.stopped" = "轉推流已停止";
+"stream.push.failed" = "轉推流失敗";
+
+// Media Relay
+"media.relay.starting" = "正在啟動媒體中繼...";
+"media.relay.active" = "媒體中繼已激活到 %d 個頻道";
+"media.relay.stopped" = "媒體中繼已停止";
+"media.relay.failed" = "媒體中繼失敗";
+
+// Token Management
+"token.expiring.soon" = "令牌將在 %d 秒後過期";
+"token.expired" = "令牌已過期";
+"token.renewed" = "令牌續期成功";
+"token.renewal.failed" = "令牌續期失敗";
+
+// Error Messages - Network
+"error.network.unavailable" = "網絡不可用";
+"error.connection.timeout" = "連接超時";
+"error.connection.failed" = "連接失敗";
+
+// Error Messages - Permission
+"error.permission.denied" = "權限被拒絕";
+"error.insufficient.permissions" = "角色權限不足：%@";
+"error.invalid.role.transition" = "無法從 %@ 切換到 %@";
+"error.microphone.permission.denied" = "麥克風權限被拒絕";
+
+// Error Messages - Configuration
+"error.invalid.configuration" = "配置無效";
+"error.provider.unavailable" = "服務提供商不可用：%@";
+"error.invalid.token" = "令牌無效";
+"error.token.expired" = "令牌已過期";
+"error.token.renewal.failed" = "令牌續期失敗";
+
+// Error Messages - Session
+"error.no.active.session" = "沒有活動會話";
+"error.session.already.active" = "會話已激活";
+"error.user.already.in.room" = "用戶已在房間中";
+"error.room.not.found" = "未找到房間：%@";
+"error.user.not.found" = "未找到用戶：%@";
+
+// Error Messages - Audio
+"error.audio.device.unavailable" = "音頻設備不可用";
+"error.audio.stream.failed" = "音頻流失敗";
+"error.volume.detection.failed" = "音量檢測失敗";
+
+// Error Messages - Stream Push
+"error.stream.push.not.supported" = "不支持轉推流";
+"error.stream.push.configuration.invalid" = "轉推流配置無效";
+"error.stream.push.failed" = "轉推流失敗";
+"error.stream.push.already.active" = "轉推流已激活";
+
+// Error Messages - Media Relay
+"error.media.relay.not.supported" = "不支持媒體中繼";
+"error.media.relay.configuration.invalid" = "媒體中繼配置無效";
+"error.media.relay.failed" = "媒體中繼失敗";
+"error.media.relay.channel.limit.exceeded" = "媒體中繼頻道限制已超出";
+
+// Error Messages - Message Processing
+"error.processor.already.registered" = "消息處理器已註冊類型：%@";
+"error.processor.not.found" = "未找到消息處理器類型：%@";
+"error.message.processing.failed" = "消息處理失敗";
+"error.invalid.message.format" = "消息格式無效";
+
+// Error Messages - Localization
+"error.localization.key.not.found" = "未找到本地化鍵：%@";
+"error.language.pack.load.failed" = "語言包加載失敗";
+"error.unsupported.language" = "不支持的語言：%@";
+
+// Error Messages - Generic
+"error.unknown" = "未知錯誤";
+"error.operation.cancelled" = "操作已取消";
+"error.operation.timeout" = "操作超時";
+"error.internal" = "內部錯誤（代碼：%d）";
+
+// General UI
+"button.ok" = "確定";
+"button.cancel" = "取消";
+"button.retry" = "重試";
+"button.close" = "關閉";
+"button.settings" = "設置";
+"button.join" = "加入";
+"button.leave" = "離開";
+
+// Settings
+"settings.language" = "語言";
+"settings.audio" = "音頻設置";
+"settings.video" = "視頻設置";
+"settings.advanced" = "高級設置";

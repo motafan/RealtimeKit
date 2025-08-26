@@ -40,8 +40,8 @@ public class LocalizationManager: ObservableObject {
     
     private var config: LocalizationConfig
     private var userDefaults: UserDefaults
-    private var localizedStrings: [SupportedLanguage: [String: String]] = [:]
     private var customLocalizations: [String: [SupportedLanguage: String]] = [:]
+    private var currentBundle: Bundle?
     
     // MARK: - Initialization
     
@@ -83,7 +83,6 @@ public class LocalizationManager: ObservableObject {
     /// Initialize the localization manager
     /// 需求: 17.2, 17.3, 17.5, 18.1, 18.2
     private func initialize() async {
-        await loadBuiltInLocalizations()
         await loadPersistedCustomLocalizations()
         await detectAndSetInitialLanguage()
         isReady = true
@@ -160,6 +159,9 @@ public class LocalizationManager: ObservableObject {
             persistedLanguage = language
         }
         
+        // Update current bundle for the selected language
+        updateCurrentBundle(for: language)
+        
         // Update error localization helper
         ErrorLocalizationHelper.updateCurrentLanguage(language)
         
@@ -183,11 +185,23 @@ public class LocalizationManager: ObservableObject {
         await setLanguage(language, notifyObservers: true)
     }
     
-    // MARK: - Built-in Localizations
+    // MARK: - Bundle Management
     
-    /// Load built-in localization strings
-    private func loadBuiltInLocalizations() async {
-        localizedStrings = LocalizedStrings.builtInStrings
+    /// Update the current bundle for the specified language
+    private func updateCurrentBundle(for language: SupportedLanguage) {
+        let languageCode = language.languageCode
+        
+        // Get the bundle for RealtimeCore module
+        let bundle = Bundle.module
+        
+        // Try to get the localized bundle
+        if let path = bundle.path(forResource: languageCode, ofType: "lproj"),
+           let localizedBundle = Bundle(path: path) {
+            currentBundle = localizedBundle
+        } else {
+            // Fallback to main bundle
+            currentBundle = bundle
+        }
     }
     
     // MARK: - Custom Localizations
@@ -242,46 +256,67 @@ public class LocalizationManager: ObservableObject {
             return localizedString
         }
         
-        // Check built-in localizations
-        if let builtInLocalizations = localizedStrings[language],
-           let localizedString = builtInLocalizations[key] {
-            return localizedString
-        }
+        // Use NSLocalizedString with appropriate bundle
+        let bundle = getBundleForLanguage(language)
         
-        // Fallback to preferred fallback language if not current language
-        // 需求: 17.4 - 本地化字符串获取和回退机制
-        let fallbackLanguage = userPreferences.preferredFallbackLanguage
-        if language != fallbackLanguage {
-            // Check custom fallback language localizations first
-            if let customLocalizations = customLocalizations[key],
-               let fallbackString = customLocalizations[fallbackLanguage] {
-                return fallbackString
+        let localizedString = NSLocalizedString(key, bundle: bundle, comment: "")
+        
+        // If we got the key back (not localized), try fallback
+        if localizedString == key {
+            // Fallback to preferred fallback language if not current language
+            // 需求: 17.4 - 本地化字符串获取和回退机制
+            let fallbackLanguage = userPreferences.preferredFallbackLanguage
+            if language != fallbackLanguage {
+                // Check custom fallback language localizations first
+                if let customLocalizations = customLocalizations[key],
+                   let fallbackString = customLocalizations[fallbackLanguage] {
+                    return fallbackString
+                }
+                
+                // Try NSLocalizedString with fallback language
+                let fallbackBundle = getBundleForLanguage(fallbackLanguage)
+                let fallbackString = NSLocalizedString(key, bundle: fallbackBundle, comment: "")
+                if fallbackString != key {
+                    return fallbackString
+                }
             }
             
-            // Check built-in fallback language localizations
-            if let fallbackLocalizations = localizedStrings[fallbackLanguage],
-               let fallbackString = fallbackLocalizations[key] {
-                return fallbackString
-            }
-        }
-        
-        // Final fallback to English if fallback language is not English
-        if fallbackLanguage != .english {
-            // Check custom English localizations
-            if let customLocalizations = customLocalizations[key],
-               let englishString = customLocalizations[.english] {
-                return englishString
+            // Final fallback to English if fallback language is not English
+            if fallbackLanguage != .english {
+                // Check custom English localizations
+                if let customLocalizations = customLocalizations[key],
+                   let englishString = customLocalizations[.english] {
+                    return englishString
+                }
+                
+                // Try NSLocalizedString with English
+                let englishBundle = getBundleForLanguage(.english)
+                let englishString = NSLocalizedString(key, bundle: englishBundle, comment: "")
+                if englishString != key {
+                    return englishString
+                }
             }
             
-            // Check built-in English localizations
-            if let englishLocalizations = localizedStrings[.english],
-               let englishString = englishLocalizations[key] {
-                return englishString
-            }
+            // Return fallback value or key itself
+            return fallbackValue ?? key
         }
         
-        // Return fallback value or key itself
-        return fallbackValue ?? key
+        return localizedString
+    }
+    
+    /// Get the appropriate bundle for a specific language
+    /// - Parameter language: The target language
+    /// - Returns: Bundle for the language or main bundle as fallback
+    private func getBundleForLanguage(_ language: SupportedLanguage) -> Bundle {
+        let languageCode = language.languageCode
+        let bundle = Bundle.module
+        
+        if let path = bundle.path(forResource: languageCode, ofType: "lproj"),
+           let localizedBundle = Bundle(path: path) {
+            return localizedBundle
+        }
+        
+        return bundle
     }
     
     // MARK: - Formatted Strings
@@ -316,27 +351,18 @@ public class LocalizationManager: ObservableObject {
     ///   - merge: Whether to merge with existing strings or replace them
     /// 需求: 17.7, 17.8, 18.1 - 自定义语言包支持和缓存持久化
     public func loadLanguagePack(_ languagePack: [String: String], for language: SupportedLanguage, merge: Bool = true) {
-        if merge {
-            var existingStrings = localizedStrings[language] ?? [:]
-            for (key, value) in languagePack {
-                existingStrings[key] = value
+        // Add language pack entries to custom localizations for runtime use
+        for (key, value) in languagePack {
+            if customLocalizations[key] == nil {
+                customLocalizations[key] = [:]
             }
-            localizedStrings[language] = existingStrings
-        } else {
-            localizedStrings[language] = languagePack
+            customLocalizations[key]?[language] = value
         }
         
         // Cache language pack if enabled and within limits (需求 18.1)
         if userPreferences.cacheCustomLanguagePacks {
             // Check cache limits
             if persistedCustomLanguagePacks.count < userPreferences.maxCachedLanguagePacks {
-                // Add language pack entries to custom localizations for persistence
-                for (key, value) in languagePack {
-                    if customLocalizations[key] == nil {
-                        customLocalizations[key] = [:]
-                    }
-                    customLocalizations[key]?[language] = value
-                }
                 persistedCustomLanguagePacks = customLocalizations
             }
         }
@@ -373,7 +399,14 @@ public class LocalizationManager: ObservableObject {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         
-        let languagePack = localizedStrings[language] ?? [:]
+        // Export only custom localizations for the specified language
+        var languagePack: [String: String] = [:]
+        for (key, localizations) in customLocalizations {
+            if let value = localizations[language] {
+                languagePack[key] = value
+            }
+        }
+        
         return try encoder.encode(languagePack)
     }
     
@@ -384,7 +417,11 @@ public class LocalizationManager: ObservableObject {
         var availability: [SupportedLanguage: Bool] = [:]
         
         for language in SupportedLanguage.allCases {
-            let hasBuiltIn = localizedStrings[language]?[key] != nil
+            // Check if key exists in Localizable.strings
+            let bundle = getBundleForLanguage(language)
+            let localizedString = NSLocalizedString(key, bundle: bundle, comment: "")
+            let hasBuiltIn = localizedString != key
+            
             let hasCustom = customLocalizations[key]?[language] != nil
             availability[language] = hasBuiltIn || hasCustom
         }
@@ -398,8 +435,8 @@ public class LocalizationManager: ObservableObject {
     public func getMissingKeys(for language: SupportedLanguage) -> Set<String> {
         guard language != .english else { return [] }
         
-        let englishKeys = Set((localizedStrings[.english] ?? [:]).keys)
-        let languageKeys = Set((localizedStrings[language] ?? [:]).keys)
+        // This is a simplified implementation since we can't easily enumerate all keys from Localizable.strings
+        // In practice, this would require parsing the .strings files or maintaining a key registry
         let customEnglishKeys = Set(customLocalizations.compactMap { key, localizations in
             localizations[.english] != nil ? key : nil
         })
@@ -407,10 +444,7 @@ public class LocalizationManager: ObservableObject {
             localizations[language] != nil ? key : nil
         })
         
-        let allEnglishKeys = englishKeys.union(customEnglishKeys)
-        let allLanguageKeys = languageKeys.union(customLanguageKeys)
-        
-        return allEnglishKeys.subtracting(allLanguageKeys)
+        return customEnglishKeys.subtracting(customLanguageKeys)
     }
     
     // MARK: - Utility Methods
@@ -425,17 +459,9 @@ public class LocalizationManager: ObservableObject {
     /// Get all available localization keys
     /// - Returns: Set of all available keys
     public func getAllLocalizationKeys() -> Set<String> {
-        var allKeys = Set<String>()
-        
-        // Add built-in keys
-        for languageStrings in localizedStrings.values {
-            allKeys.formUnion(Set(languageStrings.keys))
-        }
-        
-        // Add custom keys
-        allKeys.formUnion(Set(customLocalizations.keys))
-        
-        return allKeys
+        // Return only custom localization keys since we can't easily enumerate built-in keys
+        // In practice, this would require parsing the .strings files or maintaining a key registry
+        return Set(customLocalizations.keys)
     }
     
     /// Reset to default language

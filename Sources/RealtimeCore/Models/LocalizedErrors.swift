@@ -371,7 +371,7 @@ extension LocalizedRealtimeError {
         case .processorAlreadyRegistered, .processorNotFound, .messageProcessingFailed, .invalidMessageFormat:
             return .messageProcessing
         case .localizationKeyNotFound, .languagePackLoadFailed, .unsupportedLanguage:
-            return .system
+            return .localization
         case .unknown, .operationCancelled, .operationTimeout, .internalError:
             return .system
         }
@@ -597,7 +597,22 @@ internal struct ErrorLocalizationHelper {
     }
     
     private static func getBuiltInString(for key: String, language: SupportedLanguage) -> String? {
-        return LocalizedStrings.builtInStrings[language]?[key]
+        // Use NSLocalizedString with appropriate bundle
+        let bundle = getBundleForLanguage(language)
+        let localizedString = NSLocalizedString(key, bundle: bundle, comment: "")
+        return localizedString != key ? localizedString : nil
+    }
+    
+    private static func getBundleForLanguage(_ language: SupportedLanguage) -> Bundle {
+        let languageCode = language.languageCode
+        let bundle = Bundle.module
+        
+        if let path = bundle.path(forResource: languageCode, ofType: "lproj"),
+           let localizedBundle = Bundle(path: path) {
+            return localizedBundle
+        }
+        
+        return bundle
     }
 }
 

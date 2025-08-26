@@ -1,0 +1,201 @@
+/* 
+   Localizable.strings (Chinese Simplified)
+   RealtimeKit
+   
+   Chinese Simplified localization strings for RealtimeKit
+*/
+
+// Connection States
+"connection.state.disconnected" = "已断开";
+"connection.state.connecting" = "连接中";
+"connection.state.connected" = "已连接";
+"connection.state.reconnecting" = "重连中";
+"connection.state.failed" = "连接失败";
+
+// Network Status
+"network.status.unknown" = "未知网络";
+"network.status.unavailable" = "网络不可用";
+"network.status.wifi" = "WiFi";
+"network.status.cellular" = "蜂窝网络";
+"network.status.limited" = "受限网络";
+
+// User Roles
+"user.role.broadcaster" = "主播";
+"user.role.audience" = "观众";
+"user.role.cohost" = "连麦嘉宾";
+"user.role.moderator" = "主持人";
+
+// Audio Controls
+"audio.microphone.muted" = "麦克风已静音";
+"audio.microphone.unmuted" = "麦克风已开启";
+"audio.stream.stopped" = "音频流已停止";
+"audio.stream.active" = "音频流已激活";
+"audio.volume.mixing" = "混音音量：%d%%";
+"audio.volume.playback" = "播放音量：%d%%";
+"audio.volume.recording" = "录制音量：%d%%";
+
+// Volume Indicator
+"volume.speaking.started" = "%@ 开始说话";
+"volume.speaking.stopped" = "%@ 停止说话";
+"volume.dominant.speaker" = "主讲人：%@";
+"volume.no.speaker" = "没有人在说话";
+
+// Stream Push
+"stream.push.starting" = "正在启动转推流...";
+"stream.push.active" = "转推流已激活";
+"stream.push.stopped" = "转推流已停止";
+"stream.push.failed" = "转推流失败";
+
+// Media Relay
+"media.relay.starting" = "正在启动媒体中继...";
+"media.relay.active" = "媒体中继已激活到 %d 个频道";
+"media.relay.stopped" = "媒体中继已停止";
+"media.relay.failed" = "媒体中继失败";
+
+// Token Management
+"token.expiring.soon" = "令牌将在 %d 秒后过期";
+"token.expired" = "令牌已过期";
+"token.renewed" = "令牌续期成功";
+"token.renewal.failed" = "令牌续期失败";
+
+// Error Messages - Network
+"error.network.unavailable" = "网络不可用";
+"error.connection.timeout" = "连接超时";
+"error.connection.failed" = "连接失败";
+
+// Error Messages - Permission
+"error.permission.denied" = "权限被拒绝";
+"error.insufficient.permissions" = "角色权限不足：%@";
+"error.invalid.role.transition" = "无法从 %@ 切换到 %@";
+"error.microphone.permission.denied" = "麦克风权限被拒绝";
+
+// Error Messages - Configuration
+"error.invalid.configuration" = "配置无效";
+"error.provider.unavailable" = "服务提供商不可用：%@";
+"error.invalid.token" = "令牌无效";
+"error.token.expired" = "令牌已过期";
+"error.token.renewal.failed" = "令牌续期失败";
+
+// Error Messages - Session
+"error.no.active.session" = "没有活动会话";
+"error.session.already.active" = "会话已激活";
+"error.user.already.in.room" = "用户已在房间中";
+"error.room.not.found" = "未找到房间：%@";
+"error.user.not.found" = "未找到用户：%@";
+
+// Error Messages - Audio
+"error.audio.device.unavailable" = "音频设备不可用";
+"error.audio.stream.failed" = "音频流失败";
+"error.volume.detection.failed" = "音量检测失败";
+
+// Error Messages - Stream Push
+"error.stream.push.not.supported" = "不支持转推流";
+"error.stream.push.configuration.invalid" = "转推流配置无效";
+"error.stream.push.failed" = "转推流失败";
+"error.stream.push.already.active" = "转推流已激活";
+
+// Error Messages - Media Relay
+"error.media.relay.not.supported" = "不支持媒体中继";
+"error.media.relay.configuration.invalid" = "媒体中继配置无效";
+"error.media.relay.failed" = "媒体中继失败";
+"error.media.relay.channel.limit.exceeded" = "媒体中继频道限制已超出";
+
+// Error Messages - Message Processing
+"error.processor.already.registered" = "消息处理器已注册类型：%@";
+"error.processor.not.found" = "未找到消息处理器类型：%@";
+"error.message.processing.failed" = "消息处理失败";
+"error.invalid.message.format" = "消息格式无效";
+
+// Error Messages - Localization
+"error.localization.key.not.found" = "未找到本地化键：%@";
+"error.language.pack.load.failed" = "语言包加载失败";
+"error.unsupported.language" = "不支持的语言：%@";
+
+// Provider Features
+"provider.feature.audio_streaming" = "音频流";
+"provider.feature.video_streaming" = "视频流";
+"provider.feature.stream_push" = "转推流";
+"provider.feature.media_relay" = "媒体中继";
+"provider.feature.volume_indicator" = "音量指示器";
+"provider.feature.message_processing" = "消息处理";
+
+// Provider Names
+"provider.agora" = "声网 Agora";
+"provider.tencent" = "腾讯云 TRTC";
+"provider.zego" = "即构 ZEGO";
+"provider.mock" = "模拟服务商";
+
+// Provider Descriptions
+"provider.agora.description" = "声网实时通信平台";
+"provider.tencent.description" = "腾讯云实时通信";
+"provider.zego.description" = "即构实时通信";
+"provider.mock.description" = "用于测试的模拟服务商";
+
+// Provider Status
+"provider.status.current" = "当前";
+"provider.status.available" = "可用";
+"provider.status.unhealthy" = "不健康";
+"provider.status.not_registered" = "未注册";
+
+// Provider Switching
+"provider.switch.message" = "从 %@ 切换到 %@";
+"provider.fallback.message" = "%@ 失败，降级到 %@";
+
+// Error Messages - Provider Switching
+"error.all.providers.failed" = "所有服务商都失败了";
+"error.provider.switch.in.progress" = "服务商切换进行中";
+"error.provider.health.check.failed" = "服务商健康检查失败：%@";
+"error.provider.unhealthy" = "服务商不健康：%@";
+"error.no_fallback_providers" = "没有可用的降级服务商";
+"error.all_fallback_failed" = "所有降级服务商都失败了：%@";
+"error.recovery.try_different_provider" = "尝试使用不同的服务商";
+
+// Error Messages - Generic
+"error.unknown" = "未知错误";
+"error.operation.cancelled" = "操作已取消";
+"error.operation.timeout" = "操作超时";
+"error.internal" = "内部错误（代码：%d）";
+
+// Error Messages - Provider Specific (Agora)
+"error.agora.invalid_app_id" = "无效的声网应用ID";
+"error.agora.invalid_user_id" = "无效的用户ID";
+"error.agora.invalid_channel_id" = "无效的频道ID";
+"error.agora.invalid_room_id" = "无效的房间ID";
+"error.agora.invalid_peer_id" = "无效的对等用户ID";
+"error.agora.invalid_parameters" = "无效的参数";
+"error.agora.not_connected" = "未连接到声网服务";
+"error.provider.not_initialized" = "服务提供商未初始化";
+"error.rtm.not_logged_in" = "未登录到RTM服务";
+"error.rtm.not_in_channel" = "不在频道中";
+"error.rtm.empty_message" = "消息不能为空";
+"error.token.invalid_token" = "无效的令牌";
+"error.stream.invalid_url" = "无效的推流地址";
+"error.stream.not_active" = "推流未激活";
+"error.media_relay.no_destinations" = "未指定目标频道";
+"error.media_relay.not_active" = "媒体中继未激活";
+"error.media_relay.channel_not_found" = "中继中未找到频道";
+"error.volume.invalid_config" = "无效的音量检测配置";
+"error.volume.not_enabled" = "音量指示器未启用";
+
+// General UI
+"button.ok" = "确定";
+"button.cancel" = "取消";
+"button.retry" = "重试";
+"button.close" = "关闭";
+"button.settings" = "设置";
+"button.join" = "加入";
+"button.leave" = "离开";
+
+// Settings
+"settings.language" = "语言";
+"settings.audio" = "音频设置";
+"settings.video" = "视频设置";
+"settings.advanced" = "高级设置";
+
+// Room and User Management
+"room.user.count" = "用户数：%d";
+"connection.duration" = "已连接 %d 秒";
+
+// Accessibility
+"accessibility.button.ok" = "确定按钮";
+"accessibility.hint.tap.to.confirm" = "点击确认您的选择";

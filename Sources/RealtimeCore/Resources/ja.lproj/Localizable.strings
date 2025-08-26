@@ -1,0 +1,133 @@
+/* 
+   Localizable.strings (Japanese)
+   RealtimeKit
+   
+   Japanese localization strings for RealtimeKit
+*/
+
+// Connection States
+"connection.state.disconnected" = "切断されました";
+"connection.state.connecting" = "接続中";
+"connection.state.connected" = "接続済み";
+"connection.state.reconnecting" = "再接続中";
+"connection.state.failed" = "接続に失敗しました";
+
+// Network Status
+"network.status.unknown" = "不明なネットワーク";
+"network.status.unavailable" = "ネットワーク利用不可";
+"network.status.wifi" = "WiFi";
+"network.status.cellular" = "セルラー";
+"network.status.limited" = "制限されたネットワーク";
+
+// User Roles
+"user.role.broadcaster" = "配信者";
+"user.role.audience" = "視聴者";
+"user.role.cohost" = "共同ホスト";
+"user.role.moderator" = "モデレーター";
+
+// Audio Controls
+"audio.microphone.muted" = "マイクがミュートされました";
+"audio.microphone.unmuted" = "マイクがオンになりました";
+"audio.stream.stopped" = "オーディオストリームが停止しました";
+"audio.stream.active" = "オーディオストリームがアクティブです";
+"audio.volume.mixing" = "ミキシング音量：%d%%";
+"audio.volume.playback" = "再生音量：%d%%";
+"audio.volume.recording" = "録音音量：%d%%";
+
+// Volume Indicator
+"volume.speaking.started" = "%@ が話し始めました";
+"volume.speaking.stopped" = "%@ が話すのをやめました";
+"volume.dominant.speaker" = "メインスピーカー：%@";
+"volume.no.speaker" = "誰も話していません";
+
+// Stream Push
+"stream.push.starting" = "ストリームプッシュを開始しています...";
+"stream.push.active" = "ストリームプッシュがアクティブです";
+"stream.push.stopped" = "ストリームプッシュが停止しました";
+"stream.push.failed" = "ストリームプッシュに失敗しました";
+
+// Media Relay
+"media.relay.starting" = "メディアリレーを開始しています...";
+"media.relay.active" = "メディアリレーが %d チャンネルでアクティブです";
+"media.relay.stopped" = "メディアリレーが停止しました";
+"media.relay.failed" = "メディアリレーに失敗しました";
+
+// Token Management
+"token.expiring.soon" = "トークンは %d 秒後に期限切れになります";
+"token.expired" = "トークンの有効期限が切れました";
+"token.renewed" = "トークンの更新に成功しました";
+"token.renewal.failed" = "トークンの更新に失敗しました";
+
+// Error Messages - Network
+"error.network.unavailable" = "ネットワークが利用できません";
+"error.connection.timeout" = "接続がタイムアウトしました";
+"error.connection.failed" = "接続に失敗しました";
+
+// Error Messages - Permission
+"error.permission.denied" = "権限が拒否されました";
+"error.insufficient.permissions" = "ロールの権限が不足しています：%@";
+"error.invalid.role.transition" = "%@ から %@ に切り替えることはできません";
+"error.microphone.permission.denied" = "マイクの権限が拒否されました";
+
+// Error Messages - Configuration
+"error.invalid.configuration" = "無効な設定です";
+"error.provider.unavailable" = "サービスプロバイダーが利用できません：%@";
+"error.invalid.token" = "無効なトークンです";
+"error.token.expired" = "トークンの有効期限が切れました";
+"error.token.renewal.failed" = "トークンの更新に失敗しました";
+
+// Error Messages - Session
+"error.no.active.session" = "アクティブなセッションがありません";
+"error.session.already.active" = "セッションは既にアクティブです";
+"error.user.already.in.room" = "ユーザーは既にルームにいます";
+"error.room.not.found" = "ルームが見つかりません：%@";
+"error.user.not.found" = "ユーザーが見つかりません：%@";
+
+// Error Messages - Audio
+"error.audio.device.unavailable" = "オーディオデバイスが利用できません";
+"error.audio.stream.failed" = "オーディオストリームに失敗しました";
+"error.volume.detection.failed" = "音量検出に失敗しました";
+
+// Error Messages - Stream Push
+"error.stream.push.not.supported" = "ストリームプッシュはサポートされていません";
+"error.stream.push.configuration.invalid" = "ストリームプッシュの設定が無効です";
+"error.stream.push.failed" = "ストリームプッシュに失敗しました";
+"error.stream.push.already.active" = "ストリームプッシュは既にアクティブです";
+
+// Error Messages - Media Relay
+"error.media.relay.not.supported" = "メディアリレーはサポートされていません";
+"error.media.relay.configuration.invalid" = "メディアリレーの設定が無効です";
+"error.media.relay.failed" = "メディアリレーに失敗しました";
+"error.media.relay.channel.limit.exceeded" = "メディアリレーのチャンネル制限を超えました";
+
+// Error Messages - Message Processing
+"error.processor.already.registered" = "メッセージプロセッサーは既に登録されています：%@";
+"error.processor.not.found" = "メッセージプロセッサーが見つかりません：%@";
+"error.message.processing.failed" = "メッセージ処理に失敗しました";
+"error.invalid.message.format" = "無効なメッセージ形式です";
+
+// Error Messages - Localization
+"error.localization.key.not.found" = "ローカライゼーションキーが見つかりません：%@";
+"error.language.pack.load.failed" = "言語パックの読み込みに失敗しました";
+"error.unsupported.language" = "サポートされていない言語です：%@";
+
+// Error Messages - Generic
+"error.unknown" = "不明なエラー";
+"error.operation.cancelled" = "操作がキャンセルされました";
+"error.operation.timeout" = "操作がタイムアウトしました";
+"error.internal" = "内部エラー（コード：%d）";
+
+// General UI
+"button.ok" = "OK";
+"button.cancel" = "キャンセル";
+"button.retry" = "再試行";
+"button.close" = "閉じる";
+"button.settings" = "設定";
+"button.join" = "参加";
+"button.leave" = "退出";
+
+// Settings
+"settings.language" = "言語";
+"settings.audio" = "オーディオ設定";
+"settings.video" = "ビデオ設定";
+"settings.advanced" = "詳細設定";

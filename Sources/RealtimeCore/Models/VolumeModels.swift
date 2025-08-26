@@ -315,12 +315,12 @@ public class VolumeSmoothingFilter {
             previousValues[volumeInfo.userId] = smoothedVolume
             
             let smoothedVolumeInt = Int(smoothedVolume * 255.0)
-            let isSpeaking = smoothedVolume > config.speakingThreshold
             
+            // 保持原始的VAD状态，让后续的阈值检测来决定说话状态
             return UserVolumeInfo(
                 userId: volumeInfo.userId,
                 volume: smoothedVolumeInt,
-                vad: isSpeaking ? .speaking : .notSpeaking,
+                vad: volumeInfo.vad,
                 timestamp: volumeInfo.timestamp
             )
         }

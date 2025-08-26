@@ -23,7 +23,7 @@ public class VolumeDetectionManager: ObservableObject {
     
     // MARK: - Private Properties
     
-    private let smoothingFilter: VolumeSmoothingFilter
+    private var smoothingFilter: VolumeSmoothingFilter
     private var detectionTimer: Timer?
     
     // MARK: - Event Handlers
@@ -71,7 +71,8 @@ public class VolumeDetectionManager: ObservableObject {
         }
         
         config = newConfig
-        smoothingFilter.reset()
+        // 使用新配置重新创建平滑滤波器
+        smoothingFilter = VolumeSmoothingFilter(config: newConfig)
         
         if isEnabled {
             restartDetection()

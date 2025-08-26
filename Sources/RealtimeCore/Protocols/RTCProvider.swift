@@ -119,12 +119,12 @@ public protocol RTCProvider: AnyObject {
     
     /// 设置音量指示器更新处理器
     /// - Parameter handler: 音量更新的回调
-    func setVolumeIndicatorHandler(_ handler: @escaping ([UserVolumeInfo]) -> Void)
+    func setVolumeIndicatorHandler(_ handler: @escaping @Sendable ([UserVolumeInfo]) -> Void)
     
     /// 设置音量事件处理器，用于说话状态变化
     /// - Parameter handler: 音量事件的回调
-    func setVolumeEventHandler(_ handler: @escaping (VolumeEvent) -> Void)
-    
+    func setVolumeEventHandler(_ handler: @escaping @Sendable (VolumeEvent) -> Void)
+
     /// 获取所有用户的当前音量信息
     /// - Returns: 用户音量信息数组
     func getCurrentVolumeInfos() -> [UserVolumeInfo]
@@ -142,5 +142,5 @@ public protocol RTCProvider: AnyObject {
     
     /// 设置令牌过期处理器
     /// - Parameter handler: 令牌即将过期时的回调（剩余秒数）
-    func onTokenWillExpire(_ handler: @escaping (Int) -> Void)
+    func onTokenWillExpire(_ handler: @escaping @Sendable (Int) -> Void)
 }

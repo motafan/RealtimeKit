@@ -256,10 +256,19 @@ public final class CustomMessageProcessor: BaseMessageProcessor, @unchecked Send
     
     private let customHandler: (@Sendable (RealtimeMessage) async throws -> MessageProcessingResult)?
     
+    public convenience init() {
+        self.init(
+            name: "CustomMessageProcessor",
+            supportedTypes: [RealtimeMessageType.custom.rawValue],
+            priority: 50,
+            customHandler: nil
+        )
+    }
+    
     public init(
-        name: String = "CustomMessageProcessor",
-        supportedTypes: [String] = [RealtimeMessageType.custom.rawValue],
-        priority: Int = 50,
+        name: String,
+        supportedTypes: [String],
+        priority: Int,
         customHandler: (@Sendable (RealtimeMessage) async throws -> MessageProcessingResult)? = nil
     ) {
         self.customHandler = customHandler
@@ -512,7 +521,15 @@ public final class MessagePermissionValidator: MessageValidatorProtocol, @unchec
     
     private let allowedSenders: Set<String>
     
-    public init(allowedSenders: Set<String> = []) {
+    public convenience init() {
+        self.init(allowedSenders: [])
+    }
+    
+    public init(allowedSenders: [String]) {
+        self.allowedSenders = Set(allowedSenders)
+    }
+    
+    public init(allowedSenders: Set<String>) {
         self.allowedSenders = allowedSenders
     }
     
