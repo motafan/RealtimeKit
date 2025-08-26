@@ -153,6 +153,7 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeAgora.build/include/RealtimeAgora-Swift.h",
+        "-color-diagnostics",
         "-swift-version",
         "6",
         "-plugin-path",
@@ -439,6 +440,7 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/include/RealtimeCore-Swift.h",
+        "-color-diagnostics",
         "-swift-version",
         "6",
         "-plugin-path",
@@ -771,6 +773,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitIntegrationTests.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionManagerTests.swift"
         },
         {
@@ -840,6 +846,7 @@
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushManagerSimpleTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/StreamPushManagerTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.swift.o",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UIKitIntegrationTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionManagerTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionStorageTests.swift.o",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/VolumeDetectionManagerTests.swift.o",
@@ -865,6 +872,7 @@
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/ModuleCache",
         "-parseable-output",
         "-parse-as-library",
+        "-color-diagnostics",
         "-swift-version",
         "6",
         "-plugin-path",
@@ -991,6 +999,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UIKitIntegrationTests.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UserSessionManagerTests.swift.o"
         },
         {
@@ -1034,6 +1046,7 @@
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerSimpleTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitIntegrationTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionManagerTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift",
         "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeDetectionManagerTests.swift",
@@ -1103,6 +1116,7 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeKit.build/include/RealtimeKit-Swift.h",
+        "-color-diagnostics",
         "-swift-version",
         "6",
         "-plugin-path",
@@ -1210,6 +1224,7 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeKitPackageTests.build/include/RealtimeKitPackageTests-Swift.h",
+        "-color-diagnostics",
         "-plugin-path",
         "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
@@ -1309,6 +1324,7 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMocking.build/include/RealtimeMocking-Swift.h",
+        "-color-diagnostics",
         "-swift-version",
         "6",
         "-plugin-path",
@@ -1413,6 +1429,7 @@
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/ModuleCache",
         "-parseable-output",
         "-parse-as-library",
+        "-color-diagnostics",
         "-swift-version",
         "6",
         "-plugin-path",
@@ -1519,6 +1536,7 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/include/RealtimeSwiftUI-Swift.h",
+        "-color-diagnostics",
         "-swift-version",
         "6",
         "-plugin-path",
@@ -1630,6 +1648,7 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeUIKit.build/include/RealtimeUIKit-Swift.h",
+        "-color-diagnostics",
         "-swift-version",
         "6",
         "-plugin-path",
@@ -1722,6 +1741,7 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeAgora.build/include/RealtimeAgora-Swift.h",
+      "-color-diagnostics",
       "-swift-version",
       "6",
       "-plugin-path",
@@ -1825,6 +1845,7 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/include/RealtimeCore-Swift.h",
+      "-color-diagnostics",
       "-swift-version",
       "6",
       "-plugin-path",
@@ -1890,6 +1911,7 @@
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerSimpleTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitIntegrationTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionManagerTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionStorageTests.swift",
       "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/VolumeDetectionManagerTests.swift",
@@ -1915,6 +1937,7 @@
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/ModuleCache",
       "-parseable-output",
       "-parse-as-library",
+      "-color-diagnostics",
       "-swift-version",
       "6",
       "-plugin-path",
@@ -1981,6 +2004,7 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeKit.build/include/RealtimeKit-Swift.h",
+      "-color-diagnostics",
       "-swift-version",
       "6",
       "-plugin-path",
@@ -2049,6 +2073,7 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeKitPackageTests.build/include/RealtimeKitPackageTests-Swift.h",
+      "-color-diagnostics",
       "-plugin-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
@@ -2113,6 +2138,7 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMocking.build/include/RealtimeMocking-Swift.h",
+      "-color-diagnostics",
       "-swift-version",
       "6",
       "-plugin-path",
@@ -2178,6 +2204,7 @@
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/ModuleCache",
       "-parseable-output",
       "-parse-as-library",
+      "-color-diagnostics",
       "-swift-version",
       "6",
       "-plugin-path",
@@ -2245,6 +2272,7 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/include/RealtimeSwiftUI-Swift.h",
+      "-color-diagnostics",
       "-swift-version",
       "6",
       "-plugin-path",
@@ -2312,6 +2340,7 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeUIKit.build/include/RealtimeUIKit-Swift.h",
+      "-color-diagnostics",
       "-swift-version",
       "6",
       "-plugin-path",
@@ -2687,6 +2716,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitIntegrationTests.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UserSessionManagerTests.swift"
         },
         {
@@ -2982,6 +3015,10 @@
         {
           "kind" : "file",
           "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/TokenManagerTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCoreTests.build/UIKitIntegrationTests.swift.o"
         },
         {
           "kind" : "file",
