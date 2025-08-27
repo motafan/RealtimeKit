@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		772264392E5EE4AD00D41E98 /* RealtimeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 772264382E5EE4AD00D41E98 /* RealtimeKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		779CD0CC2E5EAD1B00DA89B3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				772264392E5EE4AD00D41E98 /* RealtimeKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = SwiftUIDemo;
 			packageProductDependencies = (
+				772264382E5EE4AD00D41E98 /* RealtimeKit */,
 			);
 			productName = SwiftUIDemo;
 			productReference = 779CD0BE2E5EAD1900DA89B3 /* SwiftUIDemo.app */;
@@ -196,6 +202,9 @@
 			);
 			mainGroup = 779CD0B52E5EAD1900DA89B3;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				772264372E5EE4AD00D41E98 /* XCLocalSwiftPackageReference "../../RealtimeKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 779CD0BF2E5EAD1900DA89B3 /* Products */;
 			projectDirPath = "";
@@ -575,6 +584,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		772264372E5EE4AD00D41E98 /* XCLocalSwiftPackageReference "../../RealtimeKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../RealtimeKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		772264382E5EE4AD00D41E98 /* RealtimeKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RealtimeKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 779CD0B62E5EAD1900DA89B3 /* Project object */;
 }

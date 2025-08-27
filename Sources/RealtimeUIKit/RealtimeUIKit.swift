@@ -282,7 +282,7 @@ open class RealtimeViewController: UIViewController {
         }
     }
     
-    @objc private func languageDidChange() {
+    @objc internal override func languageDidChange() {
         // 更新本地化内容
         updateLocalizedContent()
         
@@ -301,8 +301,8 @@ open class RealtimeViewController: UIViewController {
         let startedSpeaking = newSpeakingUsers.subtracting(oldSpeakingUsers)
         for userId in startedSpeaking {
             if let volumeInfo = newVolumeInfos.first(where: { $0.userId == userId }) {
-                delegate?.realtimeViewController(self, userDidStartSpeaking: userId, volume: volumeInfo.volume)
-                userDidStartSpeaking(userId: userId, volume: volumeInfo.volume)
+                delegate?.realtimeViewController(self, userDidStartSpeaking: userId, volume: Float(volumeInfo.volume))
+                userDidStartSpeaking(userId: userId, volume: Float(volumeInfo.volume))
             }
         }
         
@@ -310,8 +310,8 @@ open class RealtimeViewController: UIViewController {
         let stoppedSpeaking = oldSpeakingUsers.subtracting(newSpeakingUsers)
         for userId in stoppedSpeaking {
             if let volumeInfo = oldVolumeInfos.first(where: { $0.userId == userId }) {
-                delegate?.realtimeViewController(self, userDidStopSpeaking: userId, volume: volumeInfo.volume)
-                userDidStopSpeaking(userId: userId, volume: volumeInfo.volume)
+                delegate?.realtimeViewController(self, userDidStopSpeaking: userId, volume: Float(volumeInfo.volume))
+                userDidStopSpeaking(userId: userId, volume: Float(volumeInfo.volume))
             }
         }
         
@@ -713,7 +713,7 @@ public class VolumeVisualizationView: UIView {
     /// - Parameter volumeInfo: 音量信息
     public func updateVolumeInfo(_ volumeInfo: UserVolumeInfo) {
         userId = volumeInfo.userId
-        volumeLevel = volumeInfo.volume
+        volumeLevel = Float(volumeInfo.volume)
         isSpeaking = volumeInfo.isSpeaking
     }
     
@@ -729,7 +729,7 @@ public class VolumeVisualizationView: UIView {
 // MARK: - VolumeVisualizationStyle
 
 /// 音量可视化样式
-public enum VolumeVisualizationStyle {
+public enum VolumeVisualizationStyle: Codable, Sendable {
     case bar    // 条形
     case circle // 圆形
     case wave   // 波形
@@ -1497,8 +1497,8 @@ public class ErrorFeedbackView: UIView {
         let localizationManager = LocalizationManager.shared
         
         if let localizedError = error as? LocalizedRealtimeError {
-            titleLabel.text = localizationManager.localizedString(for: localizedError.titleKey)
-            messageLabel.text = localizationManager.localizedString(for: localizedError.messageKey)
+            titleLabel.text = localizationManager.localizedString(for: "error.title", fallbackValue: "Error")
+            messageLabel.text = localizedError.errorDescription ?? error.localizedDescription
         } else {
             titleLabel.text = localizationManager.localizedString(for: "error.title", fallbackValue: "Error")
             messageLabel.text = error.localizedDescription
@@ -1917,15 +1917,15 @@ public class StreamPushControlPanelView: UIView {
         guard let config = streamPushConfig else { return }
         
         urlTextField.text = config.url
-        bitrateSlider.value = Float(config.videoBitrate)
-        bitrateValueLabel.text = "\(config.videoBitrate) kbps"
+        bitrateSlider.value = Float(config.videoConfig.bitrate)
+        bitrateValueLabel.text = "\(config.videoConfig.bitrate) kbps"
         
         // 设置分辨率
-        if config.width == 1280 && config.height == 720 {
+        if config.videoConfig.width == 1280 && config.videoConfig.height == 720 {
             resolutionSegmentedControl.selectedSegmentIndex = 0
-        } else if config.width == 1920 && config.height == 1080 {
+        } else if config.videoConfig.width == 1920 && config.videoConfig.height == 1080 {
             resolutionSegmentedControl.selectedSegmentIndex = 1
-        } else if config.width == 3840 && config.height == 2160 {
+        } else if config.videoConfig.width == 3840 && config.videoConfig.height == 2160 {
             resolutionSegmentedControl.selectedSegmentIndex = 2
         }
     }
@@ -1952,18 +1952,18 @@ public class StreamPushControlPanelView: UIView {
         )
         
         // 添加布局选项
-        alert.addLocalizedAction(titleKey: "stream_push.layout.single", style: .default) { _ in
-            let layout = StreamLayout.single
+        alert.addLocalizedAction(titleKey: "stream_push.layout.floating", style: .default) { _ in
+            let layout = StreamLayout(type: .floating)
             self.onUpdateLayout?(layout)
         }
         
-        alert.addLocalizedAction(titleKey: "stream_push.layout.grid", style: .default) { _ in
-            let layout = StreamLayout.grid(columns: 2, rows: 2)
+        alert.addLocalizedAction(titleKey: "stream_push.layout.best_fit", style: .default) { _ in
+            let layout = StreamLayout(type: .bestFit)
             self.onUpdateLayout?(layout)
         }
         
-        alert.addLocalizedAction(titleKey: "stream_push.layout.picture_in_picture", style: .default) { _ in
-            let layout = StreamLayout.pictureInPicture
+        alert.addLocalizedAction(titleKey: "stream_push.layout.vertical", style: .default) { _ in
+            let layout = StreamLayout(type: .vertical)
             self.onUpdateLayout?(layout)
         }
         
@@ -2237,7 +2237,7 @@ public class MediaRelayControlPanelView: UIView {
     // MARK: - Actions
     
     @objc private func startStopButtonTapped() {
-        if mediaRelayState?.overallState == .running {
+        if mediaRelayState == .running {
             stopMediaRelay()
         } else {
             startMediaRelay()
@@ -2300,12 +2300,12 @@ public class MediaRelayControlPanelView: UIView {
         }
         
         let destinationChannelInfos = destinationChannels.map { channel in
-            MediaRelayChannelInfo(channelName: channel.channel, token: channel.token, uid: 0)
+            MediaRelayChannelInfo(channelName: channel.channel, userId: "user_\(channel.channel)", token: channel.token)
         }
         
-        let config = MediaRelayConfig(
-            sourceChannelInfo: MediaRelayChannelInfo(channelName: sourceChannel, token: "", uid: 0),
-            destinationChannelInfos: destinationChannelInfos
+        let config = try MediaRelayConfig(
+            sourceChannel: MediaRelayChannelInfo(channelName: sourceChannel, userId: "source_user", token: ""),
+            destinationChannels: destinationChannelInfos
         )
         
         onStartMediaRelay?(config)
@@ -2326,7 +2326,7 @@ public class MediaRelayControlPanelView: UIView {
         }
         
         DispatchQueue.main.async {
-            switch state.overallState {
+            switch state {
             case .idle:
                 self.statusIndicator.backgroundColor = .systemGray3
                 self.statusLabel.setLocalizedText("media_relay.status.idle", fallbackValue: "Idle")
@@ -2354,9 +2354,9 @@ public class MediaRelayControlPanelView: UIView {
     private func updateConfigurationDisplay() {
         guard let config = mediaRelayConfig else { return }
         
-        sourceChannelTextField.text = config.sourceChannelInfo.channelName
+        sourceChannelTextField.text = config.sourceChannel.channelName
         
-        destinationChannels = config.destinationChannelInfos.map { channelInfo in
+        destinationChannels = config.destinationChannels.map { channelInfo in
             (channel: channelInfo.channelName, token: channelInfo.token)
         }
         
@@ -2688,6 +2688,13 @@ public class StreamPushControlView: UIView {
             stopButton.isEnabled = true
             progressView.isHidden = true
             
+        case .stopping:
+            statusLabel.setLocalizedText("stream_push.status.stopping", fallbackValue: "Stopping...")
+            statusLabel.textColor = .systemOrange
+            startButton.isEnabled = false
+            stopButton.isEnabled = false
+            progressView.isHidden = false
+            
         case .failed:
             statusLabel.setLocalizedText("stream_push.status.failed", fallbackValue: "Failed")
             statusLabel.textColor = .systemRed
@@ -2737,13 +2744,18 @@ public class StreamPushControlView: UIView {
         
         alert.addTextField { textField in
             textField.placeholder = "RTMP URL"
-            textField.text = self.streamPushConfig?.rtmpUrl
+            textField.text = self.streamPushConfig?.url
         }
         
         alert.addLocalizedAction(titleKey: "common.save", style: .default) { _ in
             if let url = alert.textFields?.first?.text, !url.isEmpty {
-                let config = StreamPushConfig(rtmpUrl: url)
-                self.setStreamPushConfig(config)
+                do {
+                    let config = try StreamPushConfig(url: url)
+                    self.setStreamPushConfig(config)
+                } catch {
+                    // Handle configuration error
+                    print("Failed to create stream push config: \(error)")
+                }
             }
         }
         
@@ -2890,7 +2902,7 @@ public class MediaRelayControlView: UIView {
         
         Task {
             do {
-                try await mediaRelayManager?.startMediaRelay(config: config)
+                try await mediaRelayManager?.startRelay(config: config)
             } catch {
                 showErrorAlert(error)
             }
@@ -2900,7 +2912,7 @@ public class MediaRelayControlView: UIView {
     @objc private func stopButtonTapped() {
         Task {
             do {
-                try await mediaRelayManager?.stopMediaRelay()
+                try await mediaRelayManager?.stopRelay()
             } catch {
                 showErrorAlert(error)
             }
@@ -2953,6 +2965,20 @@ public class MediaRelayControlView: UIView {
             stopButton.isEnabled = true
             progressView.isHidden = true
             
+        case .paused:
+            statusLabel.setLocalizedText("media_relay.status.paused", fallbackValue: "Paused")
+            statusLabel.textColor = .systemYellow
+            startButton.isEnabled = true
+            stopButton.isEnabled = true
+            progressView.isHidden = true
+            
+        case .stopping:
+            statusLabel.setLocalizedText("media_relay.status.stopping", fallbackValue: "Stopping...")
+            statusLabel.textColor = .systemOrange
+            startButton.isEnabled = false
+            stopButton.isEnabled = false
+            progressView.isHidden = false
+            
         case .failure:
             statusLabel.setLocalizedText("media_relay.status.failed", fallbackValue: "Failed")
             statusLabel.textColor = .systemRed
@@ -2977,10 +3003,10 @@ public class MediaRelayControlView: UIView {
     }
     
     private func showErrorAlert(_ error: Error) {
-        let localizedError = LocalizedRealtimeError.from(error)
+        let localizedError = LocalizedErrorFactory.createLocalizedError(from: error)
         let alert = UIAlertController.localizedAlert(
             titleKey: "error.title",
-            messageKey: localizedError.localizationKey,
+            message: localizedError.errorDescription ?? error.localizedDescription,
             preferredStyle: .alert
         )
         
@@ -3000,13 +3026,19 @@ public class MediaRelayControlView: UIView {
         
         alert.addTextField { textField in
             textField.placeholder = "Destination Channel"
-            textField.text = self.mediaRelayConfig?.destinationChannelName
+            textField.text = self.mediaRelayConfig?.destinationChannels.first?.channelName
         }
         
         alert.addLocalizedAction(titleKey: "common.save", style: .default) { _ in
             if let channel = alert.textFields?.first?.text, !channel.isEmpty {
-                let config = MediaRelayConfig(destinationChannelName: channel)
-                self.setMediaRelayConfig(config)
+                do {
+                    let sourceChannel = MediaRelayChannelInfo(channelName: "source", userId: "source_user", token: "")
+                    let destinationChannel = MediaRelayChannelInfo(channelName: channel, userId: "dest_user", token: "")
+                    let config = try MediaRelayConfig(sourceChannel: sourceChannel, destinationChannels: [destinationChannel])
+                    self.setMediaRelayConfig(config)
+                } catch {
+                    print("Failed to create media relay config: \(error)")
+                }
             }
         }
         
@@ -3052,6 +3084,8 @@ public class ErrorHandlingView: UIView {
     private let messageLabel = UILabel()
     private let actionButton = UIButton(type: .system)
     private let dismissButton = UIButton(type: .system)
+    
+    private var actionHandler: (() -> Void)?
     
     // MARK: - Initialization
     
@@ -3170,7 +3204,7 @@ public class ErrorHandlingView: UIView {
         actionTitle: String? = nil,
         actionHandler: (() -> Void)? = nil
     ) {
-        let localizedError = LocalizedRealtimeError.from(error)
+        let localizedError = LocalizedErrorFactory.createLocalizedError(from: error)
         let localizationManager = LocalizationManager.shared
         
         // 设置图标
@@ -3187,7 +3221,12 @@ public class ErrorHandlingView: UIView {
             
             // 移除之前的 target
             actionButton.removeTarget(nil, action: nil, for: .allEvents)
-            actionButton.addAction(UIAction { _ in actionHandler() }, for: .touchUpInside)
+            if #available(iOS 14.0, *) {
+                actionButton.addAction(UIAction { _ in actionHandler() }, for: .touchUpInside)
+            } else {
+                actionButton.addTarget(self, action: #selector(actionButtonTapped), for: .touchUpInside)
+                self.actionHandler = actionHandler
+            }
         } else {
             actionButton.isHidden = true
         }
@@ -3249,6 +3288,10 @@ public class ErrorHandlingView: UIView {
     
     // MARK: - Private Methods
     
+    @objc private func actionButtonTapped() {
+        actionHandler?()
+    }
+    
     private func showErrorView() {
         isHidden = false
         alpha = 0
@@ -3289,7 +3332,7 @@ public class ErrorHandlingView: UIView {
 
 /// 错误历史记录条目
 /// 需求: 18.10 - 错误历史持久化
-public struct ErrorHistoryEntry: Codable {
+public struct ErrorHistoryEntry: Codable, Sendable {
     public let errorDescription: String
     public let errorCode: Int
     public let timestamp: Date
@@ -3305,18 +3348,7 @@ public struct ErrorHistoryEntry: Codable {
 
 // MARK: - UIView Extensions for Error Handling
 
-extension UIView {
-    /// 查找包含此视图的视图控制器
-    func findViewController() -> UIViewController? {
-        if let nextResponder = self.next as? UIViewController {
-            return nextResponder
-        } else if let nextResponder = self.next as? UIView {
-            return nextResponder.findViewController()
-        } else {
-            return nil
-        }
-    }
-}
+
 
 // MARK: - Notification Names
 

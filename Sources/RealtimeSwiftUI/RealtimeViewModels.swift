@@ -14,7 +14,7 @@ import RealtimeCore
 /// 基础 ViewModel 类，提供通用功能和状态管理
 /// 需求: 11.3, 11.5 - ViewModel 层支持 MVVM 架构和 Combine 数据流
 @MainActor
-@available(macOS 11.0, iOS 14.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 open class BaseRealtimeViewModel: ObservableObject {
     
     // MARK: - Properties
@@ -150,7 +150,7 @@ public struct BaseViewModelState: Codable, Sendable {
 /// 连接状态管理 ViewModel
 /// 需求: 11.3, 11.5, 17.3 - ViewModel 层和本地化支持
 @MainActor
-@available(macOS 11.0, iOS 14.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public final class ConnectionViewModel: BaseRealtimeViewModel {
     
     // MARK: - Published Properties
@@ -412,7 +412,7 @@ public struct ConnectionViewModelState: Codable, Sendable {
 /// 音频控制管理 ViewModel
 /// 需求: 11.3, 11.5, 17.3, 18.10 - ViewModel 层、Combine 数据流和状态持久化
 @MainActor
-@available(macOS 11.0, iOS 14.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public final class AudioViewModel: BaseRealtimeViewModel {
     
     // MARK: - Published Properties
@@ -706,7 +706,7 @@ public struct AudioViewModelState: Codable, Sendable {
 /// 用户会话管理 ViewModel
 /// 需求: 11.3, 11.5, 17.3, 18.10 - ViewModel 层、本地化支持和状态持久化
 @MainActor
-@available(macOS 11.0, iOS 14.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public final class UserSessionViewModel: BaseRealtimeViewModel {
     
     // MARK: - Published Properties

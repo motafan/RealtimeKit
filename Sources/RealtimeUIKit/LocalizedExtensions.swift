@@ -34,7 +34,7 @@ extension UILabel {
         return objc_getAssociatedObject(self, &AssociatedKeys.localizationKey) as? String
     }
     
-    private func registerForLanguageChangeNotifications() {
+    internal func registerForLanguageChangeNotifications() {
         NotificationCenter.default.removeObserver(self, name: .realtimeLanguageDidChange, object: nil)
         NotificationCenter.default.addObserver(
             self,
@@ -100,7 +100,7 @@ extension UIButton {
         return objc_getAssociatedObject(self, stateKey) as? String
     }
     
-    private func registerForLanguageChangeNotifications() {
+    internal func registerForLanguageChangeNotifications() {
         NotificationCenter.default.removeObserver(self, name: .realtimeLanguageDidChange, object: nil)
         NotificationCenter.default.addObserver(
             self,
@@ -167,7 +167,7 @@ extension UITextField {
         return objc_getAssociatedObject(self, &AssociatedKeys.placeholderKey) as? String
     }
     
-    private func registerForLanguageChangeNotifications() {
+    internal func registerForLanguageChangeNotifications() {
         NotificationCenter.default.removeObserver(self, name: .realtimeLanguageDidChange, object: nil)
         NotificationCenter.default.addObserver(
             self,
@@ -275,7 +275,7 @@ extension UIViewController {
         return objc_getAssociatedObject(self, &AssociatedKeys.titleKey) as? String
     }
     
-    private func registerForLanguageChangeNotifications() {
+    internal func registerForLanguageChangeNotifications() {
         NotificationCenter.default.removeObserver(self, name: .realtimeLanguageDidChange, object: nil)
         NotificationCenter.default.addObserver(
             self,
@@ -304,15 +304,15 @@ extension UIViewController {
 // MARK: - Associated Keys
 
 private struct AssociatedKeys {
-    static var localizationKey: UInt8 = 0
-    static var localizationArguments: UInt8 = 1
-    static var localizationFallback: UInt8 = 2
-    static var placeholderKey: UInt8 = 3
-    static var placeholderArguments: UInt8 = 4
-    static var placeholderFallback: UInt8 = 5
-    static var titleKey: UInt8 = 6
-    static var titleArguments: UInt8 = 7
-    static var titleFallback: UInt8 = 8
+    nonisolated(unsafe) static var localizationKey: UInt8 = 0
+    nonisolated(unsafe) static var localizationArguments: UInt8 = 1
+    nonisolated(unsafe) static var localizationFallback: UInt8 = 2
+    nonisolated(unsafe) static var placeholderKey: UInt8 = 3
+    nonisolated(unsafe) static var placeholderArguments: UInt8 = 4
+    nonisolated(unsafe) static var placeholderFallback: UInt8 = 5
+    nonisolated(unsafe) static var titleKey: UInt8 = 6
+    nonisolated(unsafe) static var titleArguments: UInt8 = 7
+    nonisolated(unsafe) static var titleFallback: UInt8 = 8
 }
 
 // MARK: - Language Change Notification Helper
@@ -336,12 +336,11 @@ public class LocalizationNotificationManager: ObservableObject {
     private init() {
         // Set up language change observation
         NotificationCenter.default.addObserver(
-            forName: .realtimeLanguageDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            self?.handleLanguageChange(notification)
-        }
+            self,
+            selector: #selector(handleLanguageChange(_:)),
+            name: .realtimeLanguageDidChange,
+            object: nil
+        )
     }
     
     /// Manually trigger language change update for all registered UI components
@@ -387,7 +386,7 @@ public class LocalizationNotificationManager: ObservableObject {
         )
     }
     
-    private func handleLanguageChange(_ notification: Notification) {
+    @objc private func handleLanguageChange(_ notification: Notification) {
         // Update persistent state
         uikitState.languageChangeCount += 1
         uikitState.lastLanguageChangeDate = Date()
@@ -591,3 +590,4 @@ extension LanguagePickerView: UIPickerViewDataSource, UIPickerViewDelegate {
 }
 
 #endif
+

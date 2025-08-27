@@ -3,6 +3,41 @@ import SwiftUI
 import RealtimeCore
 import Combine
 
+// MARK: - Helper Components
+
+/// Compatible Image view for iOS 13+
+private struct CompatibleImage: View {
+    let systemName: String
+    
+    var body: some View {
+        if #available(iOS 14.0, macOS 11.0, *) {
+            Image(systemName: systemName)
+        } else {
+            // Fallback for older versions - use text representation
+            Text(fallbackIcon(for: systemName))
+        }
+    }
+    
+    private func fallbackIcon(for systemName: String) -> String {
+        switch systemName {
+        case "mic.fill": return "🎤"
+        case "mic.slash.fill": return "🚫🎤"
+        case "speaker.slash": return "🔇"
+        case "ellipsis.circle": return "⚙️"
+        case "checkmark": return "✓"
+        case "chevron.up": return "⬆️"
+        case "chevron.down": return "⬇️"
+        case "crown": return "👑"
+        case "person.wave.2": return "👥"
+        case "person.3": return "👨‍👩‍👧"
+        case "rectangle.expand.vertical": return "⬆️"
+        case "rectangle.compress.vertical": return "⬇️"
+        default: return "📱"
+        }
+    }
+}
+import Combine
+
 /// RealtimeSwiftUI 模块
 /// 提供 SwiftUI 框架的集成支持和高级 UI 组件
 /// 需求: 11.2, 11.3, 15.6, 17.3, 17.6, 18.10
@@ -13,13 +48,13 @@ import Combine
 
 /// RealtimeKit SwiftUI 集成的基础视图，支持响应式数据绑定和状态管理
 /// 需求: 11.2, 11.3, 18.10 - SwiftUI 响应式支持和状态持久化
-@available(macOS 13.0, iOS 16.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public struct RealtimeView<Content: View>: View {
     
     // MARK: - Properties
     
-    @StateObject private var realtimeManager = RealtimeManager.shared
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var realtimeManager = RealtimeManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     @State private var connectionState: ConnectionState = .disconnected
     @State private var volumeInfos: [UserVolumeInfo] = []
     @State private var speakingUsers: Set<String> = []
@@ -44,10 +79,7 @@ public struct RealtimeView<Content: View>: View {
         content()
             .environmentObject(realtimeManager)
             .environmentObject(localizationManager)
-            .environment(\.realtimeConnectionState, connectionState)
-            .environment(\.realtimeVolumeInfos, volumeInfos)
-            .environment(\.realtimeSpeakingUsers, speakingUsers)
-            .environment(\.realtimeDominantSpeaker, dominantSpeaker)
+
             .onReceive(realtimeManager.$connectionState) { state in
                 connectionState = state
                 viewState.lastConnectionState = state
@@ -117,7 +149,7 @@ public struct RealtimeViewState: Codable, Sendable {
 
 /// 高级音量波形可视化 SwiftUI 视图，支持动画效果
 /// 需求: 11.2 - 音量波形可视化和动画效果
-@available(macOS 13.0, iOS 16.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public struct VolumeVisualizationView: View {
     
     // MARK: - Properties
@@ -163,7 +195,7 @@ public struct VolumeVisualizationView: View {
         .onAppear {
             startAnimations()
         }
-        .onChange(of: isSpeaking) { speaking in
+        .onReceive(Just(isSpeaking)) { speaking in
             if speaking {
                 startSpeakingAnimation()
             } else {
@@ -337,7 +369,7 @@ public enum VolumeVisualizationStyle: String, CaseIterable, Codable, Sendable {
 
 /// 用户音量指示器视图，支持本地化和自定义样式
 /// 需求: 17.3, 17.6 - 本地化 SwiftUI 组件和语言变化通知
-@available(macOS 13.0, iOS 16.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public struct UserVolumeIndicatorView: View {
     
     // MARK: - Properties
@@ -346,7 +378,7 @@ public struct UserVolumeIndicatorView: View {
     let visualizationStyle: VolumeVisualizationStyle
     let showPercentage: Bool
     
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     
     /// User volume indicator state with automatic persistence
     /// 需求: 18.10 - SwiftUI 数据绑定的兼容性
@@ -372,9 +404,9 @@ public struct UserVolumeIndicatorView: View {
             // 用户标识
             HStack(spacing: 4) {
                 if userVolumeInfo.isSpeaking {
-                    Image(systemName: "mic.fill")
+                    CompatibleImage(systemName: "mic.fill")
                         .foregroundColor(.green)
-                        .font(.caption2)
+                        .font(.caption)
                         .scaleEffect(1.1)
                         .animation(.easeInOut(duration: 0.2), value: userVolumeInfo.isSpeaking)
                 }
@@ -402,10 +434,9 @@ public struct UserVolumeIndicatorView: View {
             // 音量百分比
             if showPercentage {
                 Text("\(userVolumeInfo.volumePercentage)%")
-                    .font(.caption2)
+                    .font(Font.system(size: 11, weight: .regular))
                     .foregroundColor(.secondary)
                     .frame(width: 30, alignment: .trailing)
-                    .monospacedDigit()
             }
         }
         .padding(.horizontal, 12)
@@ -463,7 +494,7 @@ public struct UserVolumeIndicatorState: Codable, Sendable {
 
 /// 连接状态指示器视图，支持本地化和动画效果
 /// 需求: 17.3, 17.6 - 本地化 SwiftUI 组件和语言变化通知
-@available(macOS 13.0, iOS 16.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public struct ConnectionStateIndicatorView: View {
     
     // MARK: - Properties
@@ -472,7 +503,7 @@ public struct ConnectionStateIndicatorView: View {
     let showText: Bool
     let style: ConnectionIndicatorStyle
     
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     @State private var pulseAnimation: Bool = false
     
     /// Connection state indicator state with automatic persistence
@@ -510,7 +541,7 @@ public struct ConnectionStateIndicatorView: View {
             indicatorState.lastDisplayTime = Date()
             startAnimationIfNeeded()
         }
-        .onChange(of: connectionState) { newState in
+        .onReceive(Just(connectionState)) { newState in
             indicatorState.stateChangeCount += 1
             indicatorState.lastState = newState
             startAnimationIfNeeded()
@@ -539,10 +570,10 @@ public struct ConnectionStateIndicatorView: View {
         .padding(.vertical, 6)
         .background(
             Capsule()
-                .fill(connectionState.indicatorColor.opacity(0.1))
+                .fill(Color.blue.opacity(0.1))
                 .overlay(
                     Capsule()
-                        .stroke(connectionState.indicatorColor.opacity(0.3), lineWidth: 1)
+                        .stroke(Color.blue.opacity(0.3), lineWidth: 1)
                 )
         )
     }
@@ -556,7 +587,7 @@ public struct ConnectionStateIndicatorView: View {
                     connectionState.localizationKey,
                     fallbackValue: connectionState.displayName
                 )
-                .font(.caption2)
+                .font(Font.system(size: 11, weight: .regular))
                 .foregroundColor(.white)
             }
         }
@@ -564,7 +595,7 @@ public struct ConnectionStateIndicatorView: View {
         .padding(.vertical, 4)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(connectionState.indicatorColor)
+                .fill(Color.blue)
         )
     }
     
@@ -574,7 +605,7 @@ public struct ConnectionStateIndicatorView: View {
     
     private var statusIndicator: some View {
         Circle()
-            .fill(connectionState.indicatorColor)
+            .fill(Color.blue)
             .frame(width: 8, height: 8)
             .scaleEffect(pulseAnimation ? 1.3 : 1.0)
             .opacity(pulseAnimation ? 0.7 : 1.0)
@@ -634,13 +665,13 @@ public struct ConnectionStateIndicatorState: Codable, Sendable {
 
 /// 音频控制面板视图，支持本地化和状态持久化
 /// 需求: 17.3, 17.6, 18.10 - 本地化 SwiftUI 组件、语言变化通知和状态持久化
-@available(macOS 13.0, iOS 16.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public struct AudioControlPanelView: View {
     
     // MARK: - Properties
     
     @EnvironmentObject private var realtimeManager: RealtimeManager
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     @State private var audioSettings: AudioSettings = .default
     @State private var isExpanded: Bool = true
     @State private var showAdvancedControls: Bool = false
@@ -672,7 +703,7 @@ public struct AudioControlPanelView: View {
                         panelState.toggleCount += 1
                     }
                 }) {
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    CompatibleImage(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .foregroundColor(.secondary)
                         .rotationEffect(.degrees(isExpanded ? 0 : 180))
                         .animation(.easeInOut(duration: 0.3), value: isExpanded)
@@ -725,7 +756,7 @@ public struct AudioControlPanelView: View {
     
     // MARK: - Microphone Control
     
-    @available(macOS 13.0, iOS 16.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     private var microphoneControl: some View {
         HStack(spacing: 12) {
             // 麦克风图标
@@ -734,7 +765,7 @@ public struct AudioControlPanelView: View {
                     .fill(audioSettings.microphoneMuted ? Color.red.opacity(0.1) : Color.blue.opacity(0.1))
                     .frame(width: 40, height: 40)
                 
-                Image(systemName: audioSettings.microphoneMuted ? "mic.slash.fill" : "mic.fill")
+                CompatibleImage(systemName: audioSettings.microphoneMuted ? "mic.slash.fill" : "mic.fill")
                     .foregroundColor(audioSettings.microphoneMuted ? .red : .blue)
                     .font(.system(size: 18))
             }
@@ -767,7 +798,7 @@ public struct AudioControlPanelView: View {
                     }
                 }
             ))
-            .toggleStyle(SwitchToggleStyle(tint: .blue))
+            .toggleStyle(SwitchToggleStyle())
         }
     }
     
@@ -887,7 +918,7 @@ public struct AudioControlPanelView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: icon)
+                CompatibleImage(systemName: icon)
                     .foregroundColor(.blue)
                     .frame(width: 20)
                 
@@ -960,16 +991,16 @@ public struct AudioControlPanelState: Codable, Sendable {
 
 /// 多用户音量列表视图，支持实时更新和动画效果
 /// 需求: 11.2, 17.3, 18.10 - 音量波形可视化、本地化组件和状态持久化
-@available(macOS 13.0, iOS 16.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public struct MultiUserVolumeListView: View {
     
     // MARK: - Properties
     
-    @Environment(\.realtimeVolumeInfos) private var volumeInfos
-    @Environment(\.realtimeSpeakingUsers) private var speakingUsers
-    @Environment(\.realtimeDominantSpeaker) private var dominantSpeaker
+    @State private var volumeInfos: [UserVolumeInfo] = []
+    @State private var speakingUsers: Set<String> = []
+    @State private var dominantSpeaker: String? = nil
     
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     @State private var visualizationStyle: VolumeVisualizationStyle = .bar
     @State private var showPercentages: Bool = true
     @State private var sortBySpeaking: Bool = true
@@ -1025,58 +1056,75 @@ public struct MultiUserVolumeListView: View {
             Spacer()
             
             // 样式选择器
-            Menu {
-                ForEach(VolumeVisualizationStyle.allCases, id: \.self) { style in
-                    Button(action: {
-                        visualizationStyle = style
-                        listState.preferredVisualizationStyle = style
-                        listState.styleChangeCount += 1
-                    }) {
-                        HStack {
-                            Text(style.displayName)
-                            if visualizationStyle == style {
-                                Image(systemName: "checkmark")
+            if #available(macOS 11.0, iOS 14.0, *) {
+                Menu {
+                    ForEach(VolumeVisualizationStyle.allCases, id: \.self) { style in
+                        Button(action: {
+                            visualizationStyle = style
+                            listState.preferredVisualizationStyle = style
+                            listState.styleChangeCount += 1
+                        }) {
+                            HStack {
+                                Text(style.displayName)
+                                if visualizationStyle == style {
+                                    CompatibleImage(systemName: "checkmark")
+                                }
                             }
                         }
                     }
-                }
-                
-                Divider()
-                
-                Button(action: {
-                    showPercentages.toggle()
-                    listState.showPercentages = showPercentages
-                    listState.settingsChangeCount += 1
-                }) {
-                    HStack {
-                        LocalizedText(
-                            "volume.list.show.percentages",
-                            fallbackValue: "Show Percentages"
-                        )
-                        if showPercentages {
-                            Image(systemName: "checkmark")
+                    
+                    Divider()
+                    
+                    Button(action: {
+                        showPercentages.toggle()
+                        listState.showPercentages = showPercentages
+                        listState.settingsChangeCount += 1
+                    }) {
+                        HStack {
+                            LocalizedText(
+                                "volume.list.show.percentages",
+                                fallbackValue: "Show Percentages"
+                            )
+                            if showPercentages {
+                                CompatibleImage(systemName: "checkmark")
+                            }
                         }
                     }
-                }
-                
-                Button(action: {
-                    sortBySpeaking.toggle()
-                    listState.sortBySpeaking = sortBySpeaking
-                    listState.settingsChangeCount += 1
-                }) {
-                    HStack {
-                        LocalizedText(
-                            "volume.list.sort.by.speaking",
-                            fallbackValue: "Sort by Speaking"
-                        )
-                        if sortBySpeaking {
-                            Image(systemName: "checkmark")
+                    
+                    Button(action: {
+                        sortBySpeaking.toggle()
+                        listState.sortBySpeaking = sortBySpeaking
+                        listState.settingsChangeCount += 1
+                    }) {
+                        HStack {
+                            LocalizedText(
+                                "volume.list.sort.by.speaking",
+                                fallbackValue: "Sort by Speaking"
+                            )
+                            if sortBySpeaking {
+                                CompatibleImage(systemName: "checkmark")
+                            }
                         }
                     }
+                } label: {
+                    CompatibleImage(systemName: "ellipsis.circle")
+                        .foregroundColor(.blue)
                 }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .foregroundColor(.blue)
+            } else {
+                // Fallback for older versions
+                VStack {
+                    Picker("Style", selection: $visualizationStyle) {
+                        ForEach(VolumeVisualizationStyle.allCases, id: \.self) { style in
+                            Text(style.displayName).tag(style)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    
+                    HStack {
+                        Toggle("Show %", isOn: $showPercentages)
+                        Toggle("Sort by Speaking", isOn: $sortBySpeaking)
+                    }
+                }
             }
         }
         .padding(.horizontal, 16)
@@ -1087,7 +1135,7 @@ public struct MultiUserVolumeListView: View {
     
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "speaker.slash")
+            CompatibleImage(systemName: "speaker.slash")
                 .font(.largeTitle)
                 .foregroundColor(.secondary)
             
@@ -1114,40 +1162,50 @@ public struct MultiUserVolumeListView: View {
     
     // MARK: - Volume List
     
-    @available(macOS 13.0, iOS 16.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     private var volumeList: some View {
         ScrollView {
-            LazyVStack(spacing: 8) {
-                ForEach(sortedVolumeInfos, id: \.userId) { volumeInfo in
-                    UserVolumeIndicatorView(
-                        userVolumeInfo: volumeInfo,
-                        visualizationStyle: visualizationStyle,
-                        showPercentage: showPercentages
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(
-                                volumeInfo.userId == dominantSpeaker ? 
-                                    Color.blue.opacity(0.05) : 
-                                    Color.clear
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(
-                                        volumeInfo.userId == dominantSpeaker ? 
-                                            Color.blue.opacity(0.2) : 
-                                            Color.clear,
-                                        lineWidth: 1
-                                    )
-                            )
-                    )
-                    .scaleEffect(volumeInfo.userId == dominantSpeaker ? 1.02 : 1.0)
-                    .animation(.easeInOut(duration: 0.2), value: dominantSpeaker)
+            if #available(macOS 11.0, iOS 14.0, *) {
+                LazyVStack(spacing: 8) {
+                    volumeListContent
+                }
+            } else {
+                VStack(spacing: 8) {
+                    volumeListContent
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
         }
+    }
+    
+    private var volumeListContent: some View {
+        ForEach(sortedVolumeInfos, id: \.userId) { volumeInfo in
+            UserVolumeIndicatorView(
+                userVolumeInfo: volumeInfo,
+                visualizationStyle: visualizationStyle,
+                showPercentage: showPercentages
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(
+                        volumeInfo.userId == dominantSpeaker ? 
+                            Color.blue.opacity(0.05) : 
+                            Color.clear
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(
+                                volumeInfo.userId == dominantSpeaker ? 
+                                    Color.blue.opacity(0.2) : 
+                                    Color.clear,
+                                lineWidth: 1
+                            )
+                    )
+            )
+            .scaleEffect(volumeInfo.userId == dominantSpeaker ? 1.02 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: dominantSpeaker)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .onAppear {
             listState.dataDisplayCount += 1
             listState.lastItemCount = volumeInfos.count
@@ -1213,18 +1271,18 @@ public struct MultiUserVolumeListState: Codable, Sendable {
 
 /// 实时状态仪表板视图，显示连接状态、音量信息等
 /// 需求: 11.2, 11.3, 17.3, 18.10 - SwiftUI 响应式支持、本地化组件和状态持久化
-@available(macOS 13.0, iOS 16.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public struct RealtimeStatusDashboardView: View {
     
     // MARK: - Properties
     
-    @Environment(\.realtimeConnectionState) private var connectionState
-    @Environment(\.realtimeVolumeInfos) private var volumeInfos
-    @Environment(\.realtimeSpeakingUsers) private var speakingUsers
-    @Environment(\.realtimeDominantSpeaker) private var dominantSpeaker
+    @State private var connectionState: ConnectionState = .disconnected
+    @State private var volumeInfos: [UserVolumeInfo] = []
+    @State private var speakingUsers: Set<String> = []
+    @State private var dominantSpeaker: String? = nil
     
     @EnvironmentObject private var realtimeManager: RealtimeManager
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     
     @State private var isCompactMode: Bool = false
     @State private var showDetailedStats: Bool = false
@@ -1271,7 +1329,7 @@ public struct RealtimeStatusDashboardView: View {
                 "dashboard.title",
                 fallbackValue: "Realtime Status"
             )
-            .font(.title2)
+            .font(.title)
             .foregroundColor(.primary)
             
             Spacer()
@@ -1284,16 +1342,16 @@ public struct RealtimeStatusDashboardView: View {
                     dashboardState.modeToggleCount += 1
                 }
             }) {
-                Image(systemName: isCompactMode ? "rectangle.expand.vertical" : "rectangle.compress.vertical")
+                CompatibleImage(systemName: isCompactMode ? "rectangle.expand.vertical" : "rectangle.compress.vertical")
                     .foregroundColor(.blue)
-                    .font(.title3)
+                    .font(.headline)
             }
         }
     }
     
     // MARK: - Compact Dashboard
     
-    @available(macOS 13.0, iOS 16.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     private var compactDashboard: some View {
         HStack(spacing: 16) {
             // 连接状态
@@ -1305,7 +1363,7 @@ public struct RealtimeStatusDashboardView: View {
             
             // 说话用户数量
             HStack(spacing: 4) {
-                Image(systemName: "person.wave.2")
+                CompatibleImage(systemName: "person.wave.2")
                     .foregroundColor(.green)
                     .font(.caption)
                 
@@ -1315,7 +1373,7 @@ public struct RealtimeStatusDashboardView: View {
             
             // 总用户数量
             HStack(spacing: 4) {
-                Image(systemName: "person.3")
+                CompatibleImage(systemName: "person.3")
                     .foregroundColor(.blue)
                     .font(.caption)
                 
@@ -1328,12 +1386,12 @@ public struct RealtimeStatusDashboardView: View {
             // 主讲人指示器
             if let dominantSpeaker = dominantSpeaker {
                 HStack(spacing: 4) {
-                    Image(systemName: "crown")
+                    CompatibleImage(systemName: "crown")
                         .foregroundColor(.orange)
-                        .font(.caption2)
+                        .font(Font.system(size: 11, weight: .regular))
                     
                     Text(dominantSpeaker)
-                        .font(.caption2)
+                        .font(Font.system(size: 11, weight: .regular))
                         .lineLimit(1)
                 }
             }
@@ -1348,7 +1406,7 @@ public struct RealtimeStatusDashboardView: View {
     
     // MARK: - Full Dashboard
     
-    @available(macOS 13.0, iOS 16.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     private var fullDashboard: some View {
         VStack(spacing: 16) {
             // 连接状态行
@@ -1371,7 +1429,7 @@ public struct RealtimeStatusDashboardView: View {
     
     // MARK: - Connection Status Row
     
-    @available(macOS 13.0, iOS 16.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     private var connectionStatusRow: some View {
         HStack {
             LocalizedText(
@@ -1415,7 +1473,7 @@ public struct RealtimeStatusDashboardView: View {
             // 主讲人
             VStack(alignment: .center, spacing: 4) {
                 HStack(spacing: 4) {
-                    Image(systemName: "crown")
+                    CompatibleImage(systemName: "crown")
                         .foregroundColor(.orange)
                         .font(.caption)
                     
@@ -1446,46 +1504,93 @@ public struct RealtimeStatusDashboardView: View {
             .font(.subheadline)
             .foregroundColor(.primary)
             
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 12) {
-                // 平均音量
-                statCard(
-                    titleKey: "dashboard.average.volume",
-                    titleFallback: "Avg Volume",
-                    value: String(format: "%.1f%%", averageVolume * 100),
-                    icon: "speaker.wave.2",
-                    color: .purple
-                )
-                
-                // 最大音量
-                statCard(
-                    titleKey: "dashboard.max.volume",
-                    titleFallback: "Max Volume",
-                    value: String(format: "%.1f%%", maxVolume * 100),
-                    icon: "speaker.wave.3",
-                    color: .red
-                )
-                
-                // 活跃时间
-                statCard(
-                    titleKey: "dashboard.active.time",
-                    titleFallback: "Active Time",
-                    value: formatActiveTime(),
-                    icon: "clock",
-                    color: .blue
-                )
-                
-                // 语言设置
-                statCard(
-                    titleKey: "dashboard.current.language",
-                    titleFallback: "Language",
-                    value: localizationManager.currentLanguage.displayName,
-                    icon: "globe",
-                    color: .green
-                )
+            if #available(macOS 11.0, iOS 14.0, *) {
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 12) {
+                    detailedStatsContent
+                }
+            } else {
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) {
+                        statCard(
+                            titleKey: "dashboard.average.volume",
+                            titleFallback: "Avg Volume",
+                            value: String(format: "%.1f%%", averageVolume * 100),
+                            icon: "speaker.wave.2",
+                            color: .purple
+                        )
+                        
+                        statCard(
+                            titleKey: "dashboard.max.volume",
+                            titleFallback: "Max Volume",
+                            value: String(format: "%.1f%%", maxVolume * 100),
+                            icon: "speaker.wave.3",
+                            color: .red
+                        )
+                    }
+                    
+                    HStack(spacing: 12) {
+                        statCard(
+                            titleKey: "dashboard.active.time",
+                            titleFallback: "Active Time",
+                            value: formatActiveTime(),
+                            icon: "clock",
+                            color: .blue
+                        )
+                        
+                        statCard(
+                            titleKey: "dashboard.current.language",
+                            titleFallback: "Language",
+                            value: localizationManager.currentLanguage.displayName,
+                            icon: "globe",
+                            color: .green
+                        )
+                    }
+                }
             }
+        }
+    }
+    
+    @available(macOS 11.0, iOS 14.0, *)
+    private var detailedStatsContent: some View {
+        Group {
+            // 平均音量
+            statCard(
+                titleKey: "dashboard.average.volume",
+                titleFallback: "Avg Volume",
+                value: String(format: "%.1f%%", averageVolume * 100),
+                icon: "speaker.wave.2",
+                color: .purple
+            )
+            
+            // 最大音量
+            statCard(
+                titleKey: "dashboard.max.volume",
+                titleFallback: "Max Volume",
+                value: String(format: "%.1f%%", maxVolume * 100),
+                icon: "speaker.wave.3",
+                color: .red
+            )
+            
+            // 活跃时间
+            statCard(
+                titleKey: "dashboard.active.time",
+                titleFallback: "Active Time",
+                value: formatActiveTime(),
+                icon: "clock",
+                color: .blue
+            )
+            
+            // 语言设置
+            statCard(
+                titleKey: "dashboard.current.language",
+                titleFallback: "Language",
+                value: localizationManager.currentLanguage.displayName,
+                icon: "globe",
+                color: .green
+            )
         }
     }
     
@@ -1519,7 +1624,7 @@ public struct RealtimeStatusDashboardView: View {
     ) -> some View {
         VStack(alignment: .center, spacing: 4) {
             HStack(spacing: 4) {
-                Image(systemName: icon)
+                CompatibleImage(systemName: icon)
                     .foregroundColor(color)
                     .font(.caption)
                 
@@ -1542,9 +1647,9 @@ public struct RealtimeStatusDashboardView: View {
         color: Color
     ) -> some View {
         VStack(spacing: 8) {
-            Image(systemName: icon)
+            CompatibleImage(systemName: icon)
                 .foregroundColor(color)
-                .font(.title3)
+                .font(.headline)
             
             Text(value)
                 .font(.headline)
@@ -1589,7 +1694,6 @@ public struct RealtimeStatusDashboardView: View {
             return "\(minutes)m"
         }
     }
-}
 
 /// Persistent state for RealtimeStatusDashboardView
 /// 需求: 18.1, 18.10 - 状态持久化和 SwiftUI 集成
@@ -1621,7 +1725,7 @@ public struct RealtimeStatusDashboardState: Codable, Sendable {
     public init() {}
 }
 
-// MARK: - Environment Values (defined below as public)
+}
 
 // MARK: - Extensions
 
@@ -1640,77 +1744,30 @@ extension ConnectionState {
             return .yellow
         }
     }
-    
-    var localizationKey: String {
-        switch self {
-        case .disconnected:
-            return "connection.state.disconnected"
-        case .connecting:
-            return "connection.state.connecting"
-        case .connected:
-            return "connection.state.connected"
-        case .reconnecting:
-            return "connection.state.reconnecting"
-        case .failed:
-            return "connection.state.failed"
-        case .suspended:
-            return "connection.state.suspended"
-        }
-    }
-    
-    var shouldAnimate: Bool {
-        switch self {
-        case .connecting, .reconnecting:
-            return true
-        default:
-            return false
-        }
-    }
 }
 
 // MARK: - Environment Keys
 
-@available(macOS 11.0, iOS 14.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public struct RealtimeConnectionStateKey: EnvironmentKey {
     public static let defaultValue: ConnectionState = .disconnected
 }
 
-@available(macOS 11.0, iOS 14.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public struct RealtimeVolumeInfosKey: EnvironmentKey {
     public static let defaultValue: [UserVolumeInfo] = []
 }
 
-@available(macOS 11.0, iOS 14.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public struct RealtimeSpeakingUsersKey: EnvironmentKey {
     public static let defaultValue: Set<String> = []
 }
 
-@available(macOS 11.0, iOS 14.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 public struct RealtimeDominantSpeakerKey: EnvironmentKey {
     public static let defaultValue: String? = nil
 }
 
-@available(macOS 11.0, iOS 14.0, *)
-extension EnvironmentValues {
-    public var realtimeConnectionState: ConnectionState {
-        get { self[RealtimeConnectionStateKey.self] }
-        set { self[RealtimeConnectionStateKey.self] = newValue }
-    }
-    
-    public var realtimeVolumeInfos: [UserVolumeInfo] {
-        get { self[RealtimeVolumeInfosKey.self] }
-        set { self[RealtimeVolumeInfosKey.self] = newValue }
-    }
-    
-    public var realtimeSpeakingUsers: Set<String> {
-        get { self[RealtimeSpeakingUsersKey.self] }
-        set { self[RealtimeSpeakingUsersKey.self] = newValue }
-    }
-    
-    public var realtimeDominantSpeaker: String? {
-        get { self[RealtimeDominantSpeakerKey.self] }
-        set { self[RealtimeDominantSpeakerKey.self] = newValue }
-    }
-}
+
 
 #endif

@@ -6,7 +6,7 @@ import Combine
 
 /// SwiftUI 动画效果测试
 /// 需求: 11.2 - 音量波形可视化和动画效果测试
-@available(macOS 13.0, iOS 16.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 final class SwiftUIAnimationTests: XCTestCase {
     
     var cancellables: Set<AnyCancellable>!
@@ -177,7 +177,7 @@ final class SwiftUIAnimationTests: XCTestCase {
         let userVolumeInfo = UserVolumeInfo(
             userId: "silent-user",
             volume: 30,
-            vad: .silence,
+            vad: .notSpeaking,
             timestamp: Date()
         )
         
@@ -191,7 +191,7 @@ final class SwiftUIAnimationTests: XCTestCase {
         // Then
         XCTAssertNotNil(view)
         XCTAssertFalse(userVolumeInfo.isSpeaking, "User should be silent")
-        XCTAssertEqual(userVolumeInfo.vad, .silence)
+        XCTAssertEqual(userVolumeInfo.vad, .notSpeaking)
     }
     
     // MARK: - Audio Control Panel Animation Tests
@@ -328,7 +328,7 @@ final class SwiftUIAnimationTests: XCTestCase {
             let userVolumeInfo = UserVolumeInfo(
                 userId: "edge-case-user",
                 volume: volume,
-                vad: .silence,
+                vad: .notSpeaking,
                 timestamp: Date()
             )
             
@@ -371,7 +371,7 @@ final class SwiftUIAnimationTests: XCTestCase {
 
 // MARK: - Animation Test Helpers
 
-@available(macOS 13.0, iOS 16.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 extension SwiftUIAnimationTests {
     
     /// Helper to create a mock volume info with animation-relevant properties
@@ -383,7 +383,7 @@ extension SwiftUIAnimationTests {
         return UserVolumeInfo(
             userId: userId,
             volume: volume,
-            vad: isSpeaking ? .speaking : .silence,
+            vad: isSpeaking ? .speaking : .notSpeaking,
             timestamp: Date()
         )
     }

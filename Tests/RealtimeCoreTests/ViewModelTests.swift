@@ -11,7 +11,7 @@ struct ViewModelTests {
     // MARK: - BaseRealtimeViewModel Tests
     
     @Test("BaseRealtimeViewModel 初始化测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testBaseRealtimeViewModelInitialization() async throws {
         let viewModel = TestableBaseViewModel()
@@ -25,7 +25,7 @@ struct ViewModelTests {
     }
     
     @Test("BaseRealtimeViewModel 加载状态管理")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testBaseRealtimeViewModelLoadingState() async throws {
         let viewModel = TestableBaseViewModel()
@@ -43,7 +43,7 @@ struct ViewModelTests {
     }
     
     @Test("BaseRealtimeViewModel 错误处理")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testBaseRealtimeViewModelErrorHandling() async throws {
         let viewModel = TestableBaseViewModel()
@@ -63,7 +63,7 @@ struct ViewModelTests {
     }
     
     @Test("BaseRealtimeViewModel 刷新功能")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testBaseRealtimeViewModelRefresh() async throws {
         let viewModel = TestableBaseViewModel()
@@ -88,7 +88,7 @@ struct ViewModelTests {
     // MARK: - ConnectionViewModel Tests
     
     @Test("ConnectionViewModel 初始化测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testConnectionViewModelInitialization() async throws {
         let viewModel = ConnectionViewModel()
@@ -103,7 +103,7 @@ struct ViewModelTests {
     }
     
     @Test("ConnectionViewModel 连接状态变化")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testConnectionViewModelStateChanges() async throws {
         let viewModel = ConnectionViewModel()
@@ -129,7 +129,7 @@ struct ViewModelTests {
     }
     
     @Test("ConnectionViewModel 重连逻辑")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testConnectionViewModelReconnectLogic() async throws {
         let viewModel = ConnectionViewModel()
@@ -143,7 +143,7 @@ struct ViewModelTests {
     }
     
     @Test("ConnectionEvent 模型测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testConnectionEventModel() async throws {
         let event = ConnectionEvent(
             fromState: .disconnected,
@@ -159,7 +159,7 @@ struct ViewModelTests {
     }
     
     @Test("ConnectionQuality 枚举测试", arguments: ConnectionQuality.allCases)
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testConnectionQualityEnum(quality: ConnectionQuality) async throws {
         // 测试显示名称
         #expect(!quality.displayName.isEmpty)
@@ -190,7 +190,7 @@ struct ViewModelTests {
     // MARK: - AudioViewModel Tests
     
     @Test("AudioViewModel 初始化测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testAudioViewModelInitialization() async throws {
         let viewModel = AudioViewModel()
@@ -212,7 +212,7 @@ struct ViewModelTests {
     }
     
     @Test("AudioViewModel 音量统计计算")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testAudioViewModelVolumeStatistics() async throws {
         let viewModel = AudioViewModel()
@@ -235,7 +235,7 @@ struct ViewModelTests {
     }
     
     @Test("AudioViewModel 用户查询方法")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testAudioViewModelUserQueries() async throws {
         let viewModel = AudioViewModel()
@@ -249,7 +249,7 @@ struct ViewModelTests {
     // MARK: - UserSessionViewModel Tests
     
     @Test("UserSessionViewModel 初始化测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testUserSessionViewModelInitialization() async throws {
         let viewModel = UserSessionViewModel()
@@ -271,7 +271,7 @@ struct ViewModelTests {
     }
     
     @Test("UserSessionViewModel 会话时长格式化")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testUserSessionViewModelDurationFormatting() async throws {
         let viewModel = UserSessionViewModel()
@@ -299,7 +299,7 @@ struct ViewModelTests {
     }
     
     @Test("UserSessionViewModel 角色权限检查")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testUserSessionViewModelRolePermissions() async throws {
         let viewModel = UserSessionViewModel()
@@ -318,7 +318,7 @@ struct ViewModelTests {
     }
     
     @Test("UserSessionViewModel 会话统计")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testUserSessionViewModelSessionStats() async throws {
         let viewModel = UserSessionViewModel()
@@ -333,7 +333,7 @@ struct ViewModelTests {
     // MARK: - Combine 数据流测试
     
     @Test("ViewModel Combine 数据流测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testViewModelCombineDataFlow() async throws {
         let viewModel = ConnectionViewModel()
@@ -368,7 +368,7 @@ struct ViewModelTests {
     // MARK: - 持久化状态测试
     
     @Test("ViewModel 持久化状态测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testViewModelPersistentState() async throws {
         let viewModel = ConnectionViewModel()
@@ -391,7 +391,7 @@ struct ViewModelTests {
     // MARK: - 错误处理测试
     
     @Test("ViewModel 错误处理测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testViewModelErrorHandling() async throws {
         let viewModel = AudioViewModel()
@@ -416,7 +416,7 @@ struct ViewModelTests {
     // MARK: - 性能测试
     
     @Test("ViewModel 性能测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testViewModelPerformance() async throws {
         let viewModel = AudioViewModel()
@@ -444,7 +444,7 @@ struct ViewModelTests {
 
 // MARK: - 测试辅助类
 
-@available(macOS 11.0, iOS 14.0, *)
+@available(macOS 10.15, iOS 13.0, *)
 @MainActor
 private class TestableBaseViewModel: BaseRealtimeViewModel {
     var refreshCallCount = 0

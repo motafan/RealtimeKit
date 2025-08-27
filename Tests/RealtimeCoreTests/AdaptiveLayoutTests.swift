@@ -10,7 +10,7 @@ struct AdaptiveLayoutTests {
     // MARK: - AdaptiveLayoutContext Tests
     
     @Test("AdaptiveLayoutContext 初始化测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testAdaptiveLayoutContextInitialization() async throws {
         let context = AdaptiveLayoutContext()
         
@@ -25,7 +25,7 @@ struct AdaptiveLayoutTests {
     }
     
     @Test("AdaptiveLayoutContext 自定义初始化测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testAdaptiveLayoutContextCustomInitialization() async throws {
         let windowSize = CGSize(width: 1024, height: 768)
         let safeAreaInsets = EdgeInsets(top: 44, leading: 0, bottom: 34, trailing: 0)
@@ -51,7 +51,7 @@ struct AdaptiveLayoutTests {
     }
     
     @Test("AdaptiveLayoutContext 计算属性测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testAdaptiveLayoutContextComputedProperties() async throws {
         // 测试紧凑布局
         let compactContext = AdaptiveLayoutContext(
@@ -83,7 +83,7 @@ struct AdaptiveLayoutTests {
     // MARK: - DeviceType Tests
     
     @Test("DeviceType 枚举测试", arguments: DeviceType.allCases)
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testDeviceTypeEnum(deviceType: DeviceType) async throws {
         // 测试显示名称
         #expect(!deviceType.displayName.isEmpty)
@@ -108,7 +108,7 @@ struct AdaptiveLayoutTests {
     // MARK: - AdaptiveSizeClass Tests
     
     @Test("AdaptiveSizeClass 枚举测试", arguments: AdaptiveSizeClass.allCases)
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testAdaptiveSizeClassEnum(sizeClass: AdaptiveSizeClass) async throws {
         // 测试显示名称
         #expect(!sizeClass.displayName.isEmpty)
@@ -133,7 +133,7 @@ struct AdaptiveLayoutTests {
     // MARK: - DeviceOrientation Tests
     
     @Test("DeviceOrientation 枚举测试", arguments: DeviceOrientation.allCases)
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testDeviceOrientationEnum(orientation: DeviceOrientation) async throws {
         // 测试显示名称
         #expect(!orientation.displayName.isEmpty)
@@ -155,7 +155,7 @@ struct AdaptiveLayoutTests {
     // MARK: - AdaptiveLayoutMode Tests
     
     @Test("AdaptiveLayoutMode 枚举测试", arguments: AdaptiveLayoutMode.allCases)
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testAdaptiveLayoutModeEnum(layoutMode: AdaptiveLayoutMode) async throws {
         // 测试显示名称
         #expect(!layoutMode.displayName.isEmpty)
@@ -183,7 +183,7 @@ struct AdaptiveLayoutTests {
     // MARK: - AdaptiveContainerState Tests
     
     @Test("AdaptiveContainerState 持久化状态测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testAdaptiveContainerStatePersistence() async throws {
         var containerState = AdaptiveContainerState()
         
@@ -209,7 +209,7 @@ struct AdaptiveLayoutTests {
     // MARK: - AdaptiveRealtimeContainer Tests
     
     @Test("AdaptiveRealtimeContainer 初始化测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testAdaptiveRealtimeContainerInitialization() async throws {
         let container = AdaptiveRealtimeContainer { context in
@@ -223,7 +223,7 @@ struct AdaptiveLayoutTests {
     // MARK: - DashboardTab Tests
     
     @Test("DashboardTab 枚举测试", arguments: DashboardTab.allCases)
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testDashboardTabEnum(tab: DashboardTab) async throws {
         // 测试显示名称
         #expect(!tab.displayName.isEmpty)
@@ -258,7 +258,7 @@ struct AdaptiveLayoutTests {
     // MARK: - AdaptiveDashboardState Tests
     
     @Test("AdaptiveDashboardState 持久化状态测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testAdaptiveDashboardStatePersistence() async throws {
         var dashboardState = AdaptiveDashboardState()
         
@@ -299,7 +299,7 @@ struct AdaptiveLayoutTests {
     // MARK: - AdaptiveRealtimeDashboard Tests
     
     @Test("AdaptiveRealtimeDashboard 初始化测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     @MainActor
     func testAdaptiveRealtimeDashboardInitialization() async throws {
         let dashboard = AdaptiveRealtimeDashboard()
@@ -311,7 +311,7 @@ struct AdaptiveLayoutTests {
     // MARK: - 布局逻辑测试
     
     @Test("布局模式决策逻辑测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testLayoutModeDecisionLogic() async throws {
         // 测试不同设备和尺寸组合的布局模式决策
         let testCases: [(DeviceType, AdaptiveSizeClass, DeviceOrientation, AdaptiveLayoutMode)] = [
@@ -337,7 +337,7 @@ struct AdaptiveLayoutTests {
     }
     
     @Test("尺寸类别决策逻辑测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testSizeClassDecisionLogic() async throws {
         // 测试不同窗口尺寸的尺寸类别决策
         let testCases: [(CGSize, AdaptiveSizeClass)] = [
@@ -357,7 +357,7 @@ struct AdaptiveLayoutTests {
     }
     
     @Test("设备方向决策逻辑测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testOrientationDecisionLogic() async throws {
         // 测试不同窗口尺寸的方向决策
         let testCases: [(CGSize, DeviceOrientation)] = [
@@ -378,7 +378,7 @@ struct AdaptiveLayoutTests {
     // MARK: - 响应式布局测试
     
     @Test("响应式布局变化测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testResponsiveLayoutChanges() async throws {
         // 模拟窗口尺寸变化
         let initialSize = CGSize(width: 320, height: 568)
@@ -400,7 +400,7 @@ struct AdaptiveLayoutTests {
     // MARK: - 多窗口支持测试
     
     @Test("多窗口环境检测测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testMultiWindowEnvironmentDetection() async throws {
         // 测试多窗口环境检测逻辑
         let isMultiWindow = isMultiWindowEnvironment()
@@ -417,7 +417,7 @@ struct AdaptiveLayoutTests {
     // MARK: - 性能测试
     
     @Test("自适应布局性能测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testAdaptiveLayoutPerformance() async throws {
         let startTime = Date()
         
@@ -446,7 +446,7 @@ struct AdaptiveLayoutTests {
     // MARK: - 边界情况测试
     
     @Test("边界情况测试")
-    @available(macOS 11.0, iOS 14.0, *)
+    @available(macOS 10.15, iOS 13.0, *)
     func testEdgeCases() async throws {
         // 测试极小尺寸
         let tinySize = CGSize(width: 1, height: 1)

@@ -1,16 +1,17 @@
 import SwiftUI
 import RealtimeCore
+import Combine
 
 // MARK: - SwiftUI Localized Components
 
 /// A SwiftUI Text view that automatically localizes its content
-@available(iOS 13.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 10.15, *)
 public struct LocalizedText: View {
     private let key: String
     private let arguments: [CVarArg]
     private let fallbackValue: String?
     
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     
     /// Initialize with localization key
     /// - Parameters:
@@ -40,7 +41,7 @@ public struct LocalizedText: View {
 }
 
 /// A SwiftUI Button with localized title
-@available(iOS 13.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 10.15, *)
 public struct LocalizedButton<Label: View>: View {
     private let key: String?
     private let arguments: [CVarArg]
@@ -48,7 +49,7 @@ public struct LocalizedButton<Label: View>: View {
     private let action: () -> Void
     private let label: (() -> Label)?
     
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     
     /// Initialize with localization key for title
     /// - Parameters:
@@ -99,14 +100,14 @@ public struct LocalizedButton<Label: View>: View {
 }
 
 /// A SwiftUI TextField with localized placeholder
-@available(iOS 13.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 10.15, watchOS 7.0, tvOS 14.0, *)
 public struct LocalizedTextField: View {
     private let placeholderKey: String
     private let placeholderArguments: [CVarArg]
     private let placeholderFallback: String?
     @Binding private var text: String
     
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     
     /// Initialize with localization key for placeholder
     /// - Parameters:
@@ -221,9 +222,9 @@ public struct LocalizedAlert {
 
 /// A SwiftUI picker for selecting language with persistent state
 /// 需求: 17.3, 18.1, 18.10 - 本地化 UI 组件和状态持久化
-@available(iOS 16.0, macOS 13.0, *)
+@available(iOS 13.0, macOS 10.15, *)
 public struct LanguagePicker: View {
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     @State private var selectedLanguage: SupportedLanguage
     
     /// UI component localization state with automatic persistence
@@ -244,14 +245,28 @@ public struct LanguagePicker: View {
                     .tag(language)
             }
         }
-        .onChange(of: selectedLanguage) { newLanguage in
-            Task {
-                await localizationManager.switchLanguage(to: newLanguage)
-                
-                // Update persistent state
-                pickerState.lastSelectedLanguage = newLanguage
-                pickerState.selectionCount += 1
-                pickerState.lastSelectionDate = Date()
+        .onReceive(Just(selectedLanguage)) { newLanguage in
+            if #available(iOS 14.0, macOS 11.0, *) {
+                Task {
+                    await localizationManager.switchLanguage(to: newLanguage)
+                    
+                    // Update persistent state
+                    pickerState.lastSelectedLanguage = newLanguage
+                    pickerState.selectionCount += 1
+                    pickerState.lastSelectionDate = Date()
+                }
+            } else {
+                // Fallback for iOS 13/macOS 10.15
+                DispatchQueue.main.async {
+                    Task {
+                        await localizationManager.switchLanguage(to: newLanguage)
+                        
+                        // Update persistent state
+                        pickerState.lastSelectedLanguage = newLanguage
+                        pickerState.selectionCount += 1
+                        pickerState.lastSelectionDate = Date()
+                    }
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .realtimeLanguageDidChange)) { notification in
@@ -315,13 +330,13 @@ public struct LanguagePickerState: Codable, Sendable {
 
 /// A SwiftUI NavigationView with localized title and persistent state
 /// 需求: 17.3, 18.1, 18.10 - 本地化 UI 组件和状态持久化
-@available(iOS 16.0, macOS 13.0, *)
+@available(iOS 13.0, macOS 10.15, *)
 public struct LocalizedNavigationView<Content: View>: View {
     private let titleKey: String
     private let titleArguments: [CVarArg]
     private let content: () -> Content
     
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     
     /// Navigation view state with automatic persistence
     @RealtimeStorage("navigationViewState", namespace: "RealtimeKit.UI.SwiftUI")
@@ -345,7 +360,7 @@ public struct LocalizedNavigationView<Content: View>: View {
     public var body: some View {
         NavigationView {
             content()
-                .navigationTitle(localizedTitle)
+                .modifier(NavigationTitleModifier(title: localizedTitle))
                 .onReceive(NotificationCenter.default.publisher(for: .realtimeLanguageDidChange)) { _ in
                     // Update navigation state when language changes
                     navigationState.currentLanguage = localizationManager.currentLanguage
@@ -396,7 +411,7 @@ public struct NavigationViewState: Codable, Sendable {
 
 /// A SwiftUI List with localized empty state
 /// 需求: 17.3, 18.1 - 本地化 UI 组件和状态持久化
-@available(iOS 16.0, macOS 13.0, *)
+@available(iOS 13.0, macOS 10.15, *)
 public struct LocalizedList<Data: RandomAccessCollection, ID: Hashable, RowContent: View>: View {
     private let data: Data
     private let id: KeyPath<Data.Element, ID>
@@ -404,7 +419,7 @@ public struct LocalizedList<Data: RandomAccessCollection, ID: Hashable, RowConte
     private let emptyStateKey: String
     private let emptyStateArguments: [CVarArg]
     
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     
     /// List state with automatic persistence
     @RealtimeStorage("localizedListState", namespace: "RealtimeKit.UI.SwiftUI")
@@ -435,9 +450,17 @@ public struct LocalizedList<Data: RandomAccessCollection, ID: Hashable, RowConte
         Group {
             if data.isEmpty {
                 VStack {
-                    Image(systemName: "list.bullet")
-                        .font(.largeTitle)
-                        .foregroundColor(.secondary)
+                    Group {
+                        if #available(iOS 14.0, macOS 11.0, *) {
+                            Image(systemName: "list.bullet")
+                        } else {
+                            // Fallback for older versions
+                            Text("📋")
+                                .font(.largeTitle)
+                        }
+                    }
+                    .font(.largeTitle)
+                    .foregroundColor(.secondary)
                     
                     LocalizedText(emptyStateKey, arguments: emptyStateArguments)
                         .font(.headline)
@@ -503,7 +526,7 @@ public struct LocalizedListState: Codable, Sendable {
 
 // MARK: - View Modifiers
 
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 10.15, *)
 extension View {
     /// Apply localized accessibility label
     /// - Parameters:
@@ -514,7 +537,12 @@ extension View {
     public func localizedAccessibilityLabel(_ key: String, arguments: CVarArg...) -> some View {
         let localizationManager = LocalizationManager.shared
         let localizedLabel = localizationManager.localizedString(for: key, arguments: arguments)
-        return self.accessibilityLabel(localizedLabel)
+        
+        if #available(iOS 14.0, macOS 11.0, *) {
+            return self.accessibilityLabel(localizedLabel)
+        } else {
+            return self.accessibility(label: Text(localizedLabel))
+        }
     }
     
     /// Apply localized accessibility hint
@@ -526,7 +554,12 @@ extension View {
     public func localizedAccessibilityHint(_ key: String, arguments: CVarArg...) -> some View {
         let localizationManager = LocalizationManager.shared
         let localizedHint = localizationManager.localizedString(for: key, arguments: arguments)
-        return self.accessibilityHint(localizedHint)
+        
+        if #available(iOS 14.0, macOS 11.0, *) {
+            return self.accessibilityHint(localizedHint)
+        } else {
+            return self.accessibility(hint: Text(localizedHint))
+        }
     }
     
     /// Apply automatic language change updates with persistent state
@@ -543,13 +576,13 @@ extension View {
 
 /// View modifier for automatic localized state management
 /// 需求: 17.6, 18.1 - 语言变化通知和状态持久化
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 10.15, *)
 private struct LocalizedStateModifier<T: Codable>: ViewModifier {
     let stateKey: String
     let namespace: String
     let defaultValue: T
     
-    @StateObject private var localizationManager = LocalizationManager.shared
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     @State private var localizedState: T
     
     init(stateKey: String, namespace: String, defaultValue: T) {
@@ -571,10 +604,29 @@ private struct LocalizedStateModifier<T: Codable>: ViewModifier {
     }
 }
 
+// MARK: - Helper Modifiers
+
+/// Navigation title modifier that works across iOS versions
+private struct NavigationTitleModifier: ViewModifier {
+    let title: String
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 14.0, macOS 11.0, *) {
+            content.navigationTitle(title)
+        } else {
+            #if os(iOS)
+            content.navigationBarTitle(title)
+            #else
+            content
+            #endif
+        }
+    }
+}
+
 // MARK: - Preview Helpers
 
 #if DEBUG
-@available(iOS 13.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 10.15, *)
 extension LocalizedText {
     /// Preview helper for LocalizedText
     public static var previews: some View {
@@ -588,7 +640,7 @@ extension LocalizedText {
     }
 }
 
-@available(iOS 13.0, macOS 11.0, *)
+@available(iOS 13.0, macOS 10.15, *)
 extension LocalizedButton where Label == Text {
     /// Preview helper for LocalizedButton
     public static var previews: some View {

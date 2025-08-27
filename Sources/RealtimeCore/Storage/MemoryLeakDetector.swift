@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Memory leak detection and monitoring system
 /// 需求: 14.1 - 编写内存泄漏检测和性能基准测试
@@ -418,3 +421,4 @@ public struct MemoryUsageInfo: Sendable {
         """
     }
 }
+

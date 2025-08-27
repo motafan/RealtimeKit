@@ -221,7 +221,7 @@ public struct DeviceInfo: Codable, Equatable, Sendable {
     }
     
     /// 获取当前设备信息
-    public static func current(appVersion: String) -> DeviceInfo {
+    @MainActor public static func current(appVersion: String) -> DeviceInfo {
         #if os(iOS)
         return DeviceInfo(
             deviceId: UIDevice.current.identifierForVendor?.uuidString ?? "unknown",

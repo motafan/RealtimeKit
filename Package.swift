@@ -58,6 +58,9 @@ let package = Package(
                 "RealtimeSwiftUI",
                 "RealtimeAgora",
                 "RealtimeMocking"
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
         
@@ -67,19 +70,28 @@ let package = Package(
             dependencies: [],
             resources: [
                 .process("Resources")
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
         
         // UIKit integration module
         .target(
             name: "RealtimeUIKit",
-            dependencies: ["RealtimeCore"]
+            dependencies: ["RealtimeCore"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         
         // SwiftUI integration module
         .target(
             name: "RealtimeSwiftUI",
-            dependencies: ["RealtimeCore"]
+            dependencies: ["RealtimeCore"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         
         // Agora provider implementation
@@ -90,13 +102,19 @@ let package = Package(
                 // Add Agora SDK dependencies when ready:
                 // .product(name: "AgoraRtcKit", package: "AgoraRtcEngine_iOS"),
                 // .product(name: "AgoraRtmKit", package: "AgoraRtmKit_iOS")
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
         
         // Mock provider for testing
         .target(
             name: "RealtimeMocking",
-            dependencies: ["RealtimeCore"]
+            dependencies: ["RealtimeCore"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         
 
@@ -110,6 +128,9 @@ let package = Package(
                 "RealtimeAgora",
                 "RealtimeUIKit",
                 "RealtimeSwiftUI"
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
         .testTarget(
@@ -117,6 +138,9 @@ let package = Package(
             dependencies: [
                 "RealtimeCore", 
                 "RealtimeMocking"
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         )
     ]
