@@ -160,11 +160,11 @@ open class RealtimeViewController: UIViewController {
     }
     
     deinit {
-        // 注销本地化更新
-        LocalizationNotificationManager.unregisterViewController(self)
+        // 注销本地化更新 - 直接移除通知观察者，不使用 LocalizationNotificationManager
+        NotificationCenter.default.removeObserver(self, name: .realtimeLanguageDidChange, object: nil)
         
-        // 清理订阅
-        cancellables.removeAll()
+        // 清理订阅 - 在 deinit 中不能访问非 Sendable 属性，所以移除这行
+        // cancellables.removeAll()
     }
     
     // MARK: - Setup
@@ -1523,7 +1523,8 @@ public class ErrorFeedbackView: UIView {
     }
     
     deinit {
-        hideTimer?.invalidate()
+        // 在 deinit 中不能访问非 Sendable 属性，所以移除这行
+        // hideTimer?.invalidate()
         NotificationCenter.default.removeObserver(self)
     }
 }
@@ -1791,6 +1792,9 @@ public class StreamPushControlPanelView: UIView {
         case .starting, .stopping:
             // 忽略，正在处理中
             break
+        case .pausing, .paused, .resuming:
+            // 暂停相关状态，可以恢复或停止
+            stopStreamPush()
         }
         
         // 更新控制设置
@@ -1847,16 +1851,26 @@ public class StreamPushControlPanelView: UIView {
         let resolution = getSelectedResolution()
         let bitrate = Int(bitrateSlider.value)
         
-        let config = StreamPushConfig(
-            url: url,
-            width: resolution.width,
-            height: resolution.height,
-            videoBitrate: bitrate,
-            audioBitrate: 128,
-            frameRate: 30
-        )
-        
-        onStartStreamPush?(config)
+        do {
+            let videoConfig = StreamVideoConfig(
+                width: resolution.width,
+                height: resolution.height,
+                bitrate: bitrate,
+                frameRate: 30
+            )
+            let audioConfig = StreamAudioConfig(bitrate: 128)
+            
+            let config = try StreamPushConfig(
+                url: url,
+                audioConfig: audioConfig,
+                videoConfig: videoConfig
+            )
+            
+            onStartStreamPush?(config)
+        } catch {
+            showErrorAlert(message: "Invalid stream configuration: \(error.localizedDescription)")
+            return
+        }
     }
     
     private func stopStreamPush() {
@@ -1909,6 +1923,27 @@ public class StreamPushControlPanelView: UIView {
                 self.startStopButton.setLocalizedTitle("stream_push.retry", fallbackValue: "Retry")
                 self.startStopButton.backgroundColor = .systemBlue
                 self.startStopButton.isEnabled = true
+                
+            case .pausing:
+                self.statusIndicator.backgroundColor = .systemYellow
+                self.statusLabel.setLocalizedText("stream_push.status.pausing", fallbackValue: "Pausing...")
+                self.startStopButton.setLocalizedTitle("stream_push.pausing", fallbackValue: "Pausing...")
+                self.startStopButton.backgroundColor = .systemGray3
+                self.startStopButton.isEnabled = false
+                
+            case .paused:
+                self.statusIndicator.backgroundColor = .systemOrange
+                self.statusLabel.setLocalizedText("stream_push.status.paused", fallbackValue: "Paused")
+                self.startStopButton.setLocalizedTitle("stream_push.resume", fallbackValue: "Resume")
+                self.startStopButton.backgroundColor = .systemBlue
+                self.startStopButton.isEnabled = true
+                
+            case .resuming:
+                self.statusIndicator.backgroundColor = .systemYellow
+                self.statusLabel.setLocalizedText("stream_push.status.resuming", fallbackValue: "Resuming...")
+                self.startStopButton.setLocalizedTitle("stream_push.resuming", fallbackValue: "Resuming...")
+                self.startStopButton.backgroundColor = .systemGray3
+                self.startStopButton.isEnabled = false
             }
         }
     }
@@ -2303,12 +2338,16 @@ public class MediaRelayControlPanelView: UIView {
             MediaRelayChannelInfo(channelName: channel.channel, userId: "user_\(channel.channel)", token: channel.token)
         }
         
-        let config = try MediaRelayConfig(
-            sourceChannel: MediaRelayChannelInfo(channelName: sourceChannel, userId: "source_user", token: ""),
-            destinationChannels: destinationChannelInfos
-        )
-        
-        onStartMediaRelay?(config)
+        do {
+            let config = try MediaRelayConfig(
+                sourceChannel: MediaRelayChannelInfo(channelName: sourceChannel, userId: "source_user", token: ""),
+                destinationChannels: destinationChannelInfos
+            )
+            
+            onStartMediaRelay?(config)
+        } catch {
+            showErrorAlert(message: "Invalid media relay configuration: \(error.localizedDescription)")
+        }
     }
     
     private func stopMediaRelay() {
@@ -2347,6 +2386,27 @@ public class MediaRelayControlPanelView: UIView {
                 self.startStopButton.setLocalizedTitle("media_relay.retry", fallbackValue: "Retry")
                 self.startStopButton.backgroundColor = .systemBlue
                 self.startStopButton.isEnabled = true
+                
+            case .connecting:
+                self.statusIndicator.backgroundColor = .systemYellow
+                self.statusLabel.setLocalizedText("media_relay.status.connecting", fallbackValue: "Connecting...")
+                self.startStopButton.setLocalizedTitle("media_relay.connecting", fallbackValue: "Connecting...")
+                self.startStopButton.backgroundColor = .systemGray3
+                self.startStopButton.isEnabled = false
+                
+            case .paused:
+                self.statusIndicator.backgroundColor = .systemOrange
+                self.statusLabel.setLocalizedText("media_relay.status.paused", fallbackValue: "Paused")
+                self.startStopButton.setLocalizedTitle("media_relay.resume", fallbackValue: "Resume")
+                self.startStopButton.backgroundColor = .systemBlue
+                self.startStopButton.isEnabled = true
+                
+            case .stopping:
+                self.statusIndicator.backgroundColor = .systemOrange
+                self.statusLabel.setLocalizedText("media_relay.status.stopping", fallbackValue: "Stopping...")
+                self.startStopButton.setLocalizedTitle("media_relay.stopping", fallbackValue: "Stopping...")
+                self.startStopButton.backgroundColor = .systemGray3
+                self.startStopButton.isEnabled = false
             }
         }
     }
@@ -2701,6 +2761,27 @@ public class StreamPushControlView: UIView {
             startButton.isEnabled = true
             stopButton.isEnabled = false
             progressView.isHidden = true
+            
+        case .pausing:
+            statusLabel.setLocalizedText("stream_push.status.pausing", fallbackValue: "Pausing...")
+            statusLabel.textColor = .systemOrange
+            startButton.isEnabled = false
+            stopButton.isEnabled = false
+            progressView.isHidden = false
+            
+        case .paused:
+            statusLabel.setLocalizedText("stream_push.status.paused", fallbackValue: "Paused")
+            statusLabel.textColor = .systemOrange
+            startButton.isEnabled = true
+            stopButton.isEnabled = true
+            progressView.isHidden = true
+            
+        case .resuming:
+            statusLabel.setLocalizedText("stream_push.status.resuming", fallbackValue: "Resuming...")
+            statusLabel.textColor = .systemOrange
+            startButton.isEnabled = false
+            stopButton.isEnabled = false
+            progressView.isHidden = false
         }
     }
     
@@ -2719,14 +2800,20 @@ public class StreamPushControlView: UIView {
     }
     
     private func showErrorAlert(_ error: Error) {
-        let localizedError = LocalizedRealtimeError.from(error)
-        let alert = UIAlertController.localizedAlert(
-            titleKey: "error.title",
-            messageKey: localizedError.localizationKey,
+        let message: String
+        if let localizedError = error as? LocalizedRealtimeError {
+            message = localizedError.errorDescription ?? error.localizedDescription
+        } else {
+            message = error.localizedDescription
+        }
+        
+        let alert = UIAlertController(
+            title: "Error",
+            message: message,
             preferredStyle: .alert
         )
         
-        alert.addLocalizedAction(titleKey: "common.ok", style: .default)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
         
         if let viewController = findViewController() {
             viewController.present(alert, animated: true)
@@ -3003,14 +3090,20 @@ public class MediaRelayControlView: UIView {
     }
     
     private func showErrorAlert(_ error: Error) {
-        let localizedError = LocalizedErrorFactory.createLocalizedError(from: error)
-        let alert = UIAlertController.localizedAlert(
-            titleKey: "error.title",
-            message: localizedError.errorDescription ?? error.localizedDescription,
+        let message: String
+        if let localizedError = error as? LocalizedRealtimeError {
+            message = localizedError.errorDescription ?? error.localizedDescription
+        } else {
+            message = error.localizedDescription
+        }
+        
+        let alert = UIAlertController(
+            title: "Error",
+            message: message,
             preferredStyle: .alert
         )
         
-        alert.addLocalizedAction(titleKey: "common.ok", style: .default)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
         
         if let viewController = findViewController() {
             viewController.present(alert, animated: true)
@@ -3212,7 +3305,7 @@ public class ErrorHandlingView: UIView {
         
         // 设置标题和消息
         titleLabel.text = localizationManager.localizedString(for: "error.title")
-        messageLabel.text = localizationManager.localizedString(for: localizedError.localizationKey)
+        messageLabel.text = localizedError.errorDescription ?? error.localizedDescription
         
         // 设置操作按钮
         if let actionTitle = actionTitle, let actionHandler = actionHandler {

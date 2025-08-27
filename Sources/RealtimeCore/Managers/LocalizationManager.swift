@@ -250,6 +250,28 @@ public class LocalizationManager: ObservableObject {
         }
     }
     
+    /// Add custom string for a specific language
+    /// - Parameters:
+    ///   - key: The localization key
+    ///   - value: The localized string value
+    ///   - language: The target language
+    /// 需求: 17.7, 17.8, 18.1 - 开发者自定义语言包支持
+    public func addCustomString(key: String, value: String, for language: SupportedLanguage) {
+        if customLocalizations[key] == nil {
+            customLocalizations[key] = [:]
+        }
+        customLocalizations[key]?[language] = value
+        
+        // Invalidate cache for this key and language
+        let cacheKey = "\(language.languageCode):\(key)"
+        stringCache.removeValue(for: cacheKey)
+        
+        // Persist custom localizations using @RealtimeStorage (需求 18.1)
+        if userPreferences.cacheCustomLanguagePacks {
+            persistedCustomLanguagePacks = customLocalizations
+        }
+    }
+    
     /// Remove custom localization for a key
     /// - Parameter key: The localization key to remove
     /// 需求: 17.7, 17.8, 18.1 - 自定义语言包管理和持久化

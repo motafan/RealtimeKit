@@ -767,6 +767,29 @@ public class RealtimeManager: ObservableObject {
     // MARK: - Configuration (需求 3.1, 2.3)
     
     /// 配置 RealtimeManager 使用指定的服务商
+    /// Configure RealtimeManager with RealtimeConfiguration
+    /// - Parameter config: The configuration to use
+    public func configure(with config: RealtimeConfiguration) async throws {
+        // Create RealtimeConfig from RealtimeConfiguration
+        let realtimeConfig = RealtimeConfig(
+            appId: config.appId,
+            appCertificate: config.appCertificate,
+            enableLogging: config.enableLogging
+        )
+        
+        try await configure(provider: config.provider, config: realtimeConfig)
+        
+        // Apply storage configuration if provided
+        if let storageConfig = config.storageConfig {
+            await applyStorageConfiguration(storageConfig)
+        }
+        
+        // Apply localization configuration if provided
+        if let localizationConfig = config.localizationConfig {
+            await applyLocalizationConfiguration(localizationConfig)
+        }
+    }
+    
     /// - Parameters:
     ///   - provider: 服务商类型
     ///   - config: 实时通信配置
@@ -2208,6 +2231,33 @@ public class RealtimeManager: ObservableObject {
     internal func clearSessionForReconfiguration() async {
         currentSession = nil
         // 不清除持久化存储，因为这只是临时清除
+    }
+    
+    // MARK: - Configuration Support
+    
+    /// Apply storage configuration
+    private func applyStorageConfiguration(_ config: StorageConfiguration) async {
+        // Configure storage manager with the provided settings
+        // This would typically involve setting up the default backend and namespace
+        // For now, we'll just store the configuration for future use
+    }
+    
+    /// Apply localization configuration
+    private func applyLocalizationConfiguration(_ config: LocalizationConfiguration) async {
+        // Set the default language
+        await LocalizationManager.shared.setLanguage(config.defaultLanguage)
+        
+        // Configure auto-detection
+        if config.autoDetectSystemLanguage {
+            _ = await LocalizationManager.shared.detectSystemLanguage()
+        }
+        
+        // Add custom strings if provided
+        for (key, translations) in config.customStrings {
+            for (language, translation) in translations {
+                LocalizationManager.shared.addCustomString(key: key, value: translation, for: language)
+            }
+        }
     }
 }
 

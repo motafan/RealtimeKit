@@ -6,15 +6,36 @@
 //
 
 import UIKit
+import RealtimeKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Initialize RealtimeKit
+        setupRealtimeKit()
+        
         return true
+    }
+    
+    private func setupRealtimeKit() {
+        // Configure RealtimeManager with Mock provider for demo
+        let config = RealtimeConfiguration(
+            provider: .mock,
+            appId: "demo_app_id",
+            enableLogging: true
+        )
+        
+        Task {
+            do {
+                try await RealtimeManager.shared.configure(with: config)
+            } catch {
+                print("Failed to configure RealtimeManager: \(error)")
+            }
+        }
+        
+        // Setup localization
+        _ = LocalizationManager.shared.detectSystemLanguage()
     }
 
     // MARK: UISceneSession Lifecycle
@@ -30,7 +51,5 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // If any sessions were discarded while the application was not running, this will be called shortly after application:didFinishLaunchingWithOptions.
         // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
     }
-
-
 }
 

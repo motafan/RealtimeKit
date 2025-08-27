@@ -10,11 +10,12 @@
 - ✅ **本地化支持**: 完整的多语言支持系统，包括中文简繁体、英文、日文、韩文
 - ✅ **管理器架构**: 所有管理器类已实现（RealtimeManager、TokenManager、VolumeIndicatorManager 等）
 - ✅ **UI 集成层**: UIKit 和 SwiftUI 集成组件已实现
-- ✅ **Demo 应用**: UIKit 和 SwiftUI Demo 应用已创建
+- 🔧 **UIKitDemo 应用**: 基础结构已创建，需要修复 API 兼容性问题
 
 **剩余工作**: 
+- 🔧 修复 UIKitDemo 中的 API 调用错误，确保与实际 RealtimeManager API 兼容
 - 🔧 修复测试中的 Actor 隔离和数据模型不匹配问题
-- 🔧 解决 Demo 应用的平台兼容性问题
+- 🔧 完善 Demo 应用功能实现
 - 📝 完善 API 文档和使用指南
 
 - [x] 1. 建立项目基础结构和核心协议
@@ -389,29 +390,7 @@
     - _需求: 12.3, 12.5, 17.4_
 
 - [ ] 19. 修复剩余的测试和编译问题
-  - [ ] 19.1 修复 SwiftUI 测试中的 Actor 隔离问题
-    - 为 SwiftUI 测试函数添加 @MainActor 标记
-    - 修复 VolumeVisualizationView 和 ConnectionStateIndicatorView 初始化的 Actor 隔离调用
-    - 修复 RealtimeManager.shared 在非隔离上下文中的访问问题
-    - _需求: 测试要求 1, 16.1_
-
-  - [ ] 19.2 修复数据模型和枚举不匹配问题
-    - 修复 VoiceActivityStatus 枚举中缺少 .silence 成员的问题
-    - 解决 ConnectionState 扩展中 shouldAnimate 和 localizationKey 属性的歧义
-    - 修复 MediaRelayState 枚举中缺少 .stopped 成员的问题
-    - 修复 SimpleRealtimeManager 中的 volumeManager 重复声明问题
-    - 更新测试代码以匹配实际的数据模型接口
-    - _需求: 6.1, 6.2, 13.1_
-
-  - [ ] 19.3 修复 Demo 应用的平台兼容性问题
-    - 修复 SwiftUI Demo 中 @StateObject、@AppStorage 等在 macOS 10.15 上的可用性问题
-    - 修复 UIKit Demo 中 UIKit 模块在 macOS 上不可用的问题
-    - 更新 Package.swift 以正确处理平台特定的 Demo 应用
-    - 添加条件编译指令以支持不同平台
-    - 修复 MockRTCProvider 和 MockRTMProvider 的访问级别问题
-    - _需求: 15.1, 15.2, 17.1, 17.2_
-
-  - [ ] 19.4 完善测试覆盖和验证
+  - [ ] 19.1 完善测试覆盖和验证
     - 运行 `swift test` 确保所有测试通过
     - 验证测试覆盖率达到要求标准（80% 以上）
     - 修复所有编译警告和错误

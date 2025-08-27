@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Testing
 
 /// Token 管理器，负责处理多服务商的 Token 自动续期和生命周期管理
 /// 实现需求 9.1, 9.2, 9.3, 9.4, 9.5
