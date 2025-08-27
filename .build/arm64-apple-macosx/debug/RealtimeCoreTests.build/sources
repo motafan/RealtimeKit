@@ -13,6 +13,7 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayConfigTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MediaRelayManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/MessageProcessingManagerTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/PerformanceOptimizationTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/ProviderFactoryTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/RealtimeStorageTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StorageBackendTests.swift
@@ -20,6 +21,8 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushConfigTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerSimpleTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/StreamPushManagerTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIAnimationTests.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIComponentsTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/SwiftUIIntegrationTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/TokenManagerTests.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Tests/RealtimeCoreTests/UIKitIntegrationTests.swift

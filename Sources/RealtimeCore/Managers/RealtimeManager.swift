@@ -75,7 +75,7 @@ public class RealtimeManager: ObservableObject {
     public var audioSettings: AudioSettings = .default {
         didSet {
             // 当音频设置变化时，同步到 RTC Provider (需求 5.6)
-            Task {
+            Task { @MainActor in
                 do {
                     try await applyAudioSettings(audioSettings)
                 } catch {
@@ -114,7 +114,7 @@ public class RealtimeManager: ObservableObject {
     private let settingsStorage = AudioSettingsStorage()
     internal let sessionStorage = UserSessionStorage()
     private let tokenManager = TokenManager()
-    private let volumeManager = VolumeIndicatorManager()
+    internal let volumeManager = VolumeIndicatorManager()
     private let mediaRelayManager = MediaRelayManager()
     private let streamPushManager = StreamPushManager()
     private let localizationManager = LocalizationManager.shared // 需求: 17.2
@@ -884,55 +884,211 @@ public class RealtimeManager: ObservableObject {
         // 验证输入参数
         try validateLoginParameters(userId: userId, userName: userName, userRole: userRole)
         
-        // 检查是否已有活跃会话
-        if let existingSession = currentSession {
-            let errorMessage = localizationManager.localizedString(
-                for: "error.session.already.active",
-                arguments: existingSession.userName
-            )
-            throw RealtimeError.configurationError(errorMessage)
+        // 创建新的用户会话
+        let session = UserSession(userId: userId, userName: userName, userRole: userRole)
+        
+        // 验证角色权限
+        guard userRole.hasAudioPermission || userRole == .audience else {
+            throw RealtimeError.insufficientPermissions(userRole)
         }
         
-        // 创建用户会话
-        let session = UserSession(
-            userId: userId,
-            userName: userName,
-            userRole: userRole,
-            deviceInfo: deviceInfo ?? DeviceInfo.current(appVersion: "1.0.0")
-        )
-        
-        // 验证用户权限 (需求 4.2)
-        try validateUserPermissions(for: userRole)
-        
-        // 保存会话状态 (需求 4.4, 18.2)
         currentSession = session
         sessionStorage.saveUserSession(session)
         
-        // 根据角色配置音频权限 (需求 4.2)
-        try await configureAudioPermissions(for: userRole)
+        // 根据角色配置音频权限
+        if userRole.hasAudioPermission {
+            try await rtcProvider?.resumeLocalAudioStream()
+        } else {
+            try await rtcProvider?.stopLocalAudioStream()
+        }
         
-        // 更新应用状态恢复信息
-        updateAppStateRecoveryInfo()
+        print("用户登录成功: \(userName) (\(userRole.displayName))")
+    }
+    
+    /// 用户登出
+    public func logoutUser() async throws {
+        guard let session = currentSession else {
+            throw RealtimeError.noActiveSession
+        }
         
-        // 发送本地化的登录成功通知 (需求 17.6)
-        let successMessage = localizationManager.localizedString(
-            for: "user.login.success",
-            arguments: userName, userRole.displayName
-        )
-        print(successMessage)
+        // 清理会话状态
+        currentSession = nil
+        sessionStorage.clearUserSession()
         
-        // 发送通知
-        NotificationCenter.default.post(
-            name: .userDidLogin,
-            object: self,
-            userInfo: [
-                "userId": userId,
-                "userName": userName,
-                "userRole": userRole,
-                "session": session
-            ]
+        // 停止音频流
+        try await rtcProvider?.stopLocalAudioStream()
+        
+        print("用户登出成功: \(session.userName)")
+    }
+    
+    /// 验证登录参数
+    private func validateLoginParameters(userId: String, userName: String, userRole: UserRole) throws {
+        guard !userId.isEmpty else {
+            throw RealtimeError.invalidParameter("userId cannot be empty")
+        }
+        
+        guard !userName.isEmpty else {
+            throw RealtimeError.invalidParameter("userName cannot be empty")
+        }
+    }
+    
+
+    
+    // MARK: - Audio Control and Settings Management (需求 5.1, 5.2, 5.3, 5.5, 5.6, 17.6, 18.2)
+    
+    /// 设置音频混音音量
+    public func setAudioMixingVolume(_ volume: Int) async throws {
+        let clampedVolume = max(0, min(100, volume))
+        try await rtcProvider?.setAudioMixingVolume(clampedVolume)
+        
+        audioSettings = audioSettings.withUpdatedVolume(audioMixing: clampedVolume)
+    }
+    
+    /// 静音/取消静音麦克风
+    public func muteMicrophone(_ muted: Bool) async throws {
+        try await rtcProvider?.muteMicrophone(muted)
+        
+        audioSettings = AudioSettings(
+            microphoneMuted: muted,
+            audioMixingVolume: audioSettings.audioMixingVolume,
+            playbackSignalVolume: audioSettings.playbackSignalVolume,
+            recordingSignalVolume: audioSettings.recordingSignalVolume,
+            localAudioStreamActive: audioSettings.localAudioStreamActive
         )
     }
+    
+    /// 启用音量指示器
+    public func enableVolumeIndicator(config: VolumeDetectionConfig) async throws {
+        try await rtcProvider?.enableVolumeIndicator(config: config)
+        
+        // 设置音量回调
+        rtcProvider?.setVolumeIndicatorHandler { [weak self] volumeInfos in
+            Task { @MainActor in
+                self?.handleVolumeUpdate(volumeInfos)
+            }
+        }
+    }
+    
+    /// 禁用音量指示器
+    public func disableVolumeIndicator() async throws {
+        try await rtcProvider?.disableVolumeIndicator()
+        
+        // 清除音量数据
+        volumeInfos.removeAll()
+        speakingUsers.removeAll()
+        dominantSpeaker = nil
+        
+        print("音量指示器已禁用")
+    }
+    
+    /// 开始转推流
+    public func startStreamPush(config: StreamPushConfig) async throws {
+        try await rtcProvider?.startStreamPush(config: config)
+        streamPushState = .running
+    }
+    
+    /// 停止转推流
+    public func stopStreamPush() async throws {
+        try await rtcProvider?.stopStreamPush()
+        streamPushState = .stopped
+    }
+    
+    /// 开始媒体中继
+    public func startMediaRelay(config: MediaRelayConfig) async throws {
+        try await rtcProvider?.startMediaRelay(config: config)
+        mediaRelayState = .running
+    }
+    
+    /// 停止媒体中继
+    public func stopMediaRelay() async throws {
+        try await rtcProvider?.stopMediaRelay()
+        mediaRelayState = .idle
+    }
+    
+    /// 处理音量更新
+    private func handleVolumeUpdate(_ volumeInfos: [UserVolumeInfo]) {
+        self.volumeInfos = volumeInfos
+        volumeManager.processVolumeUpdate(volumeInfos)
+    }
+    
+    /// 应用持久化设置
+    private func applyPersistedSettings() async throws {
+        try await applyAudioSettings(audioSettings)
+    }
+    
+    /// 应用音频设置到 RTC Provider
+    internal func applyAudioSettings(_ settings: AudioSettings) async throws {
+        try await rtcProvider?.muteMicrophone(settings.microphoneMuted)
+        try await rtcProvider?.setAudioMixingVolume(settings.audioMixingVolume)
+        try await rtcProvider?.setPlaybackSignalVolume(settings.playbackSignalVolume)
+        try await rtcProvider?.setRecordingSignalVolume(settings.recordingSignalVolume)
+        
+        if settings.localAudioStreamActive {
+            try await rtcProvider?.resumeLocalAudioStream()
+        } else {
+            try await rtcProvider?.stopLocalAudioStream()
+        }
+    }
+    
+    /// 设置事件处理器
+    private func setupEventHandlers() {
+        // 设置连接状态处理器
+        rtmProvider?.onConnectionStateChanged { [weak self] state, reason in
+            Task { @MainActor in
+                // 将 RTMConnectionState 转换为 ConnectionState
+                let connectionState: ConnectionState
+                switch state {
+                case .disconnected:
+                    connectionState = .disconnected
+                case .connecting:
+                    connectionState = .connecting
+                case .connected:
+                    connectionState = .connected
+                case .reconnecting:
+                    connectionState = .reconnecting
+                case .failed:
+                    connectionState = .failed
+                }
+                self?.connectionState = connectionState
+            }
+        }
+    }
+    
+    /// 设置 Token 管理
+    private func setupTokenManagement() {
+        rtcProvider?.onTokenWillExpire { [weak self] expiresIn in
+            Task { @MainActor in
+                await self?.tokenManager.handleTokenExpiration(
+                    provider: self?.currentProvider ?? .mock,
+                    expiresIn: expiresIn
+                )
+            }
+        }
+        
+        rtmProvider?.onTokenWillExpire { [weak self] in
+            Task { @MainActor in
+                await self?.tokenManager.handleTokenExpiration(
+                    provider: self?.currentProvider ?? .mock,
+                    expiresIn: 60 // 默认 60 秒
+                )
+            }
+        }
+    }
+    
+    /// 更新用户偏好设置
+    private func updateUserPreferences(_ preferences: RealtimeManagerPreferences) {
+        userPreferences = preferences
+    }
+    
+    /// 恢复会话状态
+    internal func restoreSession(_ session: UserSession) async throws {
+        currentSession = session
+        sessionStorage.saveUserSession(session)
+    }
+    
+    // MARK: - User Identity and Session Management (需求 4.1, 4.2, 4.3, 4.5, 17.6, 18.2)
+    
+
     
     /// 用户登出，清理会话状态
     /// - Parameter reason: 登出原因（可选）
@@ -1098,30 +1254,7 @@ public class RealtimeManager: ObservableObject {
     
     // MARK: - Private Session Management Methods
     
-    /// 验证登录参数
-    private func validateLoginParameters(userId: String, userName: String, userRole: UserRole) throws {
-        // 验证用户ID
-        guard !userId.isEmpty else {
-            let errorMessage = localizationManager.localizedString(for: "error.invalid.user.id")
-            throw RealtimeError.configurationError(errorMessage)
-        }
-        
-        guard userId.count <= 255 else {
-            let errorMessage = localizationManager.localizedString(for: "error.user.id.too.long")
-            throw RealtimeError.configurationError(errorMessage)
-        }
-        
-        // 验证用户名
-        guard !userName.isEmpty else {
-            let errorMessage = localizationManager.localizedString(for: "error.invalid.user.name")
-            throw RealtimeError.configurationError(errorMessage)
-        }
-        
-        guard userName.count <= 100 else {
-            let errorMessage = localizationManager.localizedString(for: "error.user.name.too.long")
-            throw RealtimeError.configurationError(errorMessage)
-        }
-    }
+
     
     /// 验证用户权限 (需求 4.2)
     private func validateUserPermissions(for role: UserRole) throws {
@@ -1522,103 +1655,9 @@ public class RealtimeManager: ObservableObject {
     
     // MARK: - Audio Control and Settings Management (需求 5.1, 5.2, 5.3, 5.5, 5.6, 17.6, 18.2)
     
-    /// 静音或取消静音麦克风
-    /// - Parameter muted: true 为静音，false 为取消静音
-    /// - Throws: 配置错误、权限错误等
-    public func muteMicrophone(_ muted: Bool) async throws {
-        // 检查权限
-        guard hasPermission(.audio) else {
-            throw RealtimeError.insufficientPermissions(currentUserRole ?? .audience)
-        }
-        
-        guard let rtcProvider = rtcProvider else {
-            let errorMessage = localizationManager.localizedString(for: "error.rtc.provider.not.configured")
-            throw RealtimeError.configurationError(errorMessage)
-        }
-        
-        do {
-            try await rtcProvider.muteMicrophone(muted)
-            
-            // 更新音频设置，@RealtimeStorage 会自动持久化 (需求 18.2)
-            audioSettings = audioSettings.withUpdatedMicrophoneState(muted)
-            
-            // 发送本地化的状态提示 (需求 17.6)
-            let statusMessage = localizationManager.localizedString(
-                for: muted ? "audio.microphone.muted" : "audio.microphone.unmuted"
-            )
-            print(statusMessage)
-            
-            // 发送通知
-            NotificationCenter.default.post(
-                name: .audioMicrophoneStateChanged,
-                object: self,
-                userInfo: [
-                    "muted": muted,
-                    "audioSettings": audioSettings
-                ]
-            )
-            
-        } catch {
-            let errorMessage = localizationManager.localizedString(
-                for: "error.audio.microphone.operation.failed",
-                arguments: error.localizedDescription
-            )
-            throw RealtimeError.configurationError(errorMessage)
-        }
-    }
+
     
-    /// 设置音频混音音量
-    /// - Parameter volume: 音量级别 (0-100)
-    /// - Throws: 配置错误、参数错误等
-    public func setAudioMixingVolume(_ volume: Int) async throws {
-        // 验证音量范围 (需求 5.2)
-        guard AudioSettings.isValidVolume(volume) else {
-            let errorMessage = localizationManager.localizedString(
-                for: "error.audio.invalid.volume",
-                arguments: volume, AudioSettings.volumeRange.lowerBound, AudioSettings.volumeRange.upperBound
-            )
-            throw RealtimeError.configurationError(errorMessage)
-        }
-        
-        guard let rtcProvider = rtcProvider else {
-            let errorMessage = localizationManager.localizedString(for: "error.rtc.provider.not.configured")
-            throw RealtimeError.configurationError(errorMessage)
-        }
-        
-        let clampedVolume = AudioSettings.validateVolume(volume)
-        
-        do {
-            try await rtcProvider.setAudioMixingVolume(clampedVolume)
-            
-            // 更新音频设置，@RealtimeStorage 会自动持久化 (需求 18.2)
-            audioSettings = audioSettings.withUpdatedVolume(audioMixing: clampedVolume)
-            
-            // 发送本地化的状态提示 (需求 17.6)
-            let statusMessage = localizationManager.localizedString(
-                for: "audio.mixing.volume.set",
-                arguments: clampedVolume
-            )
-            print(statusMessage)
-            
-            // 发送通知
-            NotificationCenter.default.post(
-                name: .audioVolumeChanged,
-                object: self,
-                userInfo: [
-                    "volumeType": "mixing",
-                    "volume": clampedVolume,
-                    "audioSettings": audioSettings
-                ]
-            )
-            
-        } catch {
-            let errorMessage = localizationManager.localizedString(
-                for: "error.audio.volume.operation.failed",
-                arguments: "mixing", error.localizedDescription
-            )
-            throw RealtimeError.configurationError(errorMessage)
-        }
-    }
+
     
     /// 设置播放信号音量
     /// - Parameter volume: 音量级别 (0-100)
@@ -2000,204 +2039,7 @@ public class RealtimeManager: ObservableObject {
             throw RealtimeError.configurationError(errorMessage)
         }
     }
-    
-    // MARK: - Volume Indicator
-    
-    public func enableVolumeIndicator(config: VolumeDetectionConfig = .default) async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.configurationError("RTC Provider 未配置")
-        }
-        
-        try await rtcProvider.enableVolumeIndicator(config: config)
-        print("启用音量指示器")
-    }
-    
-    public func disableVolumeIndicator() async throws {
-        guard let rtcProvider = rtcProvider else {
-            throw RealtimeError.configurationError("RTC Provider 未配置")
-        }
-        
-        try await rtcProvider.disableVolumeIndicator()
-        volumeInfos = []
-        speakingUsers = []
-        dominantSpeaker = nil
-        
-        print("禁用音量指示器")
-    }
-    
-    // MARK: - Token Management
-    
-    /// 设置 Token 续期处理器 (需求 9.2)
-    /// - Parameter handler: Token 续期处理器，返回新的 Token
-    public func setupTokenRenewal(handler: @escaping @Sendable () async throws -> String) {
-        let provider = currentProvider
-        
-        tokenManager.setupTokenRenewal(provider: provider, handler: handler)
-    }
-    
-    /// 立即执行 Token 续期
-    public func renewTokenImmediately() async {
-        let provider = currentProvider
-        
-        await tokenManager.renewTokenImmediately(provider: provider)
-    }
-    
-    /// 获取当前服务商的 Token 状态
-    /// - Returns: Token 状态，如果未配置则返回 nil
-    public func getCurrentTokenState() -> TokenState? {
-        let provider = currentProvider
-        return tokenManager.getTokenState(for: provider)
-    }
-    
-    /// 配置 Token 续期重试策略
-    /// - Parameter configuration: 重试配置
-    public func configureTokenRetryStrategy(configuration: RetryConfiguration) {
-        let provider = currentProvider
-        
-        tokenManager.configureRetryStrategy(for: provider, configuration: configuration)
-    }
-    
-    /// 获取 Token 续期统计信息
-    /// - Returns: 续期统计信息
-    public func getTokenRenewalStats() -> TokenRenewalStats {
-        return tokenManager.renewalStats
-    }
-    
     // MARK: - Private Methods
-    
-
-    
-    private func setupEventHandlers() {
-        // 设置音量指示器处理器
-        rtcProvider?.setVolumeIndicatorHandler { [weak self] volumeInfos in
-            Task { @MainActor in
-                self?.handleVolumeUpdate(volumeInfos)
-            }
-        }
-        
-        // 设置音量事件处理器
-        rtcProvider?.setVolumeEventHandler { [weak self] (event: VolumeEvent) in
-            Task { @MainActor in
-                self?.handleVolumeEvent(event)
-            }
-        }
-    }
-    
-    /// 设置 Token 管理 (需求 9.1, 9.2, 9.5)
-    private func setupTokenManagement() {
-        let provider = currentProvider
-        
-        // 设置 RTC Provider 的 Token 过期处理器
-        rtcProvider?.onTokenWillExpire { [weak self] expiresIn in
-            Task { @MainActor in
-                await self?.tokenManager.handleTokenExpiration(
-                    provider: provider,
-                    expiresIn: expiresIn
-                )
-            }
-        }
-        
-        // 设置 RTM Provider 的 Token 过期处理器
-        rtmProvider?.onTokenWillExpire { [weak self] in
-            Task { @MainActor in
-                // RTM Provider 没有提供剩余时间，使用默认值
-                await self?.tokenManager.handleTokenExpiration(
-                    provider: provider,
-                    expiresIn: 60 // 默认 60 秒
-                )
-            }
-        }
-        
-        // 监听 Token 续期通知
-        NotificationCenter.default.addObserver(
-            forName: .tokenRenewed,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            // 提取通知数据以避免并发问题
-            if let userInfo = notification.userInfo,
-               let provider = userInfo["provider"] as? ProviderType,
-               let newToken = userInfo["token"] as? String {
-                Task { @MainActor in
-                    await self?.handleTokenRenewalNotification(provider: provider, newToken: newToken)
-                }
-            }
-        }
-        
-        print("TokenManager: 已设置 \(provider.displayName) 的 Token 管理")
-    }
-    
-    /// 处理 Token 续期通知
-    /// - Parameters:
-    ///   - provider: 服务商类型
-    ///   - newToken: 新的 Token
-    private func handleTokenRenewalNotification(provider: ProviderType, newToken: String) async {
-        
-        do {
-            // 更新 RTC Provider Token
-            try await rtcProvider?.renewToken(newToken)
-            
-            // 更新 RTM Provider Token
-            try await rtmProvider?.renewToken(newToken)
-            
-            print("TokenManager: \(provider.displayName) Token 更新成功")
-            
-        } catch {
-            print("TokenManager: \(provider.displayName) Token 更新失败: \(error)")
-            
-            // 发送失败通知
-            NotificationCenter.default.post(
-                name: .tokenRenewalFailed,
-                object: self,
-                userInfo: [
-                    "provider": provider,
-                    "error": error
-                ]
-            )
-        }
-    }
-    
-    private func handleVolumeUpdate(_ volumeInfos: [UserVolumeInfo]) {
-        self.volumeInfos = volumeInfos
-        
-        let newSpeakingUsers = Set(volumeInfos.filter { $0.isSpeaking }.map { $0.userId })
-        speakingUsers = newSpeakingUsers
-        
-        let newDominantSpeaker = volumeInfos
-            .filter { $0.isSpeaking }
-            .max { $0.volume < $1.volume }?.userId
-        dominantSpeaker = newDominantSpeaker
-        
-        // 发送通知给 UIKit 组件
-        NotificationCenter.default.post(
-            name: .realtimeVolumeInfoUpdated,
-            object: nil,
-            userInfo: ["volumeInfos": volumeInfos]
-        )
-    }
-    
-    private func handleVolumeEvent(_ event: VolumeEvent) {
-        // 处理音量事件
-        switch event {
-        case .userStartedSpeaking(let userId, _):
-            print("用户 \(userId) 开始说话")
-        case .userStoppedSpeaking(let userId, _):
-            print("用户 \(userId) 停止说话")
-        case .dominantSpeakerChanged(let userId):
-            print("主讲人变更: \(userId ?? "无")")
-        case .volumeUpdate:
-            break // 已在 handleVolumeUpdate 中处理
-        }
-    }
-    
-    private func restorePersistedSettings() {
-        // 音频设置和其他状态现在通过 @RealtimeStorage 自动恢复
-        // 这里只需要恢复不使用 @RealtimeStorage 的设置
-        
-        if let session = sessionStorage.loadUserSession() {
-            currentSession = session
-        }
-    }
     
     // MARK: - Public Persistent State Management (需求: 18.1, 18.2, 18.3)
     
@@ -2213,9 +2055,9 @@ public class RealtimeManager: ObservableObject {
         print("连接历史记录已清除")
     }
     
-    /// 更新用户偏好设置
+    /// 更新用户偏好设置（公共接口）
     /// - Parameter preferences: 新的用户偏好设置
-    public func updateUserPreferences(_ preferences: RealtimeManagerPreferences) {
+    public func updateUserPreferencesPublic(_ preferences: RealtimeManagerPreferences) {
         userPreferences = preferences
         
         // 更新降级链
@@ -2341,41 +2183,25 @@ public class RealtimeManager: ObservableObject {
         }
     }
     
-    private func applyPersistedSettings() async throws {
+    /// 应用完整的持久化设置
+    private func applyFullPersistedSettings() async throws {
         guard let rtcProvider = rtcProvider else { return }
         
-        try await rtcProvider.muteMicrophone(audioSettings.microphoneMuted)
-        try await rtcProvider.setAudioMixingVolume(audioSettings.audioMixingVolume)
-        try await rtcProvider.setPlaybackSignalVolume(audioSettings.playbackSignalVolume)
-        try await rtcProvider.setRecordingSignalVolume(audioSettings.recordingSignalVolume)
-        
-        if audioSettings.localAudioStreamActive {
-            try await rtcProvider.resumeLocalAudioStream()
-        } else {
-            try await rtcProvider.stopLocalAudioStream()
+        do {
+            try await rtcProvider.muteMicrophone(audioSettings.microphoneMuted)
+            try await rtcProvider.setAudioMixingVolume(audioSettings.audioMixingVolume)
+            try await rtcProvider.setPlaybackSignalVolume(audioSettings.playbackSignalVolume)
+            try await rtcProvider.setRecordingSignalVolume(audioSettings.recordingSignalVolume)
+            
+            if audioSettings.localAudioStreamActive {
+                try await rtcProvider.resumeLocalAudioStream()
+            } else {
+                try await rtcProvider.stopLocalAudioStream()
+            }
+        } catch {
+            print("应用持久化设置失败: \(error)")
+            throw error
         }
-    }
-    
-    // MARK: - Internal Methods (for testing and provider switching)
-    
-    internal func applyAudioSettings(_ settings: AudioSettings) async throws {
-        guard let rtcProvider = rtcProvider else { return }
-        
-        try await rtcProvider.muteMicrophone(settings.microphoneMuted)
-        try await rtcProvider.setAudioMixingVolume(settings.audioMixingVolume)
-        try await rtcProvider.setPlaybackSignalVolume(settings.playbackSignalVolume)
-        try await rtcProvider.setRecordingSignalVolume(settings.recordingSignalVolume)
-        
-        if settings.localAudioStreamActive {
-            try await rtcProvider.resumeLocalAudioStream()
-        } else {
-            try await rtcProvider.stopLocalAudioStream()
-        }
-    }
-    
-    internal func restoreSession(_ session: UserSession) async throws {
-        currentSession = session
-        sessionStorage.saveUserSession(session)
     }
     
     /// 为重新配置清除会话（内部使用）

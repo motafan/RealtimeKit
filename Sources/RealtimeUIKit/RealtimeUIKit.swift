@@ -2489,6 +2489,835 @@ extension UIView {
     }
 }
 
+/// 转推流控制视图
+/// 需求: 11.4, 7.2 - 转推流的 UI 控制组件
+public class StreamPushControlView: UIView {
+    
+    // MARK: - Properties
+    
+    /// 转推流管理器
+    public weak var streamPushManager: StreamPushManager?
+    
+    /// 当前转推流状态
+    public private(set) var streamPushState: StreamPushState = .stopped {
+        didSet {
+            DispatchQueue.main.async {
+                self.updateUI()
+            }
+        }
+    }
+    
+    /// 转推流配置
+    public private(set) var streamPushConfig: StreamPushConfig?
+    
+    // MARK: - UI Components
+    
+    private let titleLabel = UILabel()
+    private let statusLabel = UILabel()
+    private let startButton = UIButton(type: .system)
+    private let stopButton = UIButton(type: .system)
+    private let configButton = UIButton(type: .system)
+    private let progressView = UIProgressView(progressViewStyle: .default)
+    
+    // MARK: - Initialization
+    
+    public override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupViews()
+    }
+    
+    public required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupViews()
+    }
+    
+    // MARK: - Setup
+    
+    private func setupViews() {
+        backgroundColor = .systemBackground
+        layer.cornerRadius = 8
+        layer.borderWidth = 1
+        layer.borderColor = UIColor.systemGray4.cgColor
+        
+        // 标题标签
+        titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        titleLabel.textColor = .label
+        titleLabel.setLocalizedText("stream_push.title", fallbackValue: "Stream Push")
+        addSubview(titleLabel)
+        
+        // 状态标签
+        statusLabel.font = UIFont.systemFont(ofSize: 14)
+        statusLabel.textColor = .secondaryLabel
+        statusLabel.setLocalizedText("stream_push.status.stopped", fallbackValue: "Stopped")
+        addSubview(statusLabel)
+        
+        // 开始按钮
+        startButton.setLocalizedTitle("stream_push.start", fallbackValue: "Start")
+        startButton.addTarget(self, action: #selector(startButtonTapped), for: .touchUpInside)
+        addSubview(startButton)
+        
+        // 停止按钮
+        stopButton.setLocalizedTitle("stream_push.stop", fallbackValue: "Stop")
+        stopButton.addTarget(self, action: #selector(stopButtonTapped), for: .touchUpInside)
+        stopButton.isEnabled = false
+        addSubview(stopButton)
+        
+        // 配置按钮
+        configButton.setLocalizedTitle("stream_push.config", fallbackValue: "Config")
+        configButton.addTarget(self, action: #selector(configButtonTapped), for: .touchUpInside)
+        addSubview(configButton)
+        
+        // 进度视图
+        progressView.isHidden = true
+        addSubview(progressView)
+        
+        setupConstraints()
+    }
+    
+    private func setupConstraints() {
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        startButton.translatesAutoresizingMaskIntoConstraints = false
+        stopButton.translatesAutoresizingMaskIntoConstraints = false
+        configButton.translatesAutoresizingMaskIntoConstraints = false
+        progressView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            // 标题
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            
+            // 状态
+            statusLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            statusLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            statusLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            
+            // 按钮
+            startButton.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 16),
+            startButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            startButton.widthAnchor.constraint(equalToConstant: 80),
+            
+            stopButton.topAnchor.constraint(equalTo: startButton.topAnchor),
+            stopButton.leadingAnchor.constraint(equalTo: startButton.trailingAnchor, constant: 8),
+            stopButton.widthAnchor.constraint(equalToConstant: 80),
+            
+            configButton.topAnchor.constraint(equalTo: startButton.topAnchor),
+            configButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            configButton.widthAnchor.constraint(equalToConstant: 80),
+            
+            // 进度视图
+            progressView.topAnchor.constraint(equalTo: startButton.bottomAnchor, constant: 16),
+            progressView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            progressView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            progressView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16)
+        ])
+    }
+    
+    // MARK: - Actions
+    
+    @objc private func startButtonTapped() {
+        guard let config = streamPushConfig else {
+            showConfigurationAlert()
+            return
+        }
+        
+        Task {
+            do {
+                try await streamPushManager?.startStreamPush(config: config)
+            } catch {
+                showErrorAlert(error)
+            }
+        }
+    }
+    
+    @objc private func stopButtonTapped() {
+        Task {
+            do {
+                try await streamPushManager?.stopStreamPush()
+            } catch {
+                showErrorAlert(error)
+            }
+        }
+    }
+    
+    @objc private func configButtonTapped() {
+        // 显示配置界面
+        showConfigurationInterface()
+    }
+    
+    // MARK: - Public Methods
+    
+    /// 配置转推流管理器
+    public func configure(with manager: StreamPushManager) {
+        self.streamPushManager = manager
+    }
+    
+    /// 更新转推流状态
+    public func updateStreamPushState(_ state: StreamPushState) {
+        self.streamPushState = state
+    }
+    
+    /// 设置转推流配置
+    public func setStreamPushConfig(_ config: StreamPushConfig) {
+        self.streamPushConfig = config
+    }
+    
+    // MARK: - Private Methods
+    
+    private func updateUI() {
+        switch streamPushState {
+        case .stopped:
+            statusLabel.setLocalizedText("stream_push.status.stopped", fallbackValue: "Stopped")
+            statusLabel.textColor = .secondaryLabel
+            startButton.isEnabled = true
+            stopButton.isEnabled = false
+            progressView.isHidden = true
+            
+        case .starting:
+            statusLabel.setLocalizedText("stream_push.status.starting", fallbackValue: "Starting...")
+            statusLabel.textColor = .systemOrange
+            startButton.isEnabled = false
+            stopButton.isEnabled = false
+            progressView.isHidden = false
+            
+        case .running:
+            statusLabel.setLocalizedText("stream_push.status.running", fallbackValue: "Running")
+            statusLabel.textColor = .systemGreen
+            startButton.isEnabled = false
+            stopButton.isEnabled = true
+            progressView.isHidden = true
+            
+        case .failed:
+            statusLabel.setLocalizedText("stream_push.status.failed", fallbackValue: "Failed")
+            statusLabel.textColor = .systemRed
+            startButton.isEnabled = true
+            stopButton.isEnabled = false
+            progressView.isHidden = true
+        }
+    }
+    
+    private func showConfigurationAlert() {
+        let alert = UIAlertController.localizedAlert(
+            titleKey: "stream_push.config.required.title",
+            messageKey: "stream_push.config.required.message",
+            preferredStyle: .alert
+        )
+        
+        alert.addLocalizedAction(titleKey: "common.ok", style: .default)
+        
+        if let viewController = findViewController() {
+            viewController.present(alert, animated: true)
+        }
+    }
+    
+    private func showErrorAlert(_ error: Error) {
+        let localizedError = LocalizedRealtimeError.from(error)
+        let alert = UIAlertController.localizedAlert(
+            titleKey: "error.title",
+            messageKey: localizedError.localizationKey,
+            preferredStyle: .alert
+        )
+        
+        alert.addLocalizedAction(titleKey: "common.ok", style: .default)
+        
+        if let viewController = findViewController() {
+            viewController.present(alert, animated: true)
+        }
+    }
+    
+    private func showConfigurationInterface() {
+        // 这里可以显示更详细的配置界面
+        // 暂时使用简单的输入对话框
+        let alert = UIAlertController.localizedAlert(
+            titleKey: "stream_push.config.title",
+            messageKey: "stream_push.config.message",
+            preferredStyle: .alert
+        )
+        
+        alert.addTextField { textField in
+            textField.placeholder = "RTMP URL"
+            textField.text = self.streamPushConfig?.rtmpUrl
+        }
+        
+        alert.addLocalizedAction(titleKey: "common.save", style: .default) { _ in
+            if let url = alert.textFields?.first?.text, !url.isEmpty {
+                let config = StreamPushConfig(rtmpUrl: url)
+                self.setStreamPushConfig(config)
+            }
+        }
+        
+        alert.addLocalizedAction(titleKey: "common.cancel", style: .cancel)
+        
+        if let viewController = findViewController() {
+            viewController.present(alert, animated: true)
+        }
+    }
+}
+
+/// 媒体中继控制视图
+/// 需求: 11.4, 8.2 - 媒体中继的 UI 控制组件
+public class MediaRelayControlView: UIView {
+    
+    // MARK: - Properties
+    
+    /// 媒体中继管理器
+    public weak var mediaRelayManager: MediaRelayManager?
+    
+    /// 当前媒体中继状态
+    public private(set) var mediaRelayState: MediaRelayState = .idle {
+        didSet {
+            DispatchQueue.main.async {
+                self.updateUI()
+            }
+        }
+    }
+    
+    /// 媒体中继配置
+    public private(set) var mediaRelayConfig: MediaRelayConfig?
+    
+    // MARK: - UI Components
+    
+    private let titleLabel = UILabel()
+    private let statusLabel = UILabel()
+    private let startButton = UIButton(type: .system)
+    private let stopButton = UIButton(type: .system)
+    private let configButton = UIButton(type: .system)
+    private let progressView = UIProgressView(progressViewStyle: .default)
+    
+    // MARK: - Initialization
+    
+    public override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupViews()
+    }
+    
+    public required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupViews()
+    }
+    
+    // MARK: - Setup
+    
+    private func setupViews() {
+        backgroundColor = .systemBackground
+        layer.cornerRadius = 8
+        layer.borderWidth = 1
+        layer.borderColor = UIColor.systemGray4.cgColor
+        
+        // 标题标签
+        titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        titleLabel.textColor = .label
+        titleLabel.setLocalizedText("media_relay.title", fallbackValue: "Media Relay")
+        addSubview(titleLabel)
+        
+        // 状态标签
+        statusLabel.font = UIFont.systemFont(ofSize: 14)
+        statusLabel.textColor = .secondaryLabel
+        statusLabel.setLocalizedText("media_relay.status.idle", fallbackValue: "Idle")
+        addSubview(statusLabel)
+        
+        // 开始按钮
+        startButton.setLocalizedTitle("media_relay.start", fallbackValue: "Start")
+        startButton.addTarget(self, action: #selector(startButtonTapped), for: .touchUpInside)
+        addSubview(startButton)
+        
+        // 停止按钮
+        stopButton.setLocalizedTitle("media_relay.stop", fallbackValue: "Stop")
+        stopButton.addTarget(self, action: #selector(stopButtonTapped), for: .touchUpInside)
+        stopButton.isEnabled = false
+        addSubview(stopButton)
+        
+        // 配置按钮
+        configButton.setLocalizedTitle("media_relay.config", fallbackValue: "Config")
+        configButton.addTarget(self, action: #selector(configButtonTapped), for: .touchUpInside)
+        addSubview(configButton)
+        
+        // 进度视图
+        progressView.isHidden = true
+        addSubview(progressView)
+        
+        setupConstraints()
+    }
+    
+    private func setupConstraints() {
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        startButton.translatesAutoresizingMaskIntoConstraints = false
+        stopButton.translatesAutoresizingMaskIntoConstraints = false
+        configButton.translatesAutoresizingMaskIntoConstraints = false
+        progressView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            // 标题
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            
+            // 状态
+            statusLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            statusLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            statusLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            
+            // 按钮
+            startButton.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 16),
+            startButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            startButton.widthAnchor.constraint(equalToConstant: 80),
+            
+            stopButton.topAnchor.constraint(equalTo: startButton.topAnchor),
+            stopButton.leadingAnchor.constraint(equalTo: startButton.trailingAnchor, constant: 8),
+            stopButton.widthAnchor.constraint(equalToConstant: 80),
+            
+            configButton.topAnchor.constraint(equalTo: startButton.topAnchor),
+            configButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            configButton.widthAnchor.constraint(equalToConstant: 80),
+            
+            // 进度视图
+            progressView.topAnchor.constraint(equalTo: startButton.bottomAnchor, constant: 16),
+            progressView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            progressView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            progressView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16)
+        ])
+    }
+    
+    // MARK: - Actions
+    
+    @objc private func startButtonTapped() {
+        guard let config = mediaRelayConfig else {
+            showConfigurationAlert()
+            return
+        }
+        
+        Task {
+            do {
+                try await mediaRelayManager?.startMediaRelay(config: config)
+            } catch {
+                showErrorAlert(error)
+            }
+        }
+    }
+    
+    @objc private func stopButtonTapped() {
+        Task {
+            do {
+                try await mediaRelayManager?.stopMediaRelay()
+            } catch {
+                showErrorAlert(error)
+            }
+        }
+    }
+    
+    @objc private func configButtonTapped() {
+        showConfigurationInterface()
+    }
+    
+    // MARK: - Public Methods
+    
+    /// 配置媒体中继管理器
+    public func configure(with manager: MediaRelayManager) {
+        self.mediaRelayManager = manager
+    }
+    
+    /// 更新媒体中继状态
+    public func updateMediaRelayState(_ state: MediaRelayState) {
+        self.mediaRelayState = state
+    }
+    
+    /// 设置媒体中继配置
+    public func setMediaRelayConfig(_ config: MediaRelayConfig) {
+        self.mediaRelayConfig = config
+    }
+    
+    // MARK: - Private Methods
+    
+    private func updateUI() {
+        switch mediaRelayState {
+        case .idle:
+            statusLabel.setLocalizedText("media_relay.status.idle", fallbackValue: "Idle")
+            statusLabel.textColor = .secondaryLabel
+            startButton.isEnabled = true
+            stopButton.isEnabled = false
+            progressView.isHidden = true
+            
+        case .connecting:
+            statusLabel.setLocalizedText("media_relay.status.connecting", fallbackValue: "Connecting...")
+            statusLabel.textColor = .systemOrange
+            startButton.isEnabled = false
+            stopButton.isEnabled = false
+            progressView.isHidden = false
+            
+        case .running:
+            statusLabel.setLocalizedText("media_relay.status.running", fallbackValue: "Running")
+            statusLabel.textColor = .systemGreen
+            startButton.isEnabled = false
+            stopButton.isEnabled = true
+            progressView.isHidden = true
+            
+        case .failure:
+            statusLabel.setLocalizedText("media_relay.status.failed", fallbackValue: "Failed")
+            statusLabel.textColor = .systemRed
+            startButton.isEnabled = true
+            stopButton.isEnabled = false
+            progressView.isHidden = true
+        }
+    }
+    
+    private func showConfigurationAlert() {
+        let alert = UIAlertController.localizedAlert(
+            titleKey: "media_relay.config.required.title",
+            messageKey: "media_relay.config.required.message",
+            preferredStyle: .alert
+        )
+        
+        alert.addLocalizedAction(titleKey: "common.ok", style: .default)
+        
+        if let viewController = findViewController() {
+            viewController.present(alert, animated: true)
+        }
+    }
+    
+    private func showErrorAlert(_ error: Error) {
+        let localizedError = LocalizedRealtimeError.from(error)
+        let alert = UIAlertController.localizedAlert(
+            titleKey: "error.title",
+            messageKey: localizedError.localizationKey,
+            preferredStyle: .alert
+        )
+        
+        alert.addLocalizedAction(titleKey: "common.ok", style: .default)
+        
+        if let viewController = findViewController() {
+            viewController.present(alert, animated: true)
+        }
+    }
+    
+    private func showConfigurationInterface() {
+        let alert = UIAlertController.localizedAlert(
+            titleKey: "media_relay.config.title",
+            messageKey: "media_relay.config.message",
+            preferredStyle: .alert
+        )
+        
+        alert.addTextField { textField in
+            textField.placeholder = "Destination Channel"
+            textField.text = self.mediaRelayConfig?.destinationChannelName
+        }
+        
+        alert.addLocalizedAction(titleKey: "common.save", style: .default) { _ in
+            if let channel = alert.textFields?.first?.text, !channel.isEmpty {
+                let config = MediaRelayConfig(destinationChannelName: channel)
+                self.setMediaRelayConfig(config)
+            }
+        }
+        
+        alert.addLocalizedAction(titleKey: "common.cancel", style: .cancel)
+        
+        if let viewController = findViewController() {
+            viewController.present(alert, animated: true)
+        }
+    }
+}
+
+/// 错误处理和用户反馈视图
+/// 需求: 11.4, 17.6 - 错误处理和用户反馈 UI 组件，本地化的用户界面文本和提示
+public class ErrorHandlingView: UIView {
+    
+    // MARK: - Properties
+    
+    /// 错误显示模式
+    public enum DisplayMode {
+        case banner
+        case modal
+        case inline
+    }
+    
+    /// 当前显示模式
+    public var displayMode: DisplayMode = .banner
+    
+    /// 是否自动隐藏
+    public var autoHide: Bool = true
+    
+    /// 自动隐藏延迟（秒）
+    public var autoHideDelay: TimeInterval = 3.0
+    
+    /// 错误历史记录
+    @RealtimeStorage("errorHistory", namespace: "RealtimeKit.UI.ErrorHandling")
+    public var errorHistory: [ErrorHistoryEntry] = []
+    
+    // MARK: - UI Components
+    
+    private let containerView = UIView()
+    private let iconImageView = UIImageView()
+    private let titleLabel = UILabel()
+    private let messageLabel = UILabel()
+    private let actionButton = UIButton(type: .system)
+    private let dismissButton = UIButton(type: .system)
+    
+    // MARK: - Initialization
+    
+    public override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupViews()
+    }
+    
+    public required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupViews()
+    }
+    
+    // MARK: - Setup
+    
+    private func setupViews() {
+        backgroundColor = .clear
+        
+        // 容器视图
+        containerView.backgroundColor = .systemBackground
+        containerView.layer.cornerRadius = 8
+        containerView.layer.shadowColor = UIColor.black.cgColor
+        containerView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        containerView.layer.shadowRadius = 4
+        containerView.layer.shadowOpacity = 0.1
+        addSubview(containerView)
+        
+        // 图标
+        iconImageView.contentMode = .scaleAspectFit
+        iconImageView.tintColor = .systemRed
+        containerView.addSubview(iconImageView)
+        
+        // 标题
+        titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        titleLabel.textColor = .label
+        titleLabel.numberOfLines = 1
+        containerView.addSubview(titleLabel)
+        
+        // 消息
+        messageLabel.font = UIFont.systemFont(ofSize: 14)
+        messageLabel.textColor = .secondaryLabel
+        messageLabel.numberOfLines = 0
+        containerView.addSubview(messageLabel)
+        
+        // 操作按钮
+        actionButton.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        actionButton.setTitleColor(.systemBlue, for: .normal)
+        containerView.addSubview(actionButton)
+        
+        // 关闭按钮
+        dismissButton.setTitle("×", for: .normal)
+        dismissButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        dismissButton.setTitleColor(.systemGray, for: .normal)
+        dismissButton.addTarget(self, action: #selector(dismissButtonTapped), for: .touchUpInside)
+        containerView.addSubview(dismissButton)
+        
+        setupConstraints()
+        
+        // 初始状态隐藏
+        isHidden = true
+    }
+    
+    private func setupConstraints() {
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        iconImageView.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        messageLabel.translatesAutoresizingMaskIntoConstraints = false
+        actionButton.translatesAutoresizingMaskIntoConstraints = false
+        dismissButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            // 容器视图
+            containerView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            containerView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            containerView.topAnchor.constraint(equalTo: topAnchor),
+            containerView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            
+            // 图标
+            iconImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            iconImageView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
+            iconImageView.widthAnchor.constraint(equalToConstant: 24),
+            iconImageView.heightAnchor.constraint(equalToConstant: 24),
+            
+            // 关闭按钮
+            dismissButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            dismissButton.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
+            dismissButton.widthAnchor.constraint(equalToConstant: 24),
+            dismissButton.heightAnchor.constraint(equalToConstant: 24),
+            
+            // 标题
+            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 12),
+            titleLabel.trailingAnchor.constraint(equalTo: dismissButton.leadingAnchor, constant: -12),
+            titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
+            
+            // 消息
+            messageLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            messageLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            
+            // 操作按钮
+            actionButton.leadingAnchor.constraint(equalTo: messageLabel.leadingAnchor),
+            actionButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 12),
+            actionButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16)
+        ])
+    }
+    
+    // MARK: - Public Methods
+    
+    /// 显示错误
+    /// - Parameters:
+    ///   - error: 错误对象
+    ///   - actionTitle: 操作按钮标题
+    ///   - actionHandler: 操作按钮处理器
+    public func showError(
+        _ error: Error,
+        actionTitle: String? = nil,
+        actionHandler: (() -> Void)? = nil
+    ) {
+        let localizedError = LocalizedRealtimeError.from(error)
+        let localizationManager = LocalizationManager.shared
+        
+        // 设置图标
+        iconImageView.image = UIImage(systemName: "exclamationmark.triangle.fill")
+        
+        // 设置标题和消息
+        titleLabel.text = localizationManager.localizedString(for: "error.title")
+        messageLabel.text = localizationManager.localizedString(for: localizedError.localizationKey)
+        
+        // 设置操作按钮
+        if let actionTitle = actionTitle, let actionHandler = actionHandler {
+            actionButton.setTitle(actionTitle, for: .normal)
+            actionButton.isHidden = false
+            
+            // 移除之前的 target
+            actionButton.removeTarget(nil, action: nil, for: .allEvents)
+            actionButton.addAction(UIAction { _ in actionHandler() }, for: .touchUpInside)
+        } else {
+            actionButton.isHidden = true
+        }
+        
+        // 记录错误历史
+        recordError(error)
+        
+        // 显示错误视图
+        showErrorView()
+    }
+    
+    /// 显示成功消息
+    /// - Parameter message: 成功消息
+    public func showSuccess(_ message: String) {
+        iconImageView.image = UIImage(systemName: "checkmark.circle.fill")
+        iconImageView.tintColor = .systemGreen
+        
+        titleLabel.text = LocalizationManager.shared.localizedString(for: "success.title")
+        messageLabel.text = message
+        actionButton.isHidden = true
+        
+        showErrorView()
+    }
+    
+    /// 显示警告消息
+    /// - Parameter message: 警告消息
+    public func showWarning(_ message: String) {
+        iconImageView.image = UIImage(systemName: "exclamationmark.triangle.fill")
+        iconImageView.tintColor = .systemOrange
+        
+        titleLabel.text = LocalizationManager.shared.localizedString(for: "warning.title")
+        messageLabel.text = message
+        actionButton.isHidden = true
+        
+        showErrorView()
+    }
+    
+    /// 隐藏错误视图
+    public func hideError() {
+        UIView.animate(withDuration: 0.3) {
+            self.alpha = 0
+        } completion: { _ in
+            self.isHidden = true
+            self.alpha = 1
+        }
+    }
+    
+    /// 获取错误历史
+    /// - Parameter limit: 返回记录数量限制
+    /// - Returns: 错误历史记录数组
+    public func getErrorHistory(limit: Int = 50) -> [ErrorHistoryEntry] {
+        return Array(errorHistory.suffix(limit))
+    }
+    
+    /// 清除错误历史
+    public func clearErrorHistory() {
+        errorHistory.removeAll()
+    }
+    
+    // MARK: - Private Methods
+    
+    private func showErrorView() {
+        isHidden = false
+        alpha = 0
+        
+        UIView.animate(withDuration: 0.3) {
+            self.alpha = 1
+        }
+        
+        // 自动隐藏
+        if autoHide {
+            DispatchQueue.main.asyncAfter(deadline: .now() + autoHideDelay) {
+                self.hideError()
+            }
+        }
+    }
+    
+    private func recordError(_ error: Error) {
+        let entry = ErrorHistoryEntry(
+            error: error,
+            timestamp: Date(),
+            viewType: String(describing: type(of: self))
+        )
+        
+        errorHistory.append(entry)
+        
+        // 保持最近100条记录
+        if errorHistory.count > 100 {
+            errorHistory.removeFirst()
+        }
+    }
+    
+    @objc private func dismissButtonTapped() {
+        hideError()
+    }
+}
+
+// MARK: - Supporting Data Models
+
+/// 错误历史记录条目
+/// 需求: 18.10 - 错误历史持久化
+public struct ErrorHistoryEntry: Codable {
+    public let errorDescription: String
+    public let errorCode: Int
+    public let timestamp: Date
+    public let viewType: String
+    
+    public init(error: Error, timestamp: Date, viewType: String) {
+        self.errorDescription = error.localizedDescription
+        self.errorCode = (error as NSError).code
+        self.timestamp = timestamp
+        self.viewType = viewType
+    }
+}
+
+// MARK: - UIView Extensions for Error Handling
+
+extension UIView {
+    /// 查找包含此视图的视图控制器
+    func findViewController() -> UIViewController? {
+        if let nextResponder = self.next as? UIViewController {
+            return nextResponder
+        } else if let nextResponder = self.next as? UIView {
+            return nextResponder.findViewController()
+        } else {
+            return nil
+        }
+    }
+}
+
 // MARK: - Notification Names
 
 extension Notification.Name {

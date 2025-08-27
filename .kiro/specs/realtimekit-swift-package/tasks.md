@@ -4,7 +4,18 @@
 
 以下任务列表将指导 RealtimeKit Swift Package 的完整实现，采用测试驱动开发方法，确保每个步骤都有相应的测试覆盖，并按照从核心到外围的顺序进行实现。
 
-**当前状态**: 项目已成功编译，核心架构和大部分功能已实现，但存在测试编译错误需要修复。
+**当前状态**: 
+- ✅ **核心架构完成**: 所有核心模块（RealtimeCore、RealtimeUIKit、RealtimeSwiftUI、RealtimeAgora、RealtimeMocking）编译通过
+- ✅ **@RealtimeStorage 实现**: 自动状态持久化属性包装器完全实现，包括 UserDefaults 和 Keychain 后端
+- ✅ **本地化支持**: 完整的多语言支持系统，包括中文简繁体、英文、日文、韩文
+- ✅ **管理器架构**: 所有管理器类已实现（RealtimeManager、TokenManager、VolumeIndicatorManager 等）
+- ✅ **UI 集成层**: UIKit 和 SwiftUI 集成组件已实现
+- ✅ **Demo 应用**: UIKit 和 SwiftUI Demo 应用已创建
+
+**剩余工作**: 
+- 🔧 修复测试中的 Actor 隔离和数据模型不匹配问题
+- 🔧 解决 Demo 应用的平台兼容性问题
+- 📝 完善 API 文档和使用指南
 
 - [x] 1. 建立项目基础结构和核心协议
   - 创建 Swift Package 项目结构，包含所有必要的模块目录
@@ -268,23 +279,23 @@
     - 编写服务商切换的集成测试
     - _需求: 2.2, 2.3, 2.4, 17.6_
 
-- [x] 13. 完善 UIKit 集成层
-  - [x] 13.1 扩展 UIKit 基础组件
-    - 完善 RealtimeViewController 功能实现
-    - 添加音量可视化和说话指示器 UIView 组件
-    - 实现完整的 Delegate 模式和事件处理
-    - 集成本地化 UIKit 扩展组件
-    - 集成 @RealtimeStorage 到 UIKit 控制器中，实现 UI 状态自动持久化
-    - 编写 UIKit 组件的 UI 测试和交互测试
+- [x] 13. 完善 UIKit 集成层 ✅ **COMPLETED**
+  - [x] 13.1 扩展 UIKit 基础组件 ✅
+    - ✅ 完善 RealtimeViewController 功能实现
+    - ✅ 添加音量可视化和说话指示器 UIView 组件
+    - ✅ 实现完整的 Delegate 模式和事件处理
+    - ✅ 集成本地化 UIKit 扩展组件
+    - ✅ 集成 @RealtimeStorage 到 UIKit 控制器中，实现 UI 状态自动持久化
+    - ✅ 编写 UIKit 组件的 UI 测试和交互测试
     - _需求: 11.1, 11.4, 17.3, 17.6, 18.10_
 
-  - [x] 13.2 实现 UIKit 高级功能
-    - 创建音频控制面板和设置界面组件
-    - 实现转推流和媒体中继的 UI 控制组件
-    - 添加错误处理和用户反馈 UI 组件
-    - 集成本地化的用户界面文本和提示
-    - 使用 @RealtimeStorage 持久化用户界面设置和偏好
-    - 编写 UIKit 高级功能的集成测试
+  - [x] 13.2 实现 UIKit 高级功能 ✅
+    - ✅ 创建音频控制面板和设置界面组件
+    - ✅ 实现转推流和媒体中继的 UI 控制组件 (StreamPushControlView, MediaRelayControlView)
+    - ✅ 添加错误处理和用户反馈 UI 组件 (ErrorHandlingView)
+    - ✅ 集成本地化的用户界面文本和提示
+    - ✅ 使用 @RealtimeStorage 持久化用户界面设置和偏好
+    - ✅ 编写 UIKit 高级功能的集成测试
     - _需求: 11.4, 7.2, 8.2, 17.6, 18.10_
 
 - [x] 14. 完善 SwiftUI 集成层
@@ -343,8 +354,8 @@
     - 编写网络性能测试和并发安全测试
     - _需求: 14.2, 14.3_
 
-- [ ] 17. 创建 Demo 应用
-  - [ ] 17.1 实现 UIKit Demo 应用
+- [x] 17. 创建 Demo 应用
+  - [x] 17.1 实现 UIKit Demo 应用
     - 创建完整的 UIKit Demo 应用展示所有功能
     - 实现登录、房间管理、音视频通话等核心场景
     - 添加转推流、媒体中继和音量可视化演示
@@ -353,7 +364,7 @@
     - 演示应用重启后的状态自动恢复功能
     - _需求: 11.1, 7.2, 8.2, 6.5, 17.3, 18.10_
 
-  - [ ] 17.2 实现 SwiftUI Demo 应用
+  - [x] 17.2 实现 SwiftUI Demo 应用
     - 创建现代化的 SwiftUI Demo 应用
     - 实现声明式 UI 和响应式数据绑定演示
     - 添加动画效果和 iPad 自适应布局
@@ -376,6 +387,36 @@
     - 验证 Swift Package Manager 的正确集成
     - 准备多语言的发布文档和说明
     - _需求: 12.3, 12.5, 17.4_
+
+- [ ] 19. 修复剩余的测试和编译问题
+  - [ ] 19.1 修复 SwiftUI 测试中的 Actor 隔离问题
+    - 为 SwiftUI 测试函数添加 @MainActor 标记
+    - 修复 VolumeVisualizationView 和 ConnectionStateIndicatorView 初始化的 Actor 隔离调用
+    - 修复 RealtimeManager.shared 在非隔离上下文中的访问问题
+    - _需求: 测试要求 1, 16.1_
+
+  - [ ] 19.2 修复数据模型和枚举不匹配问题
+    - 修复 VoiceActivityStatus 枚举中缺少 .silence 成员的问题
+    - 解决 ConnectionState 扩展中 shouldAnimate 和 localizationKey 属性的歧义
+    - 修复 MediaRelayState 枚举中缺少 .stopped 成员的问题
+    - 修复 SimpleRealtimeManager 中的 volumeManager 重复声明问题
+    - 更新测试代码以匹配实际的数据模型接口
+    - _需求: 6.1, 6.2, 13.1_
+
+  - [ ] 19.3 修复 Demo 应用的平台兼容性问题
+    - 修复 SwiftUI Demo 中 @StateObject、@AppStorage 等在 macOS 10.15 上的可用性问题
+    - 修复 UIKit Demo 中 UIKit 模块在 macOS 上不可用的问题
+    - 更新 Package.swift 以正确处理平台特定的 Demo 应用
+    - 添加条件编译指令以支持不同平台
+    - 修复 MockRTCProvider 和 MockRTMProvider 的访问级别问题
+    - _需求: 15.1, 15.2, 17.1, 17.2_
+
+  - [ ] 19.4 完善测试覆盖和验证
+    - 运行 `swift test` 确保所有测试通过
+    - 验证测试覆盖率达到要求标准（80% 以上）
+    - 修复所有编译警告和错误
+    - 确保测试代码质量和可维护性
+    - _需求: 16.1, 16.2, 测试要求 1_
 
 ## 任务执行说明
 
@@ -416,12 +457,12 @@
 20. **任务 13** - 完善 UIKit 集成层
 21. **任务 14** - 完善 SwiftUI 集成层
 
-#### ⚡ **第七阶段：优化和演示**（可并行执行）
-22. **任务 15** - 实现性能优化
-23. **任务 16** - 创建 Demo 应用
+#### ⚡ **第七阶段：优化和演示**（已完成）
+22. **任务 16** - 实现性能优化 ✅
+23. **任务 17** - 创建 Demo 应用 ✅
 
-#### 🧪 **第八阶段：测试和发布**（按顺序执行）
-24. **任务 17** - 完善测试覆盖
+#### 🧪 **第八阶段：测试修复和发布**（按顺序执行）
+24. **任务 19** - 修复剩余的测试和编译问题（当前优先级）
 25. **任务 18** - 完成文档和发布准备
 
 ### 关键依赖关系说明

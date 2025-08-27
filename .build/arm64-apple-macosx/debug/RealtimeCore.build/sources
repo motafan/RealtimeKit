@@ -13,6 +13,7 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/CoreModels.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/LocalizationModels.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/LocalizedErrors.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/PerformanceModels.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/PersistentStateModels.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ProviderTypes.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/RTCConfig.swift
@@ -30,9 +31,17 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/RealtimeCore.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/AudioSettingsManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/ConcreteMessageProcessors.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/ConnectionPool.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/DataCompression.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/LocalizationStringCache.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/MemoryLeakDetector.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/MessageProcessingManager.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/ObjectPool.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/PerformanceBenchmark.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/RealtimeStorage.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/StorageBackend.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/ThreadSafetyManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/UserSessionManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/VolumeDetectionManager.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Storage/WeakReferenceManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/DerivedSources/resource_bundle_accessor.swift

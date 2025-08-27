@@ -1,0 +1,55 @@
+/* SwiftUI Demo Localized Strings - English */
+
+"demo.title" = "RealtimeKit SwiftUI Demo";
+"demo.subtitle" = "Demonstrating reactive programming and state persistence";
+"demo.connection_status" = "Connection Status";
+"demo.user_session" = "User Session";
+"demo.audio_controls" = "Audio Controls";
+"demo.volume_visualization" = "Volume Visualization";
+"demo.language_settings" = "Language Settings";
+"demo.demo_features" = "Demo Features";
+"demo.persistent_state" = "Persistent State Demo";
+
+"demo.connected" = "Connected";
+"demo.disconnected" = "Disconnected";
+"demo.login" = "Login";
+"demo.logout" = "Logout";
+"demo.mute_microphone" = "Mute Microphone";
+"demo.unmute_microphone" = "Unmute Microphone";
+"demo.enable_volume_detection" = "Enable Volume Detection";
+"demo.start_stream_push" = "Start Stream Push";
+"demo.stop_stream_push" = "Stop Stream Push";
+"demo.start_media_relay" = "Start Media Relay";
+"demo.stop_media_relay" = "Stop Media Relay";
+
+"demo.user_id_placeholder" = "User ID";
+"demo.user_name_placeholder" = "User Name";
+"demo.user_role" = "User Role";
+"demo.language" = "Language";
+"demo.volume" = "Volume";
+"demo.persistent" = "Persistent";
+
+"demo.speaking_users" = "Speaking Users:";
+"demo.dominant_speaker" = "(Dominant)";
+"demo.current_language" = "Current Language:";
+
+"demo.appstorage_demo" = "@AppStorage Demonstration:";
+"demo.last_user_id" = "Last User ID:";
+"demo.last_user_name" = "Last User Name:";
+"demo.preferred_language" = "Preferred Language:";
+"demo.last_volume" = "Last Volume:";
+"demo.enable_notifications" = "Enable Notifications";
+"demo.reset_persistent_data" = "Reset All Persistent Data";
+
+"demo.none" = "None";
+"demo.success" = "Success";
+"demo.error" = "Error";
+"demo.login_success" = "Logged in successfully!";
+"demo.logout_success" = "Logged out successfully!";
+"demo.volume_detection_enabled" = "Volume detection enabled!";
+"demo.stream_push_started" = "Stream push started!";
+"demo.stream_push_stopped" = "Stream push stopped!";
+"demo.media_relay_started" = "Media relay started!";
+"demo.media_relay_stopped" = "Media relay stopped!";
+"demo.reset_complete" = "Reset Complete";
+"demo.reset_message" = "All persistent data has been reset!";

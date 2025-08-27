@@ -1,0 +1,55 @@
+/* SwiftUI Demo Localized Strings - Chinese Simplified */
+
+"demo.title" = "RealtimeKit SwiftUI 演示";
+"demo.subtitle" = "演示响应式编程和状态持久化";
+"demo.connection_status" = "连接状态";
+"demo.user_session" = "用户会话";
+"demo.audio_controls" = "音频控制";
+"demo.volume_visualization" = "音量可视化";
+"demo.language_settings" = "语言设置";
+"demo.demo_features" = "演示功能";
+"demo.persistent_state" = "持久化状态演示";
+
+"demo.connected" = "已连接";
+"demo.disconnected" = "已断开";
+"demo.login" = "登录";
+"demo.logout" = "登出";
+"demo.mute_microphone" = "静音麦克风";
+"demo.unmute_microphone" = "取消静音";
+"demo.enable_volume_detection" = "启用音量检测";
+"demo.start_stream_push" = "开始转推流";
+"demo.stop_stream_push" = "停止转推流";
+"demo.start_media_relay" = "开始媒体中继";
+"demo.stop_media_relay" = "停止媒体中继";
+
+"demo.user_id_placeholder" = "用户ID";
+"demo.user_name_placeholder" = "用户名";
+"demo.user_role" = "用户角色";
+"demo.language" = "语言";
+"demo.volume" = "音量";
+"demo.persistent" = "持久化";
+
+"demo.speaking_users" = "正在说话的用户:";
+"demo.dominant_speaker" = "(主讲人)";
+"demo.current_language" = "当前语言:";
+
+"demo.appstorage_demo" = "@AppStorage 演示:";
+"demo.last_user_id" = "上次用户ID:";
+"demo.last_user_name" = "上次用户名:";
+"demo.preferred_language" = "首选语言:";
+"demo.last_volume" = "上次音量:";
+"demo.enable_notifications" = "启用通知";
+"demo.reset_persistent_data" = "重置所有持久化数据";
+
+"demo.none" = "无";
+"demo.success" = "成功";
+"demo.error" = "错误";
+"demo.login_success" = "登录成功！";
+"demo.logout_success" = "登出成功！";
+"demo.volume_detection_enabled" = "音量检测已启用！";
+"demo.stream_push_started" = "转推流已开始！";
+"demo.stream_push_stopped" = "转推流已停止！";
+"demo.media_relay_started" = "媒体中继已开始！";
+"demo.media_relay_stopped" = "媒体中继已停止！";
+"demo.reset_complete" = "重置完成";
+"demo.reset_message" = "所有持久化数据已重置！";

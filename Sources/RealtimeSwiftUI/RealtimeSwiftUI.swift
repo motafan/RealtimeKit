@@ -393,7 +393,7 @@ public struct UserVolumeIndicatorView: View {
             
             // 音量可视化
             VolumeVisualizationView(
-                volumeLevel: Float(userVolumeInfo.volume),
+                volumeLevel: userVolumeInfo.volumeFloat,
                 isSpeaking: userVolumeInfo.isSpeaking,
                 style: visualizationStyle
             )
@@ -401,10 +401,11 @@ public struct UserVolumeIndicatorView: View {
             
             // 音量百分比
             if showPercentage {
-                Text("\(Int(userVolumeInfo.volume * 100))%")
+                Text("\(userVolumeInfo.volumePercentage)%")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                     .frame(width: 30, alignment: .trailing)
+                    .monospacedDigit()
             }
         }
         .padding(.horizontal, 12)
@@ -1637,6 +1638,32 @@ extension ConnectionState {
             return .red
         case .suspended:
             return .yellow
+        }
+    }
+    
+    var localizationKey: String {
+        switch self {
+        case .disconnected:
+            return "connection.state.disconnected"
+        case .connecting:
+            return "connection.state.connecting"
+        case .connected:
+            return "connection.state.connected"
+        case .reconnecting:
+            return "connection.state.reconnecting"
+        case .failed:
+            return "connection.state.failed"
+        case .suspended:
+            return "connection.state.suspended"
+        }
+    }
+    
+    var shouldAnimate: Bool {
+        switch self {
+        case .connecting, .reconnecting:
+            return true
+        default:
+            return false
         }
     }
 }

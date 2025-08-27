@@ -198,4 +198,66 @@
 
 // Accessibility
 "accessibility.button.ok" = "确定按钮";
-"accessibility.hint.tap.to.confirm" = "点击确认您的选择";
+"accessibility.hint.tap.to.confirm" = "点击确认您的选择";// 
+错误消息
+"error.title" = "错误";
+"error.network.connection_failed" = "网络连接失败";
+"error.network.timeout" = "网络请求超时";
+"error.network.invalid_response" = "无效的网络响应";
+"error.audio.initialization_failed" = "音频初始化失败";
+"error.audio.device_not_available" = "音频设备不可用";
+"error.audio.permission_denied" = "音频权限被拒绝";
+"error.rtc.connection_failed" = "RTC连接失败";
+"error.rtc.join_channel_failed" = "加入频道失败";
+"error.rtc.leave_channel_failed" = "离开频道失败";
+"error.rtm.connection_failed" = "RTM连接失败";
+"error.rtm.login_failed" = "RTM登录失败";
+"error.rtm.send_message_failed" = "发送消息失败";
+"error.stream.push_failed" = "推流失败";
+"error.stream.invalid_url" = "无效的推流地址";
+"error.media_relay.start_failed" = "启动媒体中继失败";
+"error.media_relay.stop_failed" = "停止媒体中继失败";
+"error.storage.save_failed" = "保存数据失败";
+"error.storage.load_failed" = "加载数据失败";
+"error.localization.language_not_supported" = "不支持的语言";
+"error.unknown" = "发生未知错误";
+
+// 推流界面
+"stream_push.title" = "推流";
+"stream_push.start" = "开始";
+"stream_push.stop" = "停止";
+"stream_push.config" = "配置";
+"stream_push.status.stopped" = "已停止";
+"stream_push.status.starting" = "启动中...";
+"stream_push.status.running" = "运行中";
+"stream_push.status.failed" = "失败";
+"stream_push.config.required.title" = "需要配置";
+"stream_push.config.required.message" = "请先配置推流设置";
+"stream_push.config.title" = "推流配置";
+"stream_push.config.message" = "输入RTMP地址";
+
+// 媒体中继界面
+"media_relay.title" = "媒体中继";
+"media_relay.start" = "开始";
+"media_relay.stop" = "停止";
+"media_relay.config" = "配置";
+"media_relay.status.idle" = "空闲";
+"media_relay.status.connecting" = "连接中...";
+"media_relay.status.running" = "运行中";
+"media_relay.status.failed" = "失败";
+"media_relay.config.required.title" = "需要配置";
+"media_relay.config.required.message" = "请先配置媒体中继设置";
+"media_relay.config.title" = "媒体中继配置";
+"media_relay.config.message" = "输入目标频道";
+
+// 成功和警告消息
+"success.title" = "成功";
+"warning.title" = "警告";
+
+// 音量可视化
+"volume.visualization.title" = "音量";
+
+// 通用操作
+"common.ok" = "确定";
+"common.cancel" = "取消";
+"common.save" = "保存";

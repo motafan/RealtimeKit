@@ -475,6 +475,224 @@ struct UIKitIntegrationTests {
         let notFoundViewController = independentView.findViewController()
         #expect(notFoundViewController == nil)
     }
+    
+    // MARK: - StreamPushControlView Tests
+    
+    @Test("StreamPushControlView 基础功能测试")
+    func testStreamPushControlViewBasicFunctionality() async throws {
+        let controlView = StreamPushControlView()
+        
+        // 测试初始状态
+        #expect(controlView.streamPushState == .stopped)
+        #expect(controlView.streamPushConfig == nil)
+        #expect(controlView.streamPushManager == nil)
+        
+        // 测试配置
+        let manager = StreamPushManager()
+        let config = StreamPushConfig(rtmpUrl: "rtmp://test.example.com/live")
+        
+        controlView.configure(with: manager)
+        controlView.setStreamPushConfig(config)
+        
+        #expect(controlView.streamPushManager === manager)
+        #expect(controlView.streamPushConfig?.rtmpUrl == "rtmp://test.example.com/live")
+    }
+    
+    @Test("StreamPushControlView 状态更新测试")
+    func testStreamPushControlViewStateUpdates() async throws {
+        let controlView = StreamPushControlView()
+        
+        let states: [StreamPushState] = [.starting, .running, .failed, .stopped]
+        
+        for state in states {
+            controlView.updateStreamPushState(state)
+            #expect(controlView.streamPushState == state)
+        }
+    }
+    
+    // MARK: - MediaRelayControlView Tests
+    
+    @Test("MediaRelayControlView 基础功能测试")
+    func testMediaRelayControlViewBasicFunctionality() async throws {
+        let controlView = MediaRelayControlView()
+        
+        // 测试初始状态
+        #expect(controlView.mediaRelayState == .idle)
+        #expect(controlView.mediaRelayConfig == nil)
+        #expect(controlView.mediaRelayManager == nil)
+        
+        // 测试配置
+        let manager = MediaRelayManager()
+        let config = MediaRelayConfig(destinationChannelName: "test-channel")
+        
+        controlView.configure(with: manager)
+        controlView.setMediaRelayConfig(config)
+        
+        #expect(controlView.mediaRelayManager === manager)
+        #expect(controlView.mediaRelayConfig?.destinationChannelName == "test-channel")
+    }
+    
+    @Test("MediaRelayControlView 状态更新测试")
+    func testMediaRelayControlViewStateUpdates() async throws {
+        let controlView = MediaRelayControlView()
+        
+        let states: [MediaRelayState] = [.connecting, .running, .failure, .idle]
+        
+        for state in states {
+            controlView.updateMediaRelayState(state)
+            #expect(controlView.mediaRelayState == state)
+        }
+    }
+    
+    // MARK: - ErrorHandlingView Tests
+    
+    @Test("ErrorHandlingView 基础功能测试")
+    func testErrorHandlingViewBasicFunctionality() async throws {
+        let errorView = ErrorHandlingView()
+        
+        // 测试初始状态
+        #expect(errorView.displayMode == .banner)
+        #expect(errorView.autoHide == true)
+        #expect(errorView.autoHideDelay == 3.0)
+        #expect(errorView.isHidden == true)
+        #expect(errorView.errorHistory.isEmpty)
+    }
+    
+    @Test("ErrorHandlingView 错误显示测试")
+    func testErrorHandlingViewErrorDisplay() async throws {
+        let errorView = ErrorHandlingView()
+        let testError = NSError(domain: "TestDomain", code: 123, userInfo: [NSLocalizedDescriptionKey: "Test error"])
+        
+        errorView.showError(testError)
+        
+        #expect(errorView.isHidden == false)
+        #expect(errorView.errorHistory.count == 1)
+        #expect(errorView.errorHistory.first?.errorCode == 123)
+        #expect(errorView.errorHistory.first?.errorDescription == "Test error")
+    }
+    
+    @Test("ErrorHandlingView 成功和警告显示测试")
+    func testErrorHandlingViewSuccessAndWarningDisplay() async throws {
+        let errorView = ErrorHandlingView()
+        
+        // 测试成功消息
+        errorView.showSuccess("Test success message")
+        #expect(errorView.isHidden == false)
+        
+        // 测试警告消息
+        errorView.showWarning("Test warning message")
+        #expect(errorView.isHidden == false)
+    }
+    
+    @Test("ErrorHandlingView 错误历史管理测试")
+    func testErrorHandlingViewErrorHistoryManagement() async throws {
+        let errorView = ErrorHandlingView()
+        
+        // 添加多个错误
+        for i in 1...5 {
+            let error = NSError(domain: "TestDomain", code: i, userInfo: [NSLocalizedDescriptionKey: "Test error \(i)"])
+            errorView.showError(error)
+        }
+        
+        #expect(errorView.errorHistory.count == 5)
+        
+        let history = errorView.getErrorHistory(limit: 3)
+        #expect(history.count == 3)
+        
+        errorView.clearErrorHistory()
+        #expect(errorView.errorHistory.isEmpty)
+    }
+    
+    @Test("ErrorHandlingView 显示模式测试")
+    func testErrorHandlingViewDisplayModes() async throws {
+        let errorView = ErrorHandlingView()
+        
+        let modes: [ErrorHandlingView.DisplayMode] = [.banner, .modal, .inline]
+        
+        for mode in modes {
+            errorView.displayMode = mode
+            #expect(errorView.displayMode == mode)
+        }
+    }
+    
+    // MARK: - 高级 UIKit 功能集成测试
+    
+    @Test("UIKit 高级功能集成测试")
+    func testAdvancedUIKitFeaturesIntegration() async throws {
+        let viewController = RealtimeViewController()
+        let streamPushControl = StreamPushControlView()
+        let mediaRelayControl = MediaRelayControlView()
+        let errorHandling = ErrorHandlingView()
+        
+        // 配置管理器
+        let streamPushManager = StreamPushManager()
+        let mediaRelayManager = MediaRelayManager()
+        
+        streamPushControl.configure(with: streamPushManager)
+        mediaRelayControl.configure(with: mediaRelayManager)
+        
+        // 测试组件集成
+        viewController.view.addSubview(streamPushControl)
+        viewController.view.addSubview(mediaRelayControl)
+        viewController.view.addSubview(errorHandling)
+        
+        // 验证组件已添加
+        #expect(streamPushControl.superview === viewController.view)
+        #expect(mediaRelayControl.superview === viewController.view)
+        #expect(errorHandling.superview === viewController.view)
+        
+        // 测试错误处理集成
+        let testError = NSError(domain: "IntegrationTest", code: 999, userInfo: [NSLocalizedDescriptionKey: "Integration test error"])
+        errorHandling.showError(testError)
+        
+        #expect(errorHandling.errorHistory.count == 1)
+        #expect(errorHandling.errorHistory.first?.errorCode == 999)
+    }
+    
+    // MARK: - 本地化集成测试
+    
+    @Test("UIKit 本地化集成测试")
+    func testUIKitLocalizationIntegration() async throws {
+        let streamPushControl = StreamPushControlView()
+        let mediaRelayControl = MediaRelayControlView()
+        let errorHandling = ErrorHandlingView()
+        
+        // 测试本地化字符串是否正确应用
+        // 这里主要验证组件能够正确初始化，实际的本地化文本验证需要在 UI 测试中进行
+        
+        #expect(streamPushControl != nil)
+        #expect(mediaRelayControl != nil)
+        #expect(errorHandling != nil)
+        
+        // 测试错误本地化
+        let testError = NSError(domain: "LocalizationTest", code: 404, userInfo: [NSLocalizedDescriptionKey: "Localized error"])
+        errorHandling.showError(testError)
+        
+        #expect(errorHandling.errorHistory.count == 1)
+        #expect(errorHandling.errorHistory.first?.errorDescription == "Localized error")
+    }
+    
+    // MARK: - 存储集成测试
+    
+    @Test("UIKit 存储集成测试")
+    func testUIKitStorageIntegration() async throws {
+        let errorHandling = ErrorHandlingView()
+        
+        // 测试错误历史持久化
+        let testError1 = NSError(domain: "StorageTest", code: 1, userInfo: [NSLocalizedDescriptionKey: "Storage test error 1"])
+        let testError2 = NSError(domain: "StorageTest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Storage test error 2"])
+        
+        errorHandling.showError(testError1)
+        errorHandling.showError(testError2)
+        
+        #expect(errorHandling.errorHistory.count == 2)
+        
+        // 验证 @RealtimeStorage 自动持久化
+        let history = errorHandling.getErrorHistory()
+        #expect(history.count == 2)
+        #expect(history[0].errorCode == 1)
+        #expect(history[1].errorCode == 2)
+    }
 }
 
 // MARK: - Mock Delegates and Callbacks

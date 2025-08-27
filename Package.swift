@@ -40,7 +40,8 @@ let package = Package(
         .library(
             name: "RealtimeMocking",
             targets: ["RealtimeMocking"]
-        )
+        ),
+
     ],
     dependencies: [
         // Agora SDK dependencies (uncomment when ready to integrate real SDK)
@@ -55,7 +56,8 @@ let package = Package(
                 "RealtimeCore",
                 "RealtimeUIKit",
                 "RealtimeSwiftUI",
-                "RealtimeAgora"
+                "RealtimeAgora",
+                "RealtimeMocking"
             ]
         ),
         
@@ -96,6 +98,8 @@ let package = Package(
             name: "RealtimeMocking",
             dependencies: ["RealtimeCore"]
         ),
+        
+
         
         // Test targets using built-in Swift Testing framework
         .testTarget(

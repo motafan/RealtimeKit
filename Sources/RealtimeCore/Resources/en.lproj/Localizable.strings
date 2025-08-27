@@ -201,4 +201,66 @@
 "accessibility.hint.tap.to.confirm" = "Tap to confirm your selection";
 
 // Test keys (English only for fallback testing)
-"test.english.only" = "English Only Text";
+"test.english.only" = "English Only Text";// Err
+or Messages
+"error.title" = "Error";
+"error.network.connection_failed" = "Network connection failed";
+"error.network.timeout" = "Network request timed out";
+"error.network.invalid_response" = "Invalid network response";
+"error.audio.initialization_failed" = "Audio initialization failed";
+"error.audio.device_not_available" = "Audio device not available";
+"error.audio.permission_denied" = "Audio permission denied";
+"error.rtc.connection_failed" = "RTC connection failed";
+"error.rtc.join_channel_failed" = "Failed to join channel";
+"error.rtc.leave_channel_failed" = "Failed to leave channel";
+"error.rtm.connection_failed" = "RTM connection failed";
+"error.rtm.login_failed" = "RTM login failed";
+"error.rtm.send_message_failed" = "Failed to send message";
+"error.stream.push_failed" = "Stream push failed";
+"error.stream.invalid_url" = "Invalid stream URL";
+"error.media_relay.start_failed" = "Failed to start media relay";
+"error.media_relay.stop_failed" = "Failed to stop media relay";
+"error.storage.save_failed" = "Failed to save data";
+"error.storage.load_failed" = "Failed to load data";
+"error.localization.language_not_supported" = "Language not supported";
+"error.unknown" = "Unknown error occurred";
+
+// Stream Push UI
+"stream_push.title" = "Stream Push";
+"stream_push.start" = "Start";
+"stream_push.stop" = "Stop";
+"stream_push.config" = "Config";
+"stream_push.status.stopped" = "Stopped";
+"stream_push.status.starting" = "Starting...";
+"stream_push.status.running" = "Running";
+"stream_push.status.failed" = "Failed";
+"stream_push.config.required.title" = "Configuration Required";
+"stream_push.config.required.message" = "Please configure stream push settings first";
+"stream_push.config.title" = "Stream Push Configuration";
+"stream_push.config.message" = "Enter RTMP URL";
+
+// Media Relay UI
+"media_relay.title" = "Media Relay";
+"media_relay.start" = "Start";
+"media_relay.stop" = "Stop";
+"media_relay.config" = "Config";
+"media_relay.status.idle" = "Idle";
+"media_relay.status.connecting" = "Connecting...";
+"media_relay.status.running" = "Running";
+"media_relay.status.failed" = "Failed";
+"media_relay.config.required.title" = "Configuration Required";
+"media_relay.config.required.message" = "Please configure media relay settings first";
+"media_relay.config.title" = "Media Relay Configuration";
+"media_relay.config.message" = "Enter destination channel";
+
+// Success and Warning Messages
+"success.title" = "Success";
+"warning.title" = "Warning";
+
+// Volume Visualization
+"volume.visualization.title" = "Volume";
+
+// Common Actions
+"common.ok" = "OK";
+"common.cancel" = "Cancel";
+"common.save" = "Save";

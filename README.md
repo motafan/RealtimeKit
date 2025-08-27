@@ -1,6 +1,206 @@
 # RealtimeKit Swift Package
 
+[![Swift](https://img.shields.io/badge/Swift-6.2+-orange.svg)](https://swift.org)
+[![iOS](https://img.shields.io/badge/iOS-13.0+-blue.svg)](https://developer.apple.com/ios/)
+[![macOS](https://img.shields.io/badge/macOS-10.15+-blue.svg)](https://developer.apple.com/macos/)
+[![Swift Package Manager](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager/)
+
 RealtimeKit 是一个统一的 Swift Package，用于集成多家第三方 RTM (Real-Time Messaging) 和 RTC (Real-Time Communication) 服务提供商，为 iOS/macOS 应用提供统一的实时通信解决方案。
+
+## 🌟 主要特性
+
+- **🔌 统一 API 接口**: 通过协议抽象屏蔽不同服务商差异
+- **🎯 插件化架构**: 支持多服务商动态切换和扩展
+- **📱 双框架支持**: 完整支持 UIKit 和 SwiftUI
+- **🌐 多语言支持**: 内置中文（简繁体）、英文、日文、韩文本地化
+- **💾 自动状态持久化**: 类似 @AppStorage 的自动状态管理
+- **⚡ 现代并发**: 全面采用 Swift Concurrency (async/await, actors)
+- **🎵 音量指示器**: 实时音量检测和可视化
+- **📡 转推流支持**: 支持直播转推到第三方平台
+- **🔄 媒体中继**: 跨频道音视频流转发
+- **🔐 Token 自动续期**: 智能 Token 管理和续期
+
+## 📋 系统要求
+
+- **iOS**: 13.0 及以上版本
+- **macOS**: 10.15 及以上版本  
+- **Swift**: 6.2 及以上版本
+- **Xcode**: 15.0 及以上版本
+
+## 📦 安装
+
+### Swift Package Manager
+
+在 Xcode 中添加 Package 依赖：
+
+```
+https://github.com/your-org/RealtimeKit
+```
+
+或在 `Package.swift` 中添加：
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/your-org/RealtimeKit", from: "1.0.0")
+]
+```
+
+### 模块化导入
+
+RealtimeKit 支持按需导入功能模块：
+
+```swift
+// 完整功能导入
+import RealtimeKit
+
+// 按需导入
+import RealtimeCore      // 核心功能
+import RealtimeUIKit     // UIKit 集成
+import RealtimeSwiftUI   // SwiftUI 集成
+import RealtimeAgora     // 声网服务商
+import RealtimeMocking   // 测试模拟
+```
+
+## 🚀 快速开始
+
+### 1. 基础配置
+
+```swift
+import RealtimeKit
+
+class AppDelegate: UIResponder, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        
+        // 配置 RealtimeKit
+        Task {
+            let config = RealtimeConfig(
+                appId: "your-app-id",
+                appCertificate: "your-app-certificate"
+            )
+            
+            try await RealtimeManager.shared.configure(
+                provider: .agora,
+                config: config
+            )
+        }
+        
+        return true
+    }
+}
+```
+
+### 2. 用户登录和角色管理
+
+```swift
+// 用户登录
+try await RealtimeManager.shared.loginUser(
+    userId: "user123",
+    userName: "张三",
+    userRole: .broadcaster
+)
+
+// 角色切换
+try await RealtimeManager.shared.switchUserRole(.coHost)
+```
+
+### 3. 音频控制
+
+```swift
+// 静音/取消静音
+try await RealtimeManager.shared.muteMicrophone(true)
+
+// 音量控制
+try await RealtimeManager.shared.setAudioMixingVolume(80)
+try await RealtimeManager.shared.setPlaybackSignalVolume(90)
+```
+
+### 4. SwiftUI 集成
+
+```swift
+import SwiftUI
+import RealtimeKit
+
+struct ContentView: View {
+    @StateObject private var manager = RealtimeManager.shared
+    
+    var body: some View {
+        VStack {
+            // 连接状态指示器
+            ConnectionStateIndicatorView(state: manager.connectionState)
+            
+            // 音量可视化
+            VolumeVisualizationView(volumeInfos: manager.volumeInfos)
+            
+            // 音频控制
+            AudioControlPanelView()
+        }
+    }
+}
+```
+
+### 5. UIKit 集成
+
+```swift
+import UIKit
+import RealtimeKit
+
+class ViewController: UIViewController {
+    private let manager = RealtimeManager.shared
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // 监听状态变化
+        manager.$connectionState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.updateUI(for: state)
+            }
+            .store(in: &cancellables)
+    }
+}
+```
+
+## 📚 详细文档
+
+- [API 参考文档](docs/API-Reference.md)
+- [快速开始指南](docs/Quick-Start-Guide.md)
+- [最佳实践](docs/Best-Practices.md)
+- [本地化指南](docs/Localization-Guide.md)
+- [自动状态持久化指南](docs/Storage-Guide.md)
+- [故障排除](docs/Troubleshooting.md)
+- [常见问题](docs/FAQ.md)
+
+## 🎯 支持的服务商
+
+- ✅ **声网 Agora**: 完整支持
+- 🚧 **腾讯云 TRTC**: 开发中
+- 🚧 **即构 ZEGO**: 开发中
+- ✅ **Mock Provider**: 测试支持
+
+## 🌐 本地化支持
+
+RealtimeKit 内置多语言支持：
+
+- 🇨🇳 中文（简体）
+- 🇹🇼 中文（繁体）
+- 🇺🇸 English
+- 🇯🇵 日本語
+- 🇰🇷 한국어
+
+## 🧪 示例应用
+
+项目包含完整的示例应用：
+
+- **SwiftUI Demo**: 现代声明式 UI 示例
+- **UIKit Demo**: 传统 MVC 架构示例
+
+运行示例：
+
+```bash
+swift run SwiftUIDemo
+swift run UIKitDemo
+```
 
 ## 项目结构
 

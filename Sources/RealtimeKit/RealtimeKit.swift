@@ -19,10 +19,8 @@ import Foundation
 // MARK: - 服务商实现模块导出
 @_exported import RealtimeAgora
 
-// MARK: - 测试模块导出（仅在 DEBUG 模式下）
-#if DEBUG
+// MARK: - 测试模块导出
 @_exported import RealtimeMocking
-#endif
 
 /// RealtimeKit 主要入口点
 public final class RealtimeKit {
