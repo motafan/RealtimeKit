@@ -899,7 +899,7 @@ public class RealtimeManager: ObservableObject {
         deviceInfo: DeviceInfo? = nil
     ) async throws {
         // 验证配置状态
-        guard rtcProvider != nil, rtmProvider != nil else {
+        guard rtmProvider != nil else {
             let errorMessage = localizationManager.localizedString(for: "error.manager.not.configured")
             throw RealtimeError.configurationError(errorMessage)
         }
@@ -910,38 +910,23 @@ public class RealtimeManager: ObservableObject {
         // 创建新的用户会话
         let session = UserSession(userId: userId, userName: userName, userRole: userRole)
         
-        // 验证角色权限
-        guard userRole.hasAudioPermission || userRole == .audience else {
-            throw RealtimeError.insufficientPermissions(userRole)
-        }
+        // 获取RTM Token（如果需要）
+        let rtmToken = try await getOrGenerateRTMToken(for: userId)
         
+        // 登录RTM系统（仅处理消息系统登录）
+        try await rtmProvider?.login(userId: userId, token: rtmToken)
+        
+        // 保存用户会话
         currentSession = session
         sessionStorage.saveUserSession(session)
         
-        // 根据角色配置音频权限
-        if userRole.hasAudioPermission {
-            try await rtcProvider?.resumeLocalAudioStream()
-        } else {
-            try await rtcProvider?.stopLocalAudioStream()
-        }
-        
         print("用户登录成功: \(userName) (\(userRole.displayName))")
+        print("RTM系统登录完成，可以发送和接收消息")
     }
     
-    /// 用户登出
+    /// 用户登出（简化版本）
     public func logoutUser() async throws {
-        guard let session = currentSession else {
-            throw RealtimeError.noActiveSession
-        }
-        
-        // 清理会话状态
-        currentSession = nil
-        sessionStorage.clearUserSession()
-        
-        // 停止音频流
-        try await rtcProvider?.stopLocalAudioStream()
-        
-        print("用户登出成功: \(session.userName)")
+        try await logoutUser(reason: .userInitiated)
     }
     
     /// 验证登录参数
@@ -1127,6 +1112,13 @@ public class RealtimeManager: ObservableObject {
             } catch {
                 print("离开房间时出错: \(error)")
             }
+        }
+        
+        // 登出RTM系统
+        do {
+            try await rtmProvider?.logout()
+        } catch {
+            print("RTM登出时出错: \(error)")
         }
         
         // 记录连接历史
@@ -1633,11 +1625,29 @@ public class RealtimeManager: ObservableObject {
             throw RealtimeError.noActiveSession
         }
         
+        // 验证角色权限
+        guard currentSession.userRole.hasAudioPermission || currentSession.userRole == .audience else {
+            throw RealtimeError.insufficientPermissions(currentSession.userRole)
+        }
+        
+        // 加入RTC房间（音视频通话）
         try await rtcProvider.joinRoom(
             roomId: roomId,
             userId: currentSession.userId,
             userRole: currentSession.userRole
         )
+        
+        // 根据角色配置音频权限（这里才是正确的地方）
+        if currentSession.userRole.hasAudioPermission {
+            try await rtcProvider.resumeLocalAudioStream()
+        } else {
+            try await rtcProvider.stopLocalAudioStream()
+        }
+        
+        // 如果RTM已登录，也加入RTM频道用于消息通信
+        if rtmProvider?.isLoggedIn() == true {
+            try await rtmProvider?.joinChannel(channelId: roomId)
+        }
         
         // 更新会话信息
         let updatedSession = UserSession(
@@ -1650,7 +1660,11 @@ public class RealtimeManager: ObservableObject {
         self.currentSession = updatedSession
         sessionStorage.saveUserSession(updatedSession)
         
-        print("加入房间: \(roomId)")
+        print("加入房间成功: \(roomId)")
+        print("RTC音视频通话已连接，角色: \(currentSession.userRole.displayName)")
+        if rtmProvider?.isLoggedIn() == true {
+            print("RTM消息频道已加入")
+        }
     }
     
     public func leaveRoom() async throws {
@@ -1658,7 +1672,16 @@ public class RealtimeManager: ObservableObject {
             throw RealtimeError.configurationError("RTC Provider 未配置")
         }
         
+        // 获取当前房间ID用于RTM频道离开
+        let currentRoomId = currentSession?.roomId
+        
+        // 离开RTC房间（音视频通话）
         try await rtcProvider.leaveRoom()
+        
+        // 如果RTM已登录且在频道中，也离开RTM频道
+        if let roomId = currentRoomId, rtmProvider?.isLoggedIn() == true {
+            try await rtmProvider?.leaveChannel(channelId: roomId)
+        }
         
         // 清除房间信息
         if let currentSession = currentSession {
@@ -1673,7 +1696,11 @@ public class RealtimeManager: ObservableObject {
             sessionStorage.saveUserSession(updatedSession)
         }
         
-        print("离开房间")
+        print("离开房间成功")
+        print("RTC音视频通话已断开")
+        if currentRoomId != nil && rtmProvider?.isLoggedIn() == true {
+            print("RTM消息频道已离开")
+        }
     }
     
     // MARK: - Audio Control and Settings Management (需求 5.1, 5.2, 5.3, 5.5, 5.6, 17.6, 18.2)
@@ -2124,6 +2151,49 @@ public class RealtimeManager: ObservableObject {
         print("所有认证令牌已清除")
     }
     
+    /// 获取或生成RTM Token
+    /// - Parameter userId: 用户ID
+    /// - Returns: RTM Token字符串
+    private func getOrGenerateRTMToken(for userId: String) async throws -> String {
+        // 首先尝试从存储中获取现有的RTM Token
+        let tokenKey = "\(currentProvider.rawValue)_rtm_\(userId)"
+        if let existingToken = authTokens[tokenKey] {
+            print("使用现有RTM Token: \(userId)")
+            return existingToken
+        }
+        
+        // 如果没有现有Token，尝试生成新的Token
+        // 这里可以调用Token生成服务或使用默认Token
+        let newToken = try await generateRTMToken(for: userId)
+        
+        // 存储新生成的Token
+        authTokens[tokenKey] = newToken
+        print("生成并存储新RTM Token: \(userId)")
+        
+        return newToken
+    }
+    
+    /// 生成RTM Token
+    /// - Parameter userId: 用户ID
+    /// - Returns: 生成的RTM Token
+    private func generateRTMToken(for userId: String) async throws -> String {
+        // 在实际应用中，这里应该调用您的Token生成服务
+        // 目前返回一个模拟Token用于开发和测试
+        
+        guard currentConfig != nil else {
+            throw RealtimeError.configurationError("RealtimeConfig not available")
+        }
+        
+        // 对于Mock Provider，返回一个简单的测试Token
+        if currentProvider == .mock {
+            return "mock_rtm_token_\(userId)_\(Date().timeIntervalSince1970)"
+        }
+        
+        // 对于真实的服务商，这里应该实现实际的Token生成逻辑
+        // 例如调用您的后端服务来生成Token
+        throw RealtimeError.configurationError("RTM Token generation not implemented for provider: \(currentProvider.displayName)")
+    }
+    
     /// 获取应用状态恢复信息
     /// - Returns: 应用状态恢复信息
     public func getAppStateRecoveryInfo() -> AppStateRecoveryInfo {
@@ -2249,7 +2319,7 @@ public class RealtimeManager: ObservableObject {
         
         // Configure auto-detection
         if config.autoDetectSystemLanguage {
-            _ = await LocalizationManager.shared.detectSystemLanguage()
+            _ = LocalizationManager.shared.detectSystemLanguage()
         }
         
         // Add custom strings if provided
