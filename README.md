@@ -163,13 +163,18 @@ class ViewController: UIViewController {
 
 ## 📚 详细文档
 
-- [API 参考文档](docs/API-Reference.md)
-- [快速开始指南](docs/Quick-Start-Guide.md)
-- [最佳实践](docs/Best-Practices.md)
-- [本地化指南](docs/Localization-Guide.md)
-- [自动状态持久化指南](docs/Storage-Guide.md)
-- [故障排除](docs/Troubleshooting.md)
-- [常见问题](docs/FAQ.md)
+### 核心文档
+- [📖 API 参考文档](docs/API-Reference.md) - 完整的 API 接口说明和使用示例
+- [🚀 快速开始指南](docs/Quick-Start-Guide.md) - 从安装到运行的完整教程
+- [⭐ 最佳实践](docs/Best-Practices.md) - 架构设计、性能优化和代码质量指南
+
+### 功能指南
+- [🌐 本地化指南](docs/Localization-Guide.md) - 多语言支持和本地化最佳实践
+- [💾 自动状态持久化指南](docs/Storage-Guide.md) - @RealtimeStorage 使用指南和高级功能
+
+### 支持文档
+- [🔧 故障排除](docs/Troubleshooting.md) - 常见问题的诊断和解决方案
+- [❓ 常见问题 FAQ](docs/FAQ.md) - 快速解答和实用技巧
 
 ## 🎯 支持的服务商
 

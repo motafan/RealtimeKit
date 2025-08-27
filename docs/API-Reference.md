@@ -2,8 +2,16 @@
 
 本文档提供 RealtimeKit Swift Package 的完整 API 参考，包括所有公开接口、数据模型和使用示例。
 
+## 版本信息
+
+- **当前版本**: 1.0.0
+- **最低支持版本**: iOS 13.0+, macOS 10.15+
+- **Swift 版本**: 6.2+
+- **更新日期**: 2024年12月
+
 ## 目录
 
+- [快速开始](#快速开始)
 - [核心管理器](#核心管理器)
 - [协议接口](#协议接口)
 - [数据模型](#数据模型)
@@ -11,6 +19,46 @@
 - [本地化支持](#本地化支持)
 - [自动状态持久化](#自动状态持久化)
 - [UI 组件](#ui-组件)
+- [服务商适配](#服务商适配)
+- [性能监控](#性能监控)
+- [代码示例](#代码示例)
+
+## 快速开始
+
+### 基本配置
+
+```swift
+import RealtimeKit
+
+// 1. 配置 RealtimeKit
+let config = RealtimeConfig(
+    appId: "your-agora-app-id",
+    appCertificate: "your-agora-app-certificate",
+    logLevel: .info
+)
+
+try await RealtimeManager.shared.configure(
+    provider: .agora,
+    config: config
+)
+
+// 2. 用户登录
+try await RealtimeManager.shared.loginUser(
+    userId: "user123",
+    userName: "张三",
+    userRole: .broadcaster
+)
+
+// 3. 加入房间
+try await RealtimeManager.shared.joinRoom(roomId: "room001")
+
+// 4. 启用音量检测
+let volumeConfig = VolumeDetectionConfig(
+    detectionInterval: 300,
+    speakingThreshold: 0.3
+)
+try await RealtimeManager.shared.enableVolumeIndicator(config: volumeConfig)
+```
 
 ## 核心管理器
 
@@ -953,4 +1001,688 @@ class MainViewController: RealtimeViewController {
 }
 ```
 
-这个 API 参考文档提供了 RealtimeKit 的完整接口说明和使用示例，开发者可以根据这个文档快速上手并集成到自己的项目中。
+## 服务商适配
+
+### ProviderFactory
+
+服务商工厂协议，用于创建不同的服务商实现。
+
+```swift
+public protocol ProviderFactory {
+    func createRTCProvider() -> RTCProvider
+    func createRTMProvider() -> RTMProvider
+    func supportedFeatures() -> Set<ProviderFeature>
+}
+
+public enum ProviderFeature: String, CaseIterable {
+    case audioStreaming = "audio_streaming"
+    case videoStreaming = "video_streaming"
+    case streamPush = "stream_push"
+    case mediaRelay = "media_relay"
+    case volumeIndicator = "volume_indicator"
+    case messageProcessing = "message_processing"
+}
+```
+
+### AgoraProviderFactory
+
+声网服务商工厂实现。
+
+```swift
+public class AgoraProviderFactory: ProviderFactory {
+    public func createRTCProvider() -> RTCProvider {
+        return AgoraRTCProvider()
+    }
+    
+    public func createRTMProvider() -> RTMProvider {
+        return AgoraRTMProvider()
+    }
+    
+    public func supportedFeatures() -> Set<ProviderFeature> {
+        return [
+            .audioStreaming,
+            .videoStreaming,
+            .streamPush,
+            .mediaRelay,
+            .volumeIndicator,
+            .messageProcessing
+        ]
+    }
+}
+```
+
+### MockProviderFactory
+
+测试用 Mock 服务商工厂。
+
+```swift
+public class MockProviderFactory: ProviderFactory {
+    public func createRTCProvider() -> RTCProvider {
+        return MockRTCProvider()
+    }
+    
+    public func createRTMProvider() -> RTMProvider {
+        return MockRTMProvider()
+    }
+    
+    public func supportedFeatures() -> Set<ProviderFeature> {
+        return ProviderFeature.allCases.reduce(into: Set<ProviderFeature>()) { result, feature in
+            result.insert(feature)
+        }
+    }
+}
+```
+
+## 性能监控
+
+### PerformanceMonitor
+
+性能监控器，用于监控关键性能指标。
+
+```swift
+@MainActor
+public class PerformanceMonitor: ObservableObject {
+    @Published public private(set) var connectionLatency: TimeInterval = 0
+    @Published public private(set) var audioQuality: AudioQualityMetrics = AudioQualityMetrics()
+    @Published public private(set) var memoryUsage: MemoryUsage = MemoryUsage()
+    @Published public private(set) var networkQuality: NetworkQuality = .unknown
+    
+    public func startMonitoring()
+    public func stopMonitoring()
+    public func recordConnectionLatency(_ latency: TimeInterval)
+    public func updateAudioQuality(_ metrics: AudioQualityMetrics)
+}
+
+public struct AudioQualityMetrics: Codable, Equatable {
+    public let packetLossRate: Double
+    public let jitter: TimeInterval
+    public let roundTripTime: TimeInterval
+    public let bitrate: Int
+    public let sampleRate: Int
+}
+
+public struct MemoryUsage: Codable, Equatable {
+    public let used: UInt64
+    public let total: UInt64
+    public var percentage: Double { Double(used) / Double(total) }
+}
+
+public enum NetworkQuality: String, CaseIterable, Codable {
+    case unknown = "unknown"
+    case excellent = "excellent"
+    case good = "good"
+    case fair = "fair"
+    case poor = "poor"
+}
+```
+
+## 代码示例
+
+### 完整的会议应用示例
+
+```swift
+import SwiftUI
+import RealtimeKit
+
+@main
+struct MeetingApp: App {
+    var body: some Scene {
+        WindowGroup {
+            MeetingRoomView()
+                .task {
+                    await setupRealtimeKit()
+                }
+        }
+    }
+    
+    private func setupRealtimeKit() async {
+        do {
+            let config = RealtimeConfig(
+                appId: "your-agora-app-id",
+                appCertificate: "your-agora-app-certificate",
+                logLevel: .info
+            )
+            
+            try await RealtimeManager.shared.configure(
+                provider: .agora,
+                config: config
+            )
+        } catch {
+            print("RealtimeKit 配置失败: \(error)")
+        }
+    }
+}
+
+struct MeetingRoomView: View {
+    @StateObject private var manager = RealtimeManager.shared
+    @StateObject private var settings = UserSettingsManager()
+    @State private var roomId = ""
+    @State private var userId = ""
+    @State private var userName = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                // 房间信息输入
+                roomInfoSection
+                
+                // 连接状态显示
+                ConnectionStateIndicatorView(state: manager.connectionState)
+                
+                // 控制按钮
+                controlButtonsSection
+                
+                // 音频控制面板
+                if manager.connectionState == .connected {
+                    AudioControlPanelView()
+                        .transition(.slide)
+                }
+                
+                // 参与者列表和音量可视化
+                if !manager.volumeInfos.isEmpty {
+                    participantsSection
+                }
+                
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("会议室")
+            .alert("错误", isPresented: $showError) {
+                Button("确定") { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private var roomInfoSection: some View {
+        Group {
+            TextField("房间 ID", text: $roomId)
+            TextField("用户 ID", text: $userId)
+            TextField("用户名", text: $userName)
+        }
+        .textFieldStyle(RoundedBorderTextFieldStyle())
+        .disabled(manager.connectionState == .connected)
+    }
+    
+    private var controlButtonsSection: some View {
+        HStack(spacing: 20) {
+            if manager.connectionState == .connected {
+                Button("离开房间") {
+                    Task { await leaveRoom() }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+            } else {
+                Button("加入房间") {
+                    Task { await joinRoom() }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(roomId.isEmpty || userId.isEmpty || userName.isEmpty)
+            }
+        }
+    }
+    
+    private var participantsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("参与者 (\(manager.volumeInfos.count))")
+                .font(.headline)
+            
+            VolumeVisualizationView(
+                volumeInfos: manager.volumeInfos,
+                style: .waveform
+            )
+            .frame(height: 100)
+            
+            if let dominantSpeaker = manager.dominantSpeaker {
+                Text("主讲人: \(dominantSpeaker)")
+                    .font(.caption)
+                    .foregroundColor(.green)
+            }
+        }
+    }
+    
+    private func joinRoom() async {
+        do {
+            // 1. 用户登录
+            try await manager.loginUser(
+                userId: userId,
+                userName: userName,
+                userRole: .broadcaster
+            )
+            
+            // 2. 加入房间
+            try await manager.joinRoom(roomId: roomId)
+            
+            // 3. 启用音量检测
+            let volumeConfig = VolumeDetectionConfig(
+                detectionInterval: 300,
+                speakingThreshold: 0.3,
+                includeLocalUser: true,
+                smoothFactor: 0.3
+            )
+            try await manager.enableVolumeIndicator(config: volumeConfig)
+            
+            // 4. 应用用户设置
+            try await manager.setAudioMixingVolume(settings.audioVolume)
+            try await manager.muteMicrophone(settings.autoMuteOnJoin)
+            
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+    
+    private func leaveRoom() async {
+        do {
+            try await manager.disableVolumeIndicator()
+            try await manager.leaveRoom()
+            try await manager.logoutUser()
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+}
+
+class UserSettingsManager: ObservableObject {
+    @RealtimeStorage("audio_volume", defaultValue: 80)
+    var audioVolume: Int
+    
+    @RealtimeStorage("auto_mute_on_join", defaultValue: false)
+    var autoMuteOnJoin: Bool
+    
+    @RealtimeStorage("preferred_language", defaultValue: SupportedLanguage.english)
+    var preferredLanguage: SupportedLanguage {
+        didSet {
+            LocalizationManager.shared.setLanguage(preferredLanguage)
+        }
+    }
+}
+```
+
+### 直播应用示例
+
+```swift
+import SwiftUI
+import RealtimeKit
+
+struct LiveStreamingView: View {
+    @StateObject private var manager = RealtimeManager.shared
+    @State private var isStreaming = false
+    @State private var streamUrl = ""
+    @State private var viewerCount = 0
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // 直播状态
+            streamingStatusSection
+            
+            // 直播控制
+            streamingControlSection
+            
+            // 观众互动
+            if isStreaming {
+                audienceInteractionSection
+            }
+            
+            Spacer()
+        }
+        .padding()
+        .navigationTitle("直播间")
+    }
+    
+    private var streamingStatusSection: some View {
+        VStack {
+            if isStreaming {
+                HStack {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 12, height: 12)
+                        .scaleEffect(manager.connectionState == .connected ? 1.0 : 0.5)
+                        .animation(.easeInOut(duration: 1).repeatForever(), value: manager.connectionState)
+                    
+                    Text("直播中")
+                        .font(.headline)
+                        .foregroundColor(.red)
+                }
+                
+                Text("观众: \(viewerCount)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            } else {
+                Text("未开始直播")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+    
+    private var streamingControlSection: some View {
+        VStack(spacing: 15) {
+            if !isStreaming {
+                TextField("推流地址", text: $streamUrl)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            }
+            
+            Button(isStreaming ? "停止直播" : "开始直播") {
+                Task {
+                    if isStreaming {
+                        await stopStreaming()
+                    } else {
+                        await startStreaming()
+                    }
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(isStreaming ? .red : .green)
+            .disabled(streamUrl.isEmpty && !isStreaming)
+        }
+    }
+    
+    private var audienceInteractionSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("观众互动")
+                .font(.headline)
+            
+            // 音量可视化
+            VolumeVisualizationView(
+                volumeInfos: manager.volumeInfos.filter { !$0.userId.hasPrefix("audience_") },
+                style: .bars
+            )
+            .frame(height: 60)
+            
+            // 连麦管理
+            ConnectedAudienceListView()
+        }
+    }
+    
+    private func startStreaming() async {
+        do {
+            // 1. 登录为主播
+            try await manager.loginUser(
+                userId: "broadcaster_\(UUID().uuidString)",
+                userName: "主播",
+                userRole: .broadcaster
+            )
+            
+            // 2. 加入房间
+            try await manager.joinRoom(roomId: "live_room_001")
+            
+            // 3. 配置转推流
+            let streamConfig = StreamPushConfig(
+                pushUrl: streamUrl,
+                resolution: .resolution720p,
+                bitrate: 1000,
+                frameRate: 30,
+                layout: StreamLayout(
+                    backgroundColor: "#000000",
+                    regions: [
+                        StreamRegion(
+                            userId: "broadcaster",
+                            x: 0, y: 0, width: 1280, height: 720,
+                            zOrder: 1, alpha: 1.0
+                        )
+                    ]
+                )
+            )
+            
+            try await manager.startStreamPush(config: streamConfig)
+            
+            // 4. 启用音量检测
+            let volumeConfig = VolumeDetectionConfig(
+                detectionInterval: 200,
+                speakingThreshold: 0.4,
+                includeLocalUser: true
+            )
+            try await manager.enableVolumeIndicator(config: volumeConfig)
+            
+            isStreaming = true
+            
+        } catch {
+            print("开始直播失败: \(error)")
+        }
+    }
+    
+    private func stopStreaming() async {
+        do {
+            try await manager.stopStreamPush()
+            try await manager.leaveRoom()
+            try await manager.logoutUser()
+            
+            isStreaming = false
+            viewerCount = 0
+            
+        } catch {
+            print("停止直播失败: \(error)")
+        }
+    }
+}
+
+struct ConnectedAudienceListView: View {
+    @StateObject private var manager = RealtimeManager.shared
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text("连麦观众")
+                .font(.subheadline)
+                .fontWeight(.medium)
+            
+            ForEach(connectedAudience, id: \.userId) { audience in
+                HStack {
+                    Text(audience.userId)
+                        .font(.caption)
+                    
+                    Spacer()
+                    
+                    if audience.isSpeaking {
+                        Image(systemName: "mic.fill")
+                            .foregroundColor(.green)
+                            .font(.caption)
+                    }
+                    
+                    Button("断开") {
+                        Task {
+                            await disconnectAudience(audience.userId)
+                        }
+                    }
+                    .font(.caption)
+                    .buttonStyle(.bordered)
+                }
+                .padding(.vertical, 2)
+            }
+        }
+    }
+    
+    private var connectedAudience: [UserVolumeInfo] {
+        return manager.volumeInfos.filter { $0.userId.hasPrefix("audience_") }
+    }
+    
+    private func disconnectAudience(_ userId: String) async {
+        // 实现断开连麦逻辑
+        print("断开连麦用户: \(userId)")
+    }
+}
+```
+
+### 自定义消息处理示例
+
+```swift
+import RealtimeKit
+
+// 自定义消息类型
+enum CustomMessageType: String, CaseIterable {
+    case gift = "gift"
+    case like = "like"
+    case comment = "comment"
+    case systemNotification = "system_notification"
+}
+
+// 礼物消息处理器
+class GiftMessageProcessor: MessageProcessor {
+    var supportedMessageTypes: [String] {
+        return [CustomMessageType.gift.rawValue]
+    }
+    
+    func canProcess(_ message: RealtimeMessage) -> Bool {
+        return message.type == CustomMessageType.gift.rawValue
+    }
+    
+    func process(_ message: RealtimeMessage) async throws -> MessageProcessingResult {
+        guard let giftData = message.content as? [String: Any],
+              let giftType = giftData["type"] as? String,
+              let senderName = giftData["sender"] as? String else {
+            return .failed(MessageProcessingError.invalidFormat)
+        }
+        
+        // 处理礼物消息
+        let gift = Gift(
+            type: giftType,
+            sender: senderName,
+            timestamp: Date()
+        )
+        
+        // 通知 UI 显示礼物动画
+        await MainActor.run {
+            NotificationCenter.default.post(
+                name: .giftReceived,
+                object: gift
+            )
+        }
+        
+        return .processed(nil)
+    }
+    
+    func handleProcessingError(_ error: Error, for message: RealtimeMessage) async -> MessageProcessingResult {
+        print("礼物消息处理失败: \(error)")
+        return .failed(error)
+    }
+}
+
+// 点赞消息处理器
+class LikeMessageProcessor: MessageProcessor {
+    private var likeCount = 0
+    private let likeCountThreshold = 10
+    
+    var supportedMessageTypes: [String] {
+        return [CustomMessageType.like.rawValue]
+    }
+    
+    func canProcess(_ message: RealtimeMessage) -> Bool {
+        return message.type == CustomMessageType.like.rawValue
+    }
+    
+    func process(_ message: RealtimeMessage) async throws -> MessageProcessingResult {
+        likeCount += 1
+        
+        // 批量处理点赞，避免频繁更新 UI
+        if likeCount >= likeCountThreshold {
+            await MainActor.run {
+                NotificationCenter.default.post(
+                    name: .likeBatchReceived,
+                    object: likeCount
+                )
+            }
+            likeCount = 0
+        }
+        
+        return .processed(nil)
+    }
+    
+    func handleProcessingError(_ error: Error, for message: RealtimeMessage) async -> MessageProcessingResult {
+        return .retry(after: 1.0)  // 1秒后重试
+    }
+}
+
+// 数据模型
+struct Gift: Codable {
+    let type: String
+    let sender: String
+    let timestamp: Date
+}
+
+enum MessageProcessingError: Error {
+    case invalidFormat
+    case unsupportedType
+}
+
+// 通知扩展
+extension Notification.Name {
+    static let giftReceived = Notification.Name("CustomMessage.giftReceived")
+    static let likeBatchReceived = Notification.Name("CustomMessage.likeBatchReceived")
+}
+
+// 使用示例
+class CustomMessageManager {
+    init() {
+        setupMessageProcessors()
+    }
+    
+    private func setupMessageProcessors() {
+        let giftProcessor = GiftMessageProcessor()
+        let likeProcessor = LikeMessageProcessor()
+        
+        do {
+            try RealtimeManager.shared.registerMessageProcessor(giftProcessor)
+            try RealtimeManager.shared.registerMessageProcessor(likeProcessor)
+        } catch {
+            print("注册消息处理器失败: \(error)")
+        }
+    }
+    
+    func sendGift(type: String, to userId: String) async throws {
+        let giftData: [String: Any] = [
+            "type": type,
+            "sender": RealtimeManager.shared.currentSession?.userName ?? "匿名用户",
+            "recipient": userId,
+            "timestamp": Date().timeIntervalSince1970
+        ]
+        
+        let message = RealtimeMessage(
+            id: UUID().uuidString,
+            type: CustomMessageType.gift.rawValue,
+            content: giftData,
+            senderId: RealtimeManager.shared.currentSession?.userId ?? "",
+            timestamp: Date()
+        )
+        
+        try await RealtimeManager.shared.sendMessage(message)
+    }
+    
+    func sendLike() async throws {
+        let likeData: [String: Any] = [
+            "sender": RealtimeManager.shared.currentSession?.userName ?? "匿名用户",
+            "timestamp": Date().timeIntervalSince1970
+        ]
+        
+        let message = RealtimeMessage(
+            id: UUID().uuidString,
+            type: CustomMessageType.like.rawValue,
+            content: likeData,
+            senderId: RealtimeManager.shared.currentSession?.userId ?? "",
+            timestamp: Date()
+        )
+        
+        try await RealtimeManager.shared.sendMessage(message)
+    }
+}
+```
+
+---
+
+这个 API 参考文档提供了 RealtimeKit 的完整接口说明和使用示例，包括基础功能、高级特性和实际应用场景。开发者可以根据这个文档快速上手并集成到自己的项目中。
+
+## 相关文档
+
+- [快速开始指南](Quick-Start-Guide.md) - 快速集成和基础使用
+- [最佳实践](Best-Practices.md) - 开发最佳实践和性能优化
+- [本地化指南](Localization-Guide.md) - 多语言支持详细说明
+- [存储指南](Storage-Guide.md) - 自动状态持久化使用指南
+- [故障排除](Troubleshooting.md) - 常见问题解决方案
+- [FAQ](FAQ.md) - 常见问题解答

@@ -46,7 +46,7 @@ let package = Package(
     dependencies: [
         // Agora SDK dependencies (uncomment when ready to integrate real SDK)
         // .package(url: "https://github.com/AgoraIO/AgoraRtcEngine_iOS", from: "4.0.0"),
-        // .package(url: "https://github.com/AgoraIO/AgoraRtmKit_iOS", from: "1.5.0")
+        // .package(url: "https://github.com/AgoraIO/AgoraRtm_Apple", from: "1.5.0")
     ],
     targets: [
         // Main RealtimeKit target that re-exports all modules

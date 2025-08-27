@@ -4,4 +4,7 @@
    <FileRef
       location = "group:SwiftUIDemo/SwiftUIDemo.xcodeproj">
    </FileRef>
+ <FileRef
+      location = "group:UIKitDemo/UIKitDemo.xcodeproj">
+   </FileRef>
 </Workspace>

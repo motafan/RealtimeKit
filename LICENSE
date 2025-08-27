@@ -1,0 +1,136 @@
+MIT License
+
+Copyright (c) 2024 RealtimeKit Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+
+Third-Party Licenses and Acknowledgments
+
+This software may include or depend on third-party libraries and frameworks.
+The following is a list of such dependencies and their respective licenses:
+
+1. Swift Standard Library
+   - Copyright: Apple Inc.
+   - License: Apache License 2.0
+   - URL: https://swift.org/LICENSE.txt
+
+2. Foundation Framework
+   - Copyright: Apple Inc.
+   - License: Apple Software License
+   - URL: https://developer.apple.com/
+
+3. Combine Framework
+   - Copyright: Apple Inc.
+   - License: Apple Software License
+   - URL: https://developer.apple.com/
+
+4. SwiftUI Framework
+   - Copyright: Apple Inc.
+   - License: Apple Software License
+   - URL: https://developer.apple.com/
+
+5. UIKit Framework
+   - Copyright: Apple Inc.
+   - License: Apple Software License
+   - URL: https://developer.apple.com/
+
+6. AVFoundation Framework
+   - Copyright: Apple Inc.
+   - License: Apple Software License
+   - URL: https://developer.apple.com/
+
+Optional Third-Party Dependencies (when using specific providers):
+
+7. Agora RTC SDK (Optional - when using Agora provider)
+   - Copyright: Agora.io
+   - License: Agora SDK License
+   - URL: https://www.agora.io/en/terms-of-service/
+
+8. Agora RTM SDK (Optional - when using Agora provider)
+   - Copyright: Agora.io
+   - License: Agora SDK License
+   - URL: https://www.agora.io/en/terms-of-service/
+
+9. Tencent Cloud TRTC SDK (Optional - when using Tencent provider)
+   - Copyright: Tencent Cloud
+   - License: Tencent Cloud License
+   - URL: https://cloud.tencent.com/document/product/647
+
+10. ZEGO Express SDK (Optional - when using ZEGO provider)
+    - Copyright: ZEGO
+    - License: ZEGO SDK License
+    - URL: https://www.zegocloud.com/
+
+================================================================================
+
+Additional Terms and Conditions:
+
+1. Attribution Requirements:
+   When redistributing this software or derivative works, you must include
+   this license file and maintain all copyright notices.
+
+2. Trademark Usage:
+   The names "RealtimeKit", associated logos, and trademarks are not included
+   in the MIT license grant. Use of these trademarks requires separate
+   permission.
+
+3. Third-Party Services:
+   This software may integrate with third-party services (such as Agora,
+   Tencent Cloud, ZEGO). Use of these services is subject to their respective
+   terms of service and privacy policies.
+
+4. Data Privacy:
+   Users of this software are responsible for complying with applicable data
+   protection and privacy laws when handling user data through real-time
+   communication features.
+
+5. Export Compliance:
+   This software may be subject to export control laws and regulations.
+   Users are responsible for compliance with applicable export control laws.
+
+6. No Warranty Disclaimer:
+   This software is provided "as is" without warranty of any kind. The
+   authors and copyright holders disclaim all warranties, express or implied,
+   including but not limited to the warranties of merchantability, fitness
+   for a particular purpose, and non-infringement.
+
+7. Limitation of Liability:
+   In no event shall the authors or copyright holders be liable for any
+   claim, damages, or other liability, whether in an action of contract,
+   tort, or otherwise, arising from, out of, or in connection with the
+   software or the use or other dealings in the software.
+
+================================================================================
+
+Contact Information:
+
+For questions about this license or to request permissions beyond the scope
+of this license, please contact:
+
+Email: legal@yourcompany.com
+Website: https://github.com/your-org/RealtimeKit
+Address: [Your Company Address]
+
+================================================================================
+
+Version History:
+
+- v1.0 (2024-12): Initial license version
