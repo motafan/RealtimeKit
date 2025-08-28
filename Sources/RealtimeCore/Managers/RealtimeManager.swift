@@ -70,20 +70,12 @@ public class RealtimeManager: ObservableObject {
     
     // MARK: - Persistent State Properties (需求 18.1, 18.2, 18.3, 18.10)
     
-    /// 音频设置的自动持久化 (需求 18.1, 18.2)
+    /// 音频设置的自动持久化和响应式更新 (需求 3.2, 5.4, 5.5, 18.1, 18.2)
+    @Published public private(set) var audioSettings: AudioSettings = .default
+    
+    /// 音频设置的持久化存储 (需求 18.1, 18.2)
     @RealtimeStorage("audioSettings", namespace: "RealtimeKit.Manager")
-    public var audioSettings: AudioSettings = .default {
-        didSet {
-            // 当音频设置变化时，同步到 RTC Provider (需求 5.6)
-            Task { @MainActor in
-                do {
-                    try await applyAudioSettings(audioSettings)
-                } catch {
-                    print("Failed to apply audio settings: \(error)")
-                }
-            }
-        }
-    }
+    private var _persistedAudioSettings: AudioSettings = .default
     
     /// 当前服务商的自动持久化 (需求 18.1, 18.2)
     @RealtimeStorage("currentProvider", namespace: "RealtimeKit.Manager")
@@ -140,6 +132,9 @@ public class RealtimeManager: ObservableObject {
     // MARK: - Initialization
     
     private init() {
+        // 从持久化存储恢复音频设置 (需求: 18.1, 18.3)
+        audioSettings = _persistedAudioSettings
+        
         // 初始化默认服务商工厂
         setupDefaultProviderFactories()
         
@@ -314,7 +309,13 @@ public class RealtimeManager: ObservableObject {
             // 恢复音频设置 (音频设置已通过 @RealtimeStorage 自动恢复)
             if appStateRecovery.needsAudioSettingsRecovery {
                 print("恢复音频设置...")
-                // 音频设置的 didSet 会自动应用到 RTC Provider
+                // 需要手动同步到 RTC Provider，因为 @RealtimeStorage 只恢复本地状态
+                do {
+                    try await applyAudioSettingsToProvider(audioSettings)
+                    print("音频设置已同步到 RTC Provider")
+                } catch {
+                    print("音频设置同步失败: \(error)")
+                }
             }
             
             // 恢复用户会话
@@ -698,13 +699,16 @@ public class RealtimeManager: ObservableObject {
     }
     
     /// 创建 SwiftUI Binding 用于双向数据绑定 (需求 18.10)
+    /// 注意：此 Binding 会自动同步设置到 RTC Provider
     public func createAudioSettingsBinding() -> Binding<AudioSettings> {
         return Binding(
             get: { [weak self] in
                 self?.audioSettings ?? .default
             },
             set: { [weak self] newValue in
-                self?.audioSettings = newValue
+                Task { @MainActor in
+                    await self?.updateAudioSettings { _ in newValue }
+                }
             }
         )
     }
@@ -929,6 +933,35 @@ public class RealtimeManager: ObservableObject {
         try await logoutUser(reason: .userInitiated)
     }
     
+    /// 完全断开连接并登出
+    /// 此方法会依次执行：1) 离开房间 2) 登出用户
+    /// 适用于需要完全清理所有连接和会话状态的场景
+    /// - Parameter reason: 登出原因（可选）
+    public func disconnectAndLogout(reason: LogoutReason = .userInitiated) async throws {
+        // 先离开房间（如果在房间中）
+        if currentSession?.isInRoom == true {
+            do {
+                try await leaveRoom()
+            } catch {
+                print("离开房间时出错: \(error)")
+                // 继续执行登出，即使离开房间失败
+            }
+        }
+        
+        // 然后登出用户
+        try await logoutUser(reason: reason)
+        
+        // 发送完全断开连接通知
+        NotificationCenter.default.post(
+            name: .didDisconnectAndLogout,
+            object: self,
+            userInfo: [
+                "reason": reason,
+                "timestamp": Date()
+            ]
+        )
+    }
+    
     /// 验证登录参数
     private func validateLoginParameters(userId: String, userName: String, userRole: UserRole) throws {
         guard !userId.isEmpty else {
@@ -945,24 +978,31 @@ public class RealtimeManager: ObservableObject {
     // MARK: - Audio Control and Settings Management (需求 5.1, 5.2, 5.3, 5.5, 5.6, 17.6, 18.2)
     
     /// 设置音频混音音量
+    /// - Parameter volume: 音量级别 (0-100)
+    /// - Throws: 配置错误、参数错误等
     public func setAudioMixingVolume(_ volume: Int) async throws {
         let clampedVolume = max(0, min(100, volume))
+        
+        // 先更新 RTC Provider
         try await rtcProvider?.setAudioMixingVolume(clampedVolume)
         
-        audioSettings = audioSettings.withUpdatedVolume(audioMixing: clampedVolume)
+        // 然后更新本地设置（这会自动触发持久化）
+        await updateAudioSettings { settings in
+            settings.withUpdatedVolume(audioMixing: clampedVolume)
+        }
     }
     
     /// 静音/取消静音麦克风
+    /// - Parameter muted: true 表示静音，false 表示取消静音
+    /// - Throws: 配置错误、权限错误等
     public func muteMicrophone(_ muted: Bool) async throws {
+        // 先更新 RTC Provider
         try await rtcProvider?.muteMicrophone(muted)
         
-        audioSettings = AudioSettings(
-            microphoneMuted: muted,
-            audioMixingVolume: audioSettings.audioMixingVolume,
-            playbackSignalVolume: audioSettings.playbackSignalVolume,
-            recordingSignalVolume: audioSettings.recordingSignalVolume,
-            localAudioStreamActive: audioSettings.localAudioStreamActive
-        )
+        // 然后更新本地设置
+        await updateAudioSettings { settings in
+            settings.withUpdatedMicrophoneState(muted)
+        }
     }
     
     /// 启用音量指示器
@@ -1024,18 +1064,52 @@ public class RealtimeManager: ObservableObject {
         try await applyAudioSettings(audioSettings)
     }
     
-    /// 应用音频设置到 RTC Provider
-    internal func applyAudioSettings(_ settings: AudioSettings) async throws {
-        try await rtcProvider?.muteMicrophone(settings.microphoneMuted)
-        try await rtcProvider?.setAudioMixingVolume(settings.audioMixingVolume)
-        try await rtcProvider?.setPlaybackSignalVolume(settings.playbackSignalVolume)
-        try await rtcProvider?.setRecordingSignalVolume(settings.recordingSignalVolume)
+    /// 统一更新音频设置的方法 (需求 3.2, 5.4, 5.6, 18.2)
+    /// 此方法确保音频设置的更新同时反映到 RTC Provider 和持久化存储
+    /// - Parameter updateBlock: 音频设置更新闭包
+    @MainActor
+    private func updateAudioSettings(_ updateBlock: (AudioSettings) -> AudioSettings) async {
+        let newSettings = updateBlock(audioSettings)
+        
+        // 更新本地设置（触发 @Published）
+        audioSettings = newSettings
+        
+        // 更新持久化存储（触发 @RealtimeStorage）
+        _persistedAudioSettings = newSettings
+        
+        // 异步同步到 RTC Provider，不阻塞 UI
+        Task {
+            do {
+                try await applyAudioSettingsToProvider(newSettings)
+            } catch {
+                print("Failed to sync audio settings to RTC Provider: \(error)")
+                // 可以在这里触发错误处理或重试机制
+            }
+        }
+    }
+    
+    /// 应用音频设置到 RTC Provider (需求 5.6)
+    /// 此方法只负责与 RTC Provider 的同步，不修改本地状态
+    internal func applyAudioSettingsToProvider(_ settings: AudioSettings) async throws {
+        guard let rtcProvider = rtcProvider else {
+            throw RealtimeError.configurationError("RTC Provider 未配置")
+        }
+        
+        try await rtcProvider.muteMicrophone(settings.microphoneMuted)
+        try await rtcProvider.setAudioMixingVolume(settings.audioMixingVolume)
+        try await rtcProvider.setPlaybackSignalVolume(settings.playbackSignalVolume)
+        try await rtcProvider.setRecordingSignalVolume(settings.recordingSignalVolume)
         
         if settings.localAudioStreamActive {
-            try await rtcProvider?.resumeLocalAudioStream()
+            try await rtcProvider.resumeLocalAudioStream()
         } else {
-            try await rtcProvider?.stopLocalAudioStream()
+            try await rtcProvider.stopLocalAudioStream()
         }
+    }
+    
+    /// 应用音频设置到 RTC Provider（向后兼容方法）
+    internal func applyAudioSettings(_ settings: AudioSettings) async throws {
+        try await applyAudioSettingsToProvider(settings)
     }
     
     /// 设置事件处理器
@@ -1099,22 +1173,15 @@ public class RealtimeManager: ObservableObject {
 
     
     /// 用户登出，清理会话状态
+    /// 注意：登出只处理 RTM 消息系统的注销，不会自动离开 RTC 音视频房间
+    /// 如需离开音视频房间，请单独调用 leaveRoom() 方法
     /// - Parameter reason: 登出原因（可选）
     public func logoutUser(reason: LogoutReason = .userInitiated) async throws {
         guard let session = currentSession else {
             throw RealtimeError.noActiveSession
         }
         
-        // 如果在房间中，先离开房间
-        if session.isInRoom {
-            do {
-                try await leaveRoom()
-            } catch {
-                print("离开房间时出错: \(error)")
-            }
-        }
-        
-        // 登出RTM系统
+        // 登出RTM系统（只处理消息系统）
         do {
             try await rtmProvider?.logout()
         } catch {
@@ -1127,7 +1194,9 @@ public class RealtimeManager: ObservableObject {
         // 清理会话状态
         currentSession = nil
         sessionStorage.clearUserSession()
-        connectionState = .disconnected
+        
+        // 注意：不修改 connectionState，因为 RTC 连接可能仍然活跃
+        // connectionState 应该反映 RTC 连接状态，而不是 RTM 登录状态
         
         // 更新应用状态恢复信息
         var recoveryInfo = appStateRecovery
@@ -1300,7 +1369,14 @@ public class RealtimeManager: ObservableObject {
             // 如果当前是静音状态且新角色有音频权限，可以选择取消静音
             if audioSettings.microphoneMuted && userPreferences.enableAudioSettingsRestore {
                 try await rtcProvider.muteMicrophone(false)
-                audioSettings = audioSettings.withUpdatedMicrophoneState(false)
+                await updateAudioSettings { settings in
+                    settings.withUpdatedMicrophoneState(false)
+                }
+            }
+            
+            // 确保音频流状态正确
+            await updateAudioSettings { settings in
+                settings.withUpdatedStreamState(true)
             }
         } else {
             // 禁用音频流
@@ -1308,7 +1384,11 @@ public class RealtimeManager: ObservableObject {
             
             // 强制静音
             try await rtcProvider.muteMicrophone(true)
-            audioSettings = audioSettings.withUpdatedMicrophoneState(true)
+            
+            // 更新本地设置
+            await updateAudioSettings { settings in
+                settings.withUpdatedMicrophoneState(true).withUpdatedStreamState(false)
+            }
         }
         
         let permissionMessage = localizationManager.localizedString(
@@ -1667,6 +1747,8 @@ public class RealtimeManager: ObservableObject {
         }
     }
     
+    /// 离开当前房间
+    /// 此方法会同时离开 RTC 音视频房间和 RTM 消息频道
     public func leaveRoom() async throws {
         guard let rtcProvider = rtcProvider else {
             throw RealtimeError.configurationError("RTC Provider 未配置")
@@ -1683,7 +1765,10 @@ public class RealtimeManager: ObservableObject {
             try await rtmProvider?.leaveChannel(channelId: roomId)
         }
         
-        // 清除房间信息
+        // 更新连接状态为断开
+        connectionState = .disconnected
+        
+        // 清除房间信息，但保留用户会话
         if let currentSession = currentSession {
             let updatedSession = UserSession(
                 userId: currentSession.userId,
@@ -1701,6 +1786,79 @@ public class RealtimeManager: ObservableObject {
         if currentRoomId != nil && rtmProvider?.isLoggedIn() == true {
             print("RTM消息频道已离开")
         }
+        
+        // 发送离开房间通知
+        NotificationCenter.default.post(
+            name: .didLeaveRoom,
+            object: self,
+            userInfo: [
+                "roomId": currentRoomId ?? "",
+                "userId": currentSession?.userId ?? "",
+                "leftRTC": true,
+                "leftRTM": currentRoomId != nil && rtmProvider?.isLoggedIn() == true
+            ]
+        )
+    }
+    
+    /// 只离开 RTM 消息频道，不影响 RTC 音视频连接
+    /// - Parameter channelId: 要离开的频道ID，如果为 nil 则使用当前房间ID
+    public func leaveRTMChannel(channelId: String? = nil) async throws {
+        guard rtmProvider?.isLoggedIn() == true else {
+            throw RealtimeError.configurationError("RTM Provider 未登录")
+        }
+        
+        let targetChannelId = channelId ?? currentSession?.roomId
+        guard let roomId = targetChannelId else {
+            throw RealtimeError.noActiveSession
+        }
+        
+        try await rtmProvider?.leaveChannel(channelId: roomId)
+        print("已离开RTM消息频道: \(roomId)")
+        
+        // 发送离开RTM频道通知
+        NotificationCenter.default.post(
+            name: .didLeaveRTMChannel,
+            object: self,
+            userInfo: [
+                "channelId": roomId,
+                "userId": currentSession?.userId ?? ""
+            ]
+        )
+    }
+    
+    /// 只离开 RTC 音视频房间，不影响 RTM 消息连接
+    public func leaveRTCRoom() async throws {
+        guard let rtcProvider = rtcProvider else {
+            throw RealtimeError.configurationError("RTC Provider 未配置")
+        }
+        
+        try await rtcProvider.leaveRoom()
+        connectionState = .disconnected
+        
+        // 清除房间信息，但保留用户会话
+        if let currentSession = currentSession {
+            let updatedSession = UserSession(
+                userId: currentSession.userId,
+                userName: currentSession.userName,
+                userRole: currentSession.userRole,
+                roomId: nil
+            )
+            
+            self.currentSession = updatedSession
+            sessionStorage.saveUserSession(updatedSession)
+        }
+        
+        print("已离开RTC音视频房间")
+        
+        // 发送离开RTC房间通知
+        NotificationCenter.default.post(
+            name: .didLeaveRTCRoom,
+            object: self,
+            userInfo: [
+                "roomId": currentSession?.roomId ?? "",
+                "userId": currentSession?.userId ?? ""
+            ]
+        )
     }
     
     // MARK: - Audio Control and Settings Management (需求 5.1, 5.2, 5.3, 5.5, 5.6, 17.6, 18.2)
@@ -1733,7 +1891,9 @@ public class RealtimeManager: ObservableObject {
             try await rtcProvider.setPlaybackSignalVolume(clampedVolume)
             
             // 更新音频设置，@RealtimeStorage 会自动持久化 (需求 18.2)
-            audioSettings = audioSettings.withUpdatedVolume(playbackSignal: clampedVolume)
+            await updateAudioSettings { settings in
+                settings.withUpdatedVolume(playbackSignal: clampedVolume)
+            }
             
             // 发送本地化的状态提示 (需求 17.6)
             let statusMessage = localizationManager.localizedString(
@@ -1786,7 +1946,9 @@ public class RealtimeManager: ObservableObject {
             try await rtcProvider.setRecordingSignalVolume(clampedVolume)
             
             // 更新音频设置，@RealtimeStorage 会自动持久化 (需求 18.2)
-            audioSettings = audioSettings.withUpdatedVolume(recordingSignal: clampedVolume)
+            await updateAudioSettings { settings in
+                settings.withUpdatedVolume(recordingSignal: clampedVolume)
+            }
             
             // 发送本地化的状态提示 (需求 17.6)
             let statusMessage = localizationManager.localizedString(
@@ -1831,7 +1993,9 @@ public class RealtimeManager: ObservableObject {
             try await rtcProvider.stopLocalAudioStream()
             
             // 更新音频设置，@RealtimeStorage 会自动持久化 (需求 18.2)
-            audioSettings = audioSettings.withUpdatedStreamState(false)
+            await updateAudioSettings { settings in
+                settings.withUpdatedStreamState(false)
+            }
             
             // 发送本地化的状态提示 (需求 17.6)
             let statusMessage = localizationManager.localizedString(for: "audio.stream.stopped")
@@ -1872,7 +2036,9 @@ public class RealtimeManager: ObservableObject {
             try await rtcProvider.resumeLocalAudioStream()
             
             // 更新音频设置，@RealtimeStorage 会自动持久化 (需求 18.2)
-            audioSettings = audioSettings.withUpdatedStreamState(true)
+            await updateAudioSettings { settings in
+                settings.withUpdatedStreamState(true)
+            }
             
             // 发送本地化的状态提示 (需求 17.6)
             let statusMessage = localizationManager.localizedString(for: "audio.stream.resumed")
@@ -2075,7 +2241,7 @@ public class RealtimeManager: ObservableObject {
             
             // 如果同步的不是当前设置，更新当前设置
             if settings != nil {
-                audioSettings = targetSettings
+                await updateAudioSettings { _ in targetSettings }
             }
             
             let syncMessage = localizationManager.localizedString(for: "audio.settings.sync.success")
@@ -2209,9 +2375,9 @@ public class RealtimeManager: ObservableObject {
     }
     
     /// 重置所有持久化状态
-    public func resetAllPersistentState() {
+    public func resetAllPersistentState() async {
         // 重置音频设置
-        audioSettings = .default
+        await updateAudioSettings { _ in .default }
         
         // 重置连接历史
         connectionHistory.removeAll()

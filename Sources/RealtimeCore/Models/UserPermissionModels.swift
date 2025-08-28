@@ -374,4 +374,10 @@ extension Notification.Name {
     public static let userPermissionDenied = Notification.Name("RealtimeKit.userPermissionDenied")
     public static let sessionDidExpire = Notification.Name("RealtimeKit.sessionDidExpire")
     public static let sessionValidationFailed = Notification.Name("RealtimeKit.sessionValidationFailed")
+    
+    // 房间相关通知
+    public static let didLeaveRoom = Notification.Name("RealtimeKit.didLeaveRoom")
+    public static let didLeaveRTCRoom = Notification.Name("RealtimeKit.didLeaveRTCRoom")
+    public static let didLeaveRTMChannel = Notification.Name("RealtimeKit.didLeaveRTMChannel")
+    public static let didDisconnectAndLogout = Notification.Name("RealtimeKit.didDisconnectAndLogout")
 }
