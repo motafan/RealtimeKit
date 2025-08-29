@@ -9,6 +9,7 @@
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeEventProcessor.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Managers/VolumeIndicatorManager.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/AudioStatusModels.swift
+/Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ConfigurationModels.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/ConnectionModels.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/CoreModels.swift
 /Users/sondra/Documents/GitHub/RealtimeKit/Sources/RealtimeCore/Models/LocalizationModels.swift

@@ -229,7 +229,9 @@ public class RealtimeManager: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleAppDidEnterBackground()
+            Task { @MainActor in
+                self?.handleAppDidEnterBackground()
+            }
         }
         
         // 监听应用即将终止
@@ -238,7 +240,9 @@ public class RealtimeManager: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleAppWillTerminate()
+            Task { @MainActor in
+                self?.handleAppWillTerminate()
+            }
         }
         
         // 监听应用从后台返回
@@ -247,7 +251,9 @@ public class RealtimeManager: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleAppWillEnterForeground()
+            Task { @MainActor in
+                self?.handleAppWillEnterForeground()
+            }
         }
         #elseif os(macOS)
         // 监听应用即将终止

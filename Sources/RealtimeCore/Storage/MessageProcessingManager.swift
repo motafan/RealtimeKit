@@ -45,7 +45,8 @@ public class MessageProcessingManager: ObservableObject {
     
     // MARK: - Private Properties
     
-    private let processingQueue_internal = DispatchQueue(label: "message.processing", qos: .userInitiated)
+    /// 处理任务的 Actor，确保线程安全 (需求 15.4)
+    private let processingActor = MessageProcessingActor()
     private var processingTimer: Timer?
     
     // MARK: - Event Handlers
@@ -803,6 +804,45 @@ public struct MessageProcessingError {
     public init(message: RealtimeMessage, error: Error) {
         self.message = message
         self.error = error
+    }
+}
+
+// MARK: - Message Processing Actor (需求 15.4)
+
+/// 消息处理 Actor，确保线程安全的消息处理
+actor MessageProcessingActor {
+    private var processingTasks: [String: Task<Void, Never>] = [:]
+    
+    /// 提交消息处理任务
+    func submitProcessingTask(messageId: String, task: @escaping @Sendable () async -> Void) {
+        // 取消之前的任务（如果存在）
+        processingTasks[messageId]?.cancel()
+        
+        // 创建新任务
+        let newTask = Task {
+            await task()
+        }
+        
+        processingTasks[messageId] = newTask
+    }
+    
+    /// 取消指定消息的处理任务
+    func cancelProcessingTask(messageId: String) {
+        processingTasks[messageId]?.cancel()
+        processingTasks.removeValue(forKey: messageId)
+    }
+    
+    /// 取消所有处理任务
+    func cancelAllTasks() {
+        for task in processingTasks.values {
+            task.cancel()
+        }
+        processingTasks.removeAll()
+    }
+    
+    /// 获取当前处理中的任务数量
+    func getActiveTaskCount() -> Int {
+        return processingTasks.count
     }
 }
 

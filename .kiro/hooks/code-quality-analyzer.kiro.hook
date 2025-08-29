@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Code Quality Analyzer",
+  "description": "Monitors Swift source code files for changes and provides automated code quality analysis, including suggestions for improvements in readability, maintainability, performance, design patterns, and best practices.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "Sources/**/*.swift",
+      "SwiftUIDemo/**/*.swift",
+      "UIKitDemo/**/*.swift",
+      "Tests/**/*.swift"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the modified Swift code for potential improvements. Focus on:\n\n1. **Code Smells**: Identify any code smells such as long methods, large classes, duplicate code, or complex conditionals\n2. **Design Patterns**: Suggest appropriate design patterns that could improve the code structure\n3. **Best Practices**: Check adherence to Swift best practices, naming conventions, and iOS development standards\n4. **Readability**: Suggest improvements for code clarity and documentation\n5. **Maintainability**: Identify areas that could be refactored for better maintainability\n6. **Performance**: Highlight potential performance optimizations without changing functionality\n\nProvide specific, actionable suggestions while preserving the existing functionality. Include code examples where helpful."
+  }
+}

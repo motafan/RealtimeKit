@@ -5,27 +5,27 @@
 [![macOS](https://img.shields.io/badge/macOS-10.15+-blue.svg)](https://developer.apple.com/macos/)
 [![Swift Package Manager](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager/)
 
-RealtimeKit 是一个统一的 Swift Package，用于集成多家第三方 RTM (Real-Time Messaging) 和 RTC (Real-Time Communication) 服务提供商，为 iOS/macOS 应用提供统一的实时通信解决方案。
+RealtimeKit is a unified Swift Package for integrating multiple third-party RTM (Real-Time Messaging) and RTC (Real-Time Communication) service providers, providing a unified real-time communication solution for iOS/macOS applications.
 
-## 🌟 主要特性
+## 🌟 Core Features
 
-- **🔌 统一 API 接口**: 通过协议抽象屏蔽不同服务商差异
-- **🎯 插件化架构**: 支持多服务商动态切换和扩展
-- **📱 双框架支持**: 完整支持 UIKit 和 SwiftUI
-- **🌐 多语言支持**: 内置中文（简繁体）、英文、日文、韩文本地化
-- **💾 自动状态持久化**: 类似 @AppStorage 的自动状态管理
-- **⚡ 现代并发**: 全面采用 Swift Concurrency (async/await, actors)
-- **🎵 音量指示器**: 实时音量检测和可视化
-- **📡 转推流支持**: 支持直播转推到第三方平台
-- **🔄 媒体中继**: 跨频道音视频流转发
-- **🔐 Token 自动续期**: 智能 Token 管理和续期
+- **🔌 Unified API Interface**: Protocol abstraction that shields differences between service providers
+- **🎯 Plugin Architecture**: Support for dynamic switching and extension of multiple service providers  
+- **📱 Dual Framework Support**: Complete support for both UIKit and SwiftUI
+- **🌐 Multi-language Support**: Built-in localization for Chinese (Simplified/Traditional), English, Japanese, Korean
+- **💾 Automatic State Persistence**: @AppStorage-like automatic state management
+- **⚡ Modern Concurrency**: Full adoption of Swift Concurrency (async/await, actors)
+- **🎵 Volume Indicators**: Real-time volume detection and visualization
+- **📡 Stream Push Support**: Support for live streaming to third-party platforms
+- **🔄 Media Relay**: Cross-channel audio/video stream forwarding
+- **🔐 Token Auto-renewal**: Intelligent token management and renewal
 
-## 📋 系统要求
+## 📋 Target Platforms
 
-- **iOS**: 13.0 及以上版本
-- **macOS**: 10.15 及以上版本  
-- **Swift**: 6.2 及以上版本
-- **Xcode**: 15.0 及以上版本
+- **iOS**: 13.0+
+- **macOS**: 10.15+
+- **Swift**: 6.2+
+- **Xcode**: 15.0+
 
 ## 📦 安装
 
@@ -176,12 +176,12 @@ class ViewController: UIViewController {
 - [🔧 故障排除](docs/Troubleshooting.md) - 常见问题的诊断和解决方案
 - [❓ 常见问题 FAQ](docs/FAQ.md) - 快速解答和实用技巧
 
-## 🎯 支持的服务商
+## 🎯 Supported Providers
 
-- ✅ **声网 Agora**: 完整支持
-- 🚧 **腾讯云 TRTC**: 开发中
-- 🚧 **即构 ZEGO**: 开发中
-- ✅ **Mock Provider**: 测试支持
+- ✅ **Agora**: Full support
+- 🚧 **Tencent Cloud TRTC**: In development
+- 🚧 **ZEGO**: In development
+- ✅ **Mock Provider**: Testing support
 
 ## 🌐 本地化支持
 

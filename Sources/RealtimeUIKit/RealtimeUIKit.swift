@@ -74,7 +74,7 @@ open class RealtimeViewController: UIViewController {
     /// 当前连接状态
     public private(set) var connectionState: ConnectionState = .disconnected {
         didSet {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.connectionStateDidChange(from: oldValue, to: self.connectionState)
                 self.delegate?.realtimeViewController(self, didChangeConnectionState: self.connectionState)
                 
@@ -88,7 +88,7 @@ open class RealtimeViewController: UIViewController {
     /// 当前音量信息
     public private(set) var volumeInfos: [UserVolumeInfo] = [] {
         didSet {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.volumeInfosDidUpdate(self.volumeInfos)
                 self.delegate?.realtimeViewController(self, didUpdateVolumeInfos: self.volumeInfos)
                 
@@ -105,7 +105,7 @@ open class RealtimeViewController: UIViewController {
     /// 当前音频设置
     public private(set) var audioSettings: AudioSettings = .default {
         didSet {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.audioSettingsDidChange(from: oldValue, to: self.audioSettings)
                 self.delegate?.realtimeViewController(self, didChangeAudioSettings: self.audioSettings)
                 
@@ -119,7 +119,7 @@ open class RealtimeViewController: UIViewController {
     private let localizationManager = LocalizationManager.shared
     
     /// Combine 订阅集合
-    private var cancellables = Set<AnyCancellable>()
+    private nonisolated(unsafe) var cancellables = Set<AnyCancellable>()
     
     /// 上一次的说话用户集合（用于检测变化）
     private var previousSpeakingUsers: Set<String> = []
@@ -163,8 +163,8 @@ open class RealtimeViewController: UIViewController {
         // 注销本地化更新 - 直接移除通知观察者，不使用 LocalizationNotificationManager
         NotificationCenter.default.removeObserver(self, name: .realtimeLanguageDidChange, object: nil)
         
-        // 清理订阅 - 在 deinit 中不能访问非 Sendable 属性，所以移除这行
-        // cancellables.removeAll()
+        // 清理订阅 - 在 deinit 中直接访问，因为对象正在被销毁
+        cancellables.removeAll()
     }
     
     // MARK: - Setup
@@ -200,21 +200,21 @@ open class RealtimeViewController: UIViewController {
     private func setupStateObservation() {
         // 观察 RealtimeManager 的状态变化
         realtimeManager.$connectionState
-            .receive(on: DispatchQueue.main)
+            .receive(on: RunLoop.main)
             .sink { [weak self] state in
                 self?.connectionState = state
             }
             .store(in: &cancellables)
         
         realtimeManager.$volumeInfos
-            .receive(on: DispatchQueue.main)
+            .receive(on: RunLoop.main)
             .sink { [weak self] volumeInfos in
                 self?.volumeInfos = volumeInfos
             }
             .store(in: &cancellables)
         
         realtimeManager.$audioSettings
-            .receive(on: DispatchQueue.main)
+            .receive(on: RunLoop.main)
             .sink { [weak self] settings in
                 self?.audioSettings = settings
             }
@@ -1330,7 +1330,7 @@ public class ErrorFeedbackView: UIView {
     public var displayDuration: TimeInterval = 3.0
     
     /// 自动隐藏定时器
-    private var hideTimer: Timer?
+    private nonisolated(unsafe) var hideTimer: Timer?
     
     // MARK: - UI Components
     
@@ -1508,7 +1508,9 @@ public class ErrorFeedbackView: UIView {
     private func scheduleAutoHide() {
         hideTimer?.invalidate()
         hideTimer = Timer.scheduledTimer(withTimeInterval: displayDuration, repeats: false) { [weak self] _ in
-            self?.hideError()
+            Task { @MainActor in
+                self?.hideError()
+            }
         }
     }
     
@@ -1523,8 +1525,9 @@ public class ErrorFeedbackView: UIView {
     }
     
     deinit {
-        // 在 deinit 中不能访问非 Sendable 属性，所以移除这行
-        // hideTimer?.invalidate()
+        // 在 deinit 中直接清理 hideTimer，因为对象正在被销毁
+        hideTimer?.invalidate()
+        hideTimer = nil
         NotificationCenter.default.removeObserver(self)
     }
 }
@@ -2035,12 +2038,24 @@ public class StreamPushControlPanelView: UIView {
     }
     
     deinit {
-        // 保存当前设置
+        // 注意：不能在 deinit 中访问 Main actor 隔离的属性
+        // 设置保存已移至 saveCurrentSettings() 方法中
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    /// 保存当前设置
+    private func saveCurrentSettings() {
         controlSettings.lastStreamUrl = urlTextField.text
         controlSettings.lastBitrate = Int(bitrateSlider.value)
         controlSettings.lastResolutionIndex = resolutionSegmentedControl.selectedSegmentIndex
-        
-        NotificationCenter.default.removeObserver(self)
+    }
+    
+    public override func willMove(toSuperview newSuperview: UIView?) {
+        super.willMove(toSuperview: newSuperview)
+        if newSuperview == nil {
+            // 视图即将被移除，保存设置
+            saveCurrentSettings()
+        }
     }
 }
 
@@ -2440,10 +2455,22 @@ public class MediaRelayControlPanelView: UIView {
     }
     
     deinit {
-        // 保存当前设置
-        controlSettings.lastSourceChannel = sourceChannelTextField.text
-        
+        // 注意：不能在 deinit 中访问 Main actor 隔离的属性
+        // 设置保存已移至 saveCurrentSettings() 方法中
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    /// 保存当前设置
+    private func saveCurrentSettings() {
+        controlSettings.lastSourceChannel = sourceChannelTextField.text
+    }
+    
+    public override func willMove(toSuperview newSuperview: UIView?) {
+        super.willMove(toSuperview: newSuperview)
+        if newSuperview == nil {
+            // 视图即将被移除，保存设置
+            saveCurrentSettings()
+        }
     }
 }
 

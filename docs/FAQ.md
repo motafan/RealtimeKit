@@ -5,6 +5,7 @@
 ## 目录
 
 - [安装和配置](#安装和配置)
+- [服务提供商](#服务提供商)
 - [功能使用](#功能使用)
 - [性能和优化](#性能和优化)
 - [兼容性](#兼容性)
@@ -44,6 +45,63 @@ import RealtimeTencent   // 腾讯云 TRTC（开发中）
 // 测试 - 开发和测试时使用
 import RealtimeMocking   // Mock 服务商
 ```
+
+## 服务提供商
+
+### Q: RealtimeKit 支持哪些服务提供商？
+
+**A:** RealtimeKit 目前支持以下服务提供商：
+
+- ✅ **Agora**: 完全支持，包括 RTC 和 RTM 功能
+- 🚧 **腾讯云 TRTC**: 开发中，即将支持
+- 🚧 **ZEGO**: 开发中，即将支持  
+- ✅ **Mock Provider**: 完整的测试和开发支持
+
+### Q: 如何在不同服务提供商之间切换？
+
+**A:** RealtimeKit 的插件化架构支持无缝切换：
+
+```swift
+// 方法 1: 运行时切换
+try await RealtimeManager.shared.switchProvider(.agora)
+try await RealtimeManager.shared.switchProvider(.tencent)
+
+// 方法 2: 初始化时指定
+let config = RealtimeConfig(
+    appId: "your-app-id",
+    provider: .agora  // 或 .tencent, .zego
+)
+```
+
+### Q: 为什么选择 RealtimeKit 而不是直接使用服务商 SDK？
+
+**A:** RealtimeKit 提供以下优势：
+
+1. **统一 API**: 一套代码支持多个服务商，降低学习成本
+2. **插件化架构**: 轻松切换服务商，无需重写业务逻辑
+3. **自动状态管理**: 内置状态持久化和恢复机制
+4. **现代并发**: 全面支持 Swift Concurrency
+5. **完整本地化**: 内置多语言支持
+6. **双框架支持**: 同时支持 UIKit 和 SwiftUI
+
+### Q: 如何获取不同服务商的凭证？
+
+**A:** 各服务商凭证获取方式：
+
+#### Agora
+1. 访问 [Agora 控制台](https://console.agora.io/)
+2. 创建项目并获取 App ID
+3. 启用 App Certificate（推荐）
+
+#### 腾讯云 TRTC（即将支持）
+1. 访问 [腾讯云控制台](https://console.cloud.tencent.com/trtc)
+2. 创建应用并获取 SDKAppID
+3. 获取密钥信息
+
+#### ZEGO（即将支持）
+1. 访问 [ZEGO 控制台](https://console.zego.im/)
+2. 创建项目并获取 AppID
+3. 获取 AppSign
 
 ### Q: 如何获取 Agora App ID 和 App Certificate？
 

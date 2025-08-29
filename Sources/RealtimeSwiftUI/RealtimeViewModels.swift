@@ -259,7 +259,7 @@ public final class ConnectionViewModel: BaseRealtimeViewModel {
     private func setupConnectionBindings() {
         // 监听连接状态变化
         realtimeManager.$connectionState
-            .receive(on: DispatchQueue.main)
+            .receive(on: RunLoop.main)
             .sink { [weak self] newState in
                 self?.handleConnectionStateChange(newState)
             }

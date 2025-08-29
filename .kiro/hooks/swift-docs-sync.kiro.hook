@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Swift Documentation Sync",
+  "description": "Monitors Swift source files and related configuration files for changes and triggers documentation updates in README.md and docs folder",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "Sources/**/*.swift",
+      "Tests/**/*.swift",
+      "SwiftUIDemo/**/*.swift",
+      "UIKitDemo/**/*.swift",
+      "Package.swift",
+      "*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Swift source files have been modified. Please review the changes and update the documentation accordingly. Focus on:\n\n1. Update README.md if there are significant API changes, new features, or architectural modifications\n2. Update relevant files in the /docs folder based on the specific changes:\n   - API-Reference.md for new or modified public APIs\n   - Quick-Start-Guide.md for usage pattern changes\n   - Migration-Guide.md for breaking changes\n   - Best-Practices.md for new recommended patterns\n   - Troubleshooting.md for new known issues or solutions\n\nEnsure documentation remains accurate, comprehensive, and reflects the current state of the codebase."
+  }
+}

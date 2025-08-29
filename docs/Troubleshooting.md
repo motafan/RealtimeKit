@@ -5,6 +5,7 @@
 ## 目录
 
 - [安装和配置问题](#安装和配置问题)
+- [服务提供商相关问题](#服务提供商相关问题)
 - [连接和网络问题](#连接和网络问题)
 - [音频相关问题](#音频相关问题)
 - [UI 和界面问题](#ui-和界面问题)
@@ -13,6 +14,57 @@
 - [性能问题](#性能问题)
 - [编译和构建问题](#编译和构建问题)
 - [调试工具和技巧](#调试工具和技巧)
+
+## 服务提供商相关问题
+
+### Q: 如何切换服务提供商？
+
+**症状**: 需要从一个服务商（如 Agora）切换到另一个服务商（如腾讯云 TRTC）
+
+**解决方案**:
+
+RealtimeKit 的插件化架构支持无缝切换服务提供商：
+
+```swift
+// 从 Agora 切换到腾讯云 TRTC
+try await RealtimeManager.shared.switchProvider(.tencent)
+
+// 或者在初始化时指定
+let config = RealtimeConfig(
+    appId: "your-app-id",
+    provider: .tencent  // 替换为目标提供商
+)
+```
+
+### Q: 提供商初始化失败
+
+**症状**: 特定服务提供商无法正常初始化
+
+**解决方案**:
+
+1. **检查 App ID 和凭证**:
+   ```swift
+   // 确保使用正确的服务商凭证
+   let config = RealtimeConfig(
+       appId: "correct-app-id-for-provider",
+       appCertificate: "correct-certificate"
+   )
+   ```
+
+2. **验证服务商支持状态**:
+   - ✅ Agora: 完全支持
+   - 🚧 腾讯云 TRTC: 开发中
+   - 🚧 ZEGO: 开发中
+   - ✅ Mock Provider: 测试支持
+
+3. **使用 Mock Provider 进行测试**:
+   ```swift
+   // 用于开发和测试
+   try await RealtimeManager.shared.configure(
+       provider: .mock,
+       config: config
+   )
+   ```
 
 ## 安装和配置问题
 

@@ -1,6 +1,21 @@
 # RealtimeKit 快速开始指南
 
-本指南将帮助您快速集成 RealtimeKit 到您的 iOS/macOS 应用中，实现实时音视频通信功能。
+本指南将帮助您快速集成 RealtimeKit 到您的 iOS/macOS 应用中。RealtimeKit 是一个统一的 Swift Package，用于集成多家第三方 RTM (Real-Time Messaging) 和 RTC (Real-Time Communication) 服务提供商，提供统一的实时通信解决方案。
+
+## 核心特性
+
+RealtimeKit 提供以下主要功能：
+
+- **统一 API 接口**: 通过协议抽象屏蔽不同服务商差异
+- **插件化架构**: 支持多服务商动态切换和扩展
+- **双框架支持**: 完整支持 UIKit 和 SwiftUI
+- **多语言支持**: 内置中文（简繁体）、英文、日文、韩文本地化
+- **自动状态持久化**: @AppStorage-like 自动状态管理
+- **现代并发**: 全面采用 Swift Concurrency (async/await, actors)
+- **音量指示器**: 实时音量检测和可视化
+- **转推流支持**: 支持直播转推到第三方平台
+- **媒体中继**: 跨频道音视频流转发
+- **Token 自动续期**: 智能 Token 管理和续期
 
 ## 目录
 

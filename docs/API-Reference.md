@@ -1,6 +1,6 @@
 # RealtimeKit API 参考文档
 
-本文档提供 RealtimeKit Swift Package 的完整 API 参考，包括所有公开接口、数据模型和使用示例。
+本文档提供 RealtimeKit Swift Package 的完整 API 参考，这是一个用于集成多家第三方 RTM (Real-Time Messaging) 和 RTC (Real-Time Communication) 服务提供商的统一解决方案，包括所有公开接口、数据模型和使用示例。
 
 ## 版本信息
 
