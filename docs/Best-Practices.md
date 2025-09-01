@@ -13,6 +13,193 @@
 - [安全考虑](#安全考虑)
 - [部署和监控](#部署和监控)
 
+## 平台兼容性和服务商选择
+
+### 平台支持策略
+
+RealtimeKit 采用平台特定的服务商支持策略：
+
+#### iOS 平台
+- **Agora**: 生产环境首选，功能完整，稳定可靠
+  - 全球覆盖，低延迟网络
+  - 完整的 RTC 和 RTM 功能支持
+  - 支持转推流和媒体中继
+  - 企业级可靠性和技术支持
+- **Mock Provider**: 适用于开发和测试阶段
+
+#### macOS 平台
+- **Mock Provider**: 唯一可用选项
+  - 用于开发和测试
+  - 模拟完整的 API 行为
+  - 支持基础功能验证
+- **未来支持**: 计划支持其他跨平台服务商
+
+### 跨平台开发最佳实践
+
+#### 1. 条件编译策略
+
+```swift
+// 推荐的平台适配模式
+class PlatformProviderManager {
+    static func createProvider() -> ProviderType {
+        #if os(iOS)
+        return .agora
+        #elseif os(macOS)
+        return .mock
+        #else
+        return .mock
+        #endif
+    }
+    
+    static func validateFeature(_ feature: ProviderFeature) throws {
+        let supportedFeatures = getSupportedFeatures()
+        guard supportedFeatures.contains(feature) else {
+            throw RealtimeError.featureNotSupported(
+                "\(feature.rawValue) 在当前平台不支持"
+            )
+        }
+    }
+    
+    private static func getSupportedFeatures() -> Set<ProviderFeature> {
+        #if os(iOS)
+        return [.audioStreaming, .videoStreaming, .streamPush, .mediaRelay, .volumeIndicator, .messageProcessing]
+        #else
+        return [.messageProcessing, .volumeIndicator]
+        #endif
+    }
+}
+```
+
+#### 2. 平台抽象层
+
+```swift
+protocol PlatformAdapter {
+    func configureProvider() async throws
+    func supportedFeatures() -> Set<ProviderFeature>
+    func handlePlatformSpecificError(_ error: Error) -> RealtimeError
+}
+
+#if os(iOS)
+class iOSPlatformAdapter: PlatformAdapter {
+    func configureProvider() async throws {
+        let config = RealtimeConfig(
+            appId: "your-agora-app-id",
+            appCertificate: "your-agora-certificate"
+        )
+        try await RealtimeManager.shared.configure(provider: .agora, config: config)
+    }
+    
+    func supportedFeatures() -> Set<ProviderFeature> {
+        return [.audioStreaming, .videoStreaming, .streamPush, .mediaRelay]
+    }
+}
+#endif
+
+#if os(macOS)
+class macOSPlatformAdapter: PlatformAdapter {
+    func configureProvider() async throws {
+        let config = RealtimeConfig(appId: "mock-app-id")
+        try await RealtimeManager.shared.configure(provider: .mock, config: config)
+    }
+    
+    func supportedFeatures() -> Set<ProviderFeature> {
+        return [.messageProcessing, .volumeIndicator]
+    }
+}
+#endif
+```
+
+### 选择合适的服务商
+
+根据您的需求和目标平台选择合适的服务商：
+
+### Agora 最佳实践
+
+#### 1. 配置优化
+
+```swift
+// 生产环境配置
+let agoraConfig = AgoraProviderFactory.AgoraConfiguration(
+    enableCloudProxy: true,          // 在网络受限环境启用
+    enableAudioVolumeIndication: true, // 启用音量检测
+    enableLocalizedErrors: true,     // 启用本地化错误
+    logLevel: .warn,                 // 生产环境使用 warn 级别
+    region: .china                   // 根据用户地理位置选择
+)
+
+let factory = AgoraProviderFactory(configuration: agoraConfig)
+```
+
+#### 2. Token 管理
+
+```swift
+// 实现 Token 自动续期
+rtcProvider.onTokenWillExpire { secondsToExpire in
+    Task {
+        // 从服务器获取新 Token
+        let newToken = try await fetchNewTokenFromServer()
+        try await rtcProvider.renewToken(newToken)
+    }
+}
+
+rtmProvider.onTokenWillExpire {
+    Task {
+        let newToken = try await fetchNewRTMTokenFromServer()
+        try await rtmProvider.renewToken(newToken)
+    }
+}
+```
+
+#### 3. 错误处理
+
+```swift
+// 处理 Agora 特定错误
+do {
+    try await rtcProvider.joinRoom(roomId: roomId, userId: userId, userRole: .broadcaster)
+} catch let error as RealtimeError {
+    switch error {
+    case .connectionError(let message) where message.contains("token"):
+        // Token 相关错误，尝试刷新 Token
+        await refreshTokenAndRetry()
+    case .networkUnavailable:
+        // 网络问题，启用云代理
+        await enableCloudProxyAndRetry()
+    default:
+        // 其他错误处理
+        handleGenericError(error)
+    }
+}
+```
+
+#### 4. 性能优化
+
+```swift
+// 音量检测优化
+let volumeConfig = VolumeDetectionConfig(
+    detectionInterval: 300,          // 适中的检测间隔
+    speakingThreshold: 0.3,          // 根据环境调整
+    includeLocalUser: false,         // 减少不必要的处理
+    smoothFactor: 0.3                // 平滑音量变化
+)
+
+// 推流参数优化
+let streamConfig = try StreamPushConfig(
+    url: "rtmp://your-server.com/live/stream",
+    layout: StreamLayout(canvasWidth: 1280, canvasHeight: 720),
+    audioConfig: StreamAudioConfig(
+        sampleRate: 48000,
+        bitrate: 128,               // 根据网络条件调整
+        channels: 2
+    ),
+    videoConfig: StreamVideoConfig(
+        width: 1280,
+        height: 720,
+        bitrate: 2000,              // 根据网络条件调整
+        frameRate: 30
+    )
+)
+```
+
 ## 架构设计
 
 ### 架构哲学
@@ -273,6 +460,87 @@ class VolumeVisualizationView: UIView {
 // ❌ 避免：每次都立即更新 UI
 func updateVolumeInfos(_ volumeInfos: [UserVolumeInfo]) {
     updateDisplay(with: volumeInfos)  // 可能导致频繁刷新
+}
+```
+
+### 5. 转推流优化
+
+正确管理转推流生命周期和资源：
+
+```swift
+// ✅ 推荐：完整的转推流管理
+class StreamPushManager: ObservableObject {
+    @Published private(set) var streamState: StreamPushState = .stopped
+    @Published private(set) var streamQuality: StreamQualityMetrics?
+    
+    private var currentConfig: StreamPushConfig?
+    private var qualityMonitor: Timer?
+    
+    func startStreamPush(config: StreamPushConfig) async throws {
+        // 验证配置
+        try config.validate()
+        
+        // 检查前置条件
+        guard RealtimeManager.shared.connectionState == .connected else {
+            throw StreamPushError.invalidState("Must be connected to room before starting stream push")
+        }
+        
+        // 保存配置用于重试
+        currentConfig = config
+        
+        do {
+            try await RealtimeManager.shared.startStreamPush(config: config)
+            streamState = .running
+            startQualityMonitoring()
+        } catch {
+            streamState = .failed
+            throw error
+        }
+    }
+    
+    func stopStreamPush() async throws {
+        defer {
+            streamState = .stopped
+            currentConfig = nil
+            stopQualityMonitoring()
+        }
+        
+        guard streamState == .running else {
+            return // 已经停止
+        }
+        
+        try await RealtimeManager.shared.stopStreamPush()
+    }
+    
+    private func startQualityMonitoring() {
+        qualityMonitor = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                await self?.updateQualityMetrics()
+            }
+        }
+    }
+    
+    private func stopQualityMonitoring() {
+        qualityMonitor?.invalidate()
+        qualityMonitor = nil
+        streamQuality = nil
+    }
+    
+    private func updateQualityMetrics() async {
+        // 获取推流质量指标
+        // 实际实现需要从底层 SDK 获取数据
+        streamQuality = StreamQualityMetrics(
+            bitrate: getCurrentBitrate(),
+            frameRate: getCurrentFrameRate(),
+            packetLoss: getCurrentPacketLoss()
+        )
+    }
+}
+
+// ❌ 避免：不完整的资源管理
+func startStreamPush(config: StreamPushConfig) async throws {
+    try await RealtimeManager.shared.startStreamPush(config: config)
+    // 缺少错误处理和状态管理
 }
 ```
 
@@ -1019,4 +1287,322 @@ extension RealtimeManager {
 }
 ```
 
-通过遵循这些最佳实践，您可以构建出高质量、高性能、易维护的实时通信应用。记住，最佳实践是不断演进的，请根据您的具体需求和用户反馈持续优化您的实现。
+通过遵循这些最佳实践，您可以构建出高质量、高性能、易维护的实时通信应用。记住，最佳实践是不断演进的，请根据您的具体需求和用户反馈持续优化您的实现。## 
+平台特定开发指南
+
+### iOS 开发最佳实践
+
+#### 1. Agora SDK 优化
+
+```swift
+// iOS 特定的 Agora 配置优化
+#if os(iOS)
+let agoraConfig = AgoraProviderFactory.AgoraConfiguration(
+    enableCloudProxy: true,          // 网络受限环境启用
+    enableAudioVolumeIndication: true, // 启用音量检测
+    enableLocalizedErrors: true,     // 启用本地化错误
+    logLevel: .warn,                 // 生产环境使用 warn 级别
+    region: .china                   // 根据用户地理位置选择
+)
+
+// 音频会话配置
+func configureAudioSession() throws {
+    let audioSession = AVAudioSession.sharedInstance()
+    try audioSession.setCategory(
+        .playAndRecord,
+        mode: .voiceChat,
+        options: [.defaultToSpeaker, .allowBluetooth]
+    )
+    try audioSession.setActive(true)
+}
+#endif
+```
+
+#### 2. 后台处理
+
+```swift
+#if os(iOS)
+class BackgroundTaskManager {
+    private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
+    
+    func beginBackgroundTask() {
+        backgroundTask = UIApplication.shared.beginBackgroundTask { [weak self] in
+            self?.endBackgroundTask()
+        }
+    }
+    
+    func endBackgroundTask() {
+        if backgroundTask != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTask)
+            backgroundTask = .invalid
+        }
+    }
+}
+#endif
+```
+
+### macOS 开发最佳实践
+
+#### 1. Mock Provider 使用
+
+```swift
+#if os(macOS)
+// macOS 上的 Mock Provider 配置
+class macOSRealtimeManager {
+    func setupMockProvider() async throws {
+        let config = RealtimeConfig(
+            appId: "mock-app-id",
+            appCertificate: nil
+        )
+        
+        try await RealtimeManager.shared.configure(
+            provider: .mock,
+            config: config
+        )
+        
+        // 配置 Mock 行为
+        if let mockProvider = RealtimeManager.shared.currentProvider as? MockProvider {
+            mockProvider.simulateNetworkDelay = true
+            mockProvider.simulateVolumeData = true
+        }
+    }
+}
+#endif
+```
+
+#### 2. 功能限制处理
+
+```swift
+#if os(macOS)
+extension RealtimeManager {
+    func attemptStreamPush(config: StreamPushConfig) async throws {
+        throw RealtimeError.featureNotSupported(
+            "推流功能在 macOS 平台不支持，请在 iOS 设备上使用"
+        )
+    }
+    
+    func showPlatformLimitationAlert() {
+        let alert = NSAlert()
+        alert.messageText = "功能限制"
+        alert.informativeText = "此功能仅在 iOS 平台支持，当前为 macOS 开发环境"
+        alert.alertStyle = .informational
+        alert.runModal()
+    }
+}
+#endif
+```
+
+### 跨平台 UI 设计
+
+#### 1. SwiftUI 平台适配
+
+```swift
+struct PlatformAwareContentView: View {
+    @StateObject private var manager = RealtimeManager.shared
+    
+    var body: some View {
+        VStack {
+            // 通用组件
+            ConnectionStateIndicatorView(state: manager.connectionState)
+            
+            #if os(iOS)
+            // iOS 特定功能
+            Group {
+                AudioControlPanelView()
+                VolumeVisualizationView(volumeInfos: manager.volumeInfos)
+                StreamPushControlView()
+            }
+            #elseif os(macOS)
+            // macOS 简化界面
+            Group {
+                Text("开发模式 - Mock Provider")
+                    .foregroundColor(.secondary)
+                BasicControlPanelView()
+            }
+            #endif
+        }
+        .onAppear {
+            Task {
+                await configurePlatformProvider()
+            }
+        }
+    }
+    
+    private func configurePlatformProvider() async {
+        do {
+            #if os(iOS)
+            try await manager.configure(provider: .agora, config: agoraConfig)
+            #else
+            try await manager.configure(provider: .mock, config: mockConfig)
+            #endif
+        } catch {
+            print("平台配置失败: \(error)")
+        }
+    }
+}
+```
+
+#### 2. UIKit 平台适配
+
+```swift
+#if os(iOS)
+class iOSRealtimeViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupiOSSpecificUI()
+    }
+    
+    private func setupiOSSpecificUI() {
+        // iOS 特定的 UI 设置
+        let audioControlView = AudioControlView()
+        let volumeIndicatorView = VolumeIndicatorView()
+        // 添加到视图层次结构
+    }
+}
+#endif
+
+#if os(macOS)
+class macOSRealtimeViewController: NSViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupmacOSSpecificUI()
+    }
+    
+    private func setupmacOSSpecificUI() {
+        // macOS 特定的 UI 设置
+        let statusLabel = NSTextField(labelWithString: "Mock Provider 模式")
+        // 添加到视图层次结构
+    }
+}
+#endif
+```
+
+### 测试策略
+
+#### 1. 平台特定测试
+
+```swift
+#if os(iOS)
+class iOSAgoraTests: XCTestCase {
+    func testAgoraProviderInitialization() async throws {
+        let provider = AgoraRTCProvider()
+        let config = RTCConfig(appId: "test-app-id")
+        try await provider.initialize(config: config)
+        // iOS 特定的 Agora 测试
+    }
+}
+#endif
+
+#if os(macOS)
+class macOSMockTests: XCTestCase {
+    func testMockProviderBehavior() async throws {
+        let provider = MockRTCProvider()
+        let config = RTCConfig(appId: "mock-app-id")
+        try await provider.initialize(config: config)
+        // macOS 特定的 Mock 测试
+    }
+}
+#endif
+```
+
+#### 2. 跨平台兼容性测试
+
+```swift
+class CrossPlatformCompatibilityTests: XCTestCase {
+    func testPlatformFeatureMatrix() {
+        let manager = RealtimeManager.shared
+        
+        #if os(iOS)
+        XCTAssertTrue(manager.isFeatureSupported(.audioStreaming))
+        XCTAssertTrue(manager.isFeatureSupported(.streamPush))
+        #else
+        XCTAssertFalse(manager.isFeatureSupported(.audioStreaming))
+        XCTAssertFalse(manager.isFeatureSupported(.streamPush))
+        #endif
+        
+        // 跨平台支持的功能
+        XCTAssertTrue(manager.isFeatureSupported(.messageProcessing))
+        XCTAssertTrue(manager.isFeatureSupported(.volumeIndicator))
+    }
+}
+```
+
+### 部署和发布
+
+#### 1. 多平台构建配置
+
+```swift
+// Package.swift 中的平台特定配置
+let package = Package(
+    name: "RealtimeKit",
+    platforms: [
+        .iOS(.v13),
+        .macOS(.v10_15)
+    ],
+    products: [
+        .library(name: "RealtimeKit", targets: ["RealtimeKit"]),
+        .library(name: "RealtimeCore", targets: ["RealtimeCore"]),
+        .library(name: "RealtimeAgora", targets: ["RealtimeAgora"])
+    ],
+    targets: [
+        .target(
+            name: "RealtimeAgora",
+            dependencies: [
+                "RealtimeCore",
+                .product(name: "AgoraRtcKit", package: "AgoraRtcEngine_iOS", condition: .when(platforms: [.iOS])),
+                .product(name: "AgoraRtmKit", package: "AgoraRtm_Apple", condition: .when(platforms: [.iOS]))
+            ]
+        )
+    ]
+)
+```
+
+#### 2. CI/CD 配置
+
+```yaml
+# GitHub Actions 示例
+name: Multi-Platform Build
+on: [push, pull_request]
+
+jobs:
+  ios-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build iOS
+        run: |
+          xcodebuild -scheme RealtimeKit-iOS -destination 'platform=iOS Simulator,name=iPhone 14' build
+  
+  macos-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build macOS
+        run: |
+          xcodebuild -scheme RealtimeKit-macOS -destination 'platform=macOS' build
+```
+
+### 性能监控
+
+#### 1. 平台特定性能指标
+
+```swift
+class PlatformPerformanceMonitor {
+    func collectMetrics() -> [String: Any] {
+        var metrics: [String: Any] = [:]
+        
+        #if os(iOS)
+        metrics["platform"] = "iOS"
+        metrics["agora_version"] = getAgoraSDKVersion()
+        metrics["audio_session_active"] = AVAudioSession.sharedInstance().isOtherAudioPlaying
+        #else
+        metrics["platform"] = "macOS"
+        metrics["mock_provider"] = true
+        #endif
+        
+        return metrics
+    }
+}
+```
+
+这些平台特定的最佳实践将帮助您充分利用 RealtimeKit 在不同平台上的能力，同时正确处理平台限制和差异。

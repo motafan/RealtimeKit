@@ -104,6 +104,102 @@
 
   ],
   "swiftCommands" : {
+    "C.AgoraInfra_iOS-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/sources",
+      "importPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/checkouts/AgoraRtcEngine_iOS/Sources/AgoraInfra_iOS/AgoraInfra_iOS.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/swift-version-39B54973F684ADAB.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "AgoraInfra_iOS",
+      "moduleOutputPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules/AgoraInfra_iOS.swiftmodule",
+      "objects" : [
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/AgoraInfra_iOS.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx10.13",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/include/AgoraInfra_iOS-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+        "-F",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-suppress-warnings"
+      ],
+      "outputFileMapPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/AgoraInfra_iOS.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules/AgoraInfra_iOS.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/sondra/Documents/GitHub/RealtimeKit/.build/checkouts/AgoraRtcEngine_iOS/Sources/AgoraInfra_iOS/AgoraInfra_iOS.swift"
+      ],
+      "tempsPath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build",
+      "wholeModuleOptimization" : false
+    },
     "C.RealtimeAgora-arm64-apple-macosx26.0-debug.module" : {
       "executable" : "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "fileList" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeAgora.build/sources",
@@ -153,7 +249,6 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeAgora.build/include/RealtimeAgora-Swift.h",
-        "-color-diagnostics",
         "-swift-version",
         "6",
         "-enable-experimental-feature",
@@ -492,7 +587,6 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/include/RealtimeCore-Swift.h",
-        "-color-diagnostics",
         "-swift-version",
         "6",
         "-enable-experimental-feature",
@@ -1011,7 +1105,6 @@
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/ModuleCache",
         "-parseable-output",
         "-parse-as-library",
-        "-color-diagnostics",
         "-swift-version",
         "6",
         "-enable-experimental-feature",
@@ -1296,7 +1389,6 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeKit.build/include/RealtimeKit-Swift.h",
-        "-color-diagnostics",
         "-swift-version",
         "6",
         "-enable-experimental-feature",
@@ -1406,7 +1498,6 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeKitPackageTests.build/include/RealtimeKitPackageTests-Swift.h",
-        "-color-diagnostics",
         "-plugin-path",
         "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
         "-sdk",
@@ -1506,7 +1597,6 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMocking.build/include/RealtimeMocking-Swift.h",
-        "-color-diagnostics",
         "-swift-version",
         "6",
         "-enable-experimental-feature",
@@ -1613,7 +1703,6 @@
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/ModuleCache",
         "-parseable-output",
         "-parse-as-library",
-        "-color-diagnostics",
         "-swift-version",
         "6",
         "-enable-experimental-feature",
@@ -1732,7 +1821,6 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/include/RealtimeSwiftUI-Swift.h",
-        "-color-diagnostics",
         "-swift-version",
         "6",
         "-enable-experimental-feature",
@@ -1856,7 +1944,6 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeUIKit.build/include/RealtimeUIKit-Swift.h",
-        "-color-diagnostics",
         "-swift-version",
         "6",
         "-enable-experimental-feature",
@@ -1921,6 +2008,69 @@
 
   },
   "swiftTargetScanArgs" : {
+    "AgoraInfra_iOS" : [
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "AgoraInfra_iOS",
+      "-c",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/.build/checkouts/AgoraRtcEngine_iOS/Sources/AgoraInfra_iOS/AgoraInfra_iOS.swift",
+      "-I",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx10.13",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/include/AgoraInfra_iOS-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+      "-F",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-suppress-warnings",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
     "RealtimeAgora" : [
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "-module-name",
@@ -1951,7 +2101,6 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeAgora.build/include/RealtimeAgora-Swift.h",
-      "-color-diagnostics",
       "-swift-version",
       "6",
       "-enable-experimental-feature",
@@ -2067,7 +2216,6 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeCore.build/include/RealtimeCore-Swift.h",
-      "-color-diagnostics",
       "-swift-version",
       "6",
       "-enable-experimental-feature",
@@ -2168,7 +2316,6 @@
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/ModuleCache",
       "-parseable-output",
       "-parse-as-library",
-      "-color-diagnostics",
       "-swift-version",
       "6",
       "-enable-experimental-feature",
@@ -2237,7 +2384,6 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeKit.build/include/RealtimeKit-Swift.h",
-      "-color-diagnostics",
       "-swift-version",
       "6",
       "-enable-experimental-feature",
@@ -2308,7 +2454,6 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeKitPackageTests.build/include/RealtimeKitPackageTests-Swift.h",
-      "-color-diagnostics",
       "-plugin-path",
       "/Applications/Xcode-beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
       "-sdk",
@@ -2373,7 +2518,6 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeMocking.build/include/RealtimeMocking-Swift.h",
-      "-color-diagnostics",
       "-swift-version",
       "6",
       "-enable-experimental-feature",
@@ -2441,7 +2585,6 @@
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/ModuleCache",
       "-parseable-output",
       "-parse-as-library",
-      "-color-diagnostics",
       "-swift-version",
       "6",
       "-enable-experimental-feature",
@@ -2513,7 +2656,6 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeSwiftUI.build/include/RealtimeSwiftUI-Swift.h",
-      "-color-diagnostics",
       "-swift-version",
       "6",
       "-enable-experimental-feature",
@@ -2583,7 +2725,6 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeUIKit.build/include/RealtimeUIKit-Swift.h",
-      "-color-diagnostics",
       "-swift-version",
       "6",
       "-enable-experimental-feature",
@@ -2624,6 +2765,9 @@
     ]
   },
   "targetDependencyMap" : {
+    "AgoraInfra_iOS" : [
+      "aosl"
+    ],
     "RealtimeAgora" : [
       "RealtimeCore"
     ],
@@ -2689,6 +2833,20 @@
     }
   },
   "writeCommands" : {
+    "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/checkouts/AgoraRtcEngine_iOS/Sources/AgoraInfra_iOS/AgoraInfra_iOS.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/AgoraInfra_iOS.build/sources"
+    },
     "/Users/sondra/Documents/GitHub/RealtimeKit/.build/arm64-apple-macosx/debug/RealtimeAgora.build/sources" : {
       "alwaysOutOfDate" : false,
       "inputs" : [

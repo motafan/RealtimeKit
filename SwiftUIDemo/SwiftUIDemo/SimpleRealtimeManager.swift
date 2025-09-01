@@ -1,8 +1,10 @@
 import Foundation
+import Combine
 import RealtimeCore
 import RealtimeMocking
 
 /// Simplified RealtimeManager for SwiftUI Demo
+@available(iOS 14.0, macOS 11.0, *)
 @MainActor
 public class SimpleRealtimeManager: ObservableObject {
     
@@ -16,7 +18,7 @@ public class SimpleRealtimeManager: ObservableObject {
     @Published public private(set) var speakingUsers: Set<String> = []
     @Published public private(set) var dominantSpeaker: String? = nil
     @Published public private(set) var streamPushState: StreamPushState = .stopped
-    @Published public private(set) var mediaRelayState: MediaRelayState = .stopped
+    @Published public private(set) var mediaRelayState: MediaRelayState = .idle
     
     // MARK: - Private Properties
     private var rtcProvider: RTCProvider?
@@ -34,8 +36,9 @@ public class SimpleRealtimeManager: ObservableObject {
         
         // Create mock providers for demo
         if provider == .mock {
-            rtcProvider = MockRTCProvider()
-            rtmProvider = MockRTMProvider()
+            let mockFactory = MockProviderFactory()
+            rtcProvider = mockFactory.createRTCProvider()
+            rtmProvider = mockFactory.createRTMProvider()
         }
         
         // Initialize providers
@@ -120,7 +123,7 @@ public class SimpleRealtimeManager: ObservableObject {
     
     public func stopMediaRelay() async throws {
         try await rtcProvider?.stopMediaRelay()
-        mediaRelayState = .stopped
+        mediaRelayState = .idle
         print("Media relay stopped")
     }
     
@@ -155,7 +158,7 @@ public class SimpleRealtimeManager: ObservableObject {
                 
                 // Generate simulated volume data
                 let simulatedVolumeInfos = generateSimulatedVolumeData()
-                await handleVolumeUpdate(simulatedVolumeInfos)
+                handleVolumeUpdate(simulatedVolumeInfos)
             }
         }
     }
@@ -170,7 +173,7 @@ public class SimpleRealtimeManager: ObservableObject {
         return [
             UserVolumeInfo(
                 userId: session.userId,
-                volume: baseVolume,
+                volumeFloat: baseVolume,
                 isSpeaking: isSpeaking,
                 timestamp: Date()
             )
@@ -182,7 +185,7 @@ public class SimpleRealtimeManager: ObservableObject {
 
 extension SimpleRealtimeManager {
     /// Convenience property for demo
-    public var volumeManager: VolumeIndicatorManager {
+    public var volumeIndicatorManager: VolumeIndicatorManager {
         return self.volumeManager
     }
 }

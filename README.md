@@ -22,10 +22,23 @@ RealtimeKit is a unified Swift Package for integrating multiple third-party RTM 
 
 ## 📋 Target Platforms
 
-- **iOS**: 13.0+
-- **macOS**: 10.15+
+- **iOS**: 13.0+ (Full feature support)
+- **macOS**: 10.15+ (Core features only)
 - **Swift**: 6.2+
 - **Xcode**: 15.0+
+
+### Platform Feature Matrix
+
+| Feature | iOS | macOS | Notes |
+|---------|-----|-------|-------|
+| Audio Communication | ✅ | ❌ | Agora SDK iOS-only |
+| Video Communication | ✅ | ❌ | Agora SDK iOS-only |
+| Stream Push | ✅ | ❌ | Agora SDK iOS-only |
+| Media Relay | ✅ | ❌ | Agora SDK iOS-only |
+| Volume Detection | ✅ | ✅ | Mock implementation on macOS |
+| Message Processing | ✅ | ✅ | Cross-platform core feature |
+| State Persistence | ✅ | ✅ | Cross-platform core feature |
+| UI Components | ✅ | ✅ | SwiftUI/UIKit support |
 
 ## 📦 安装
 
@@ -54,12 +67,18 @@ RealtimeKit 支持按需导入功能模块：
 import RealtimeKit
 
 // 按需导入
-import RealtimeCore      // 核心功能
-import RealtimeUIKit     // UIKit 集成
-import RealtimeSwiftUI   // SwiftUI 集成
-import RealtimeAgora     // 声网服务商
-import RealtimeMocking   // 测试模拟
+import RealtimeCore      // 核心功能（所有平台）
+import RealtimeUIKit     // UIKit 集成（所有平台）
+import RealtimeSwiftUI   // SwiftUI 集成（所有平台）
+import RealtimeMocking   // 测试模拟（所有平台）
+
+// 平台特定导入
+#if os(iOS)
+import RealtimeAgora     // 声网服务商（仅 iOS，包含原生 SDK）
+#endif
 ```
+
+> **重要**: RealtimeAgora 模块仅在 iOS 平台可用，包含完整的 Agora 原生 SDK 集成。macOS 平台请使用 RealtimeMocking 进行开发和测试。
 
 ## 🚀 快速开始
 
@@ -178,10 +197,17 @@ class ViewController: UIViewController {
 
 ## 🎯 Supported Providers
 
-- ✅ **Agora**: Full support
+- ✅ **Agora**: Complete implementation with native SDK integration
+  - ✅ Real-time audio/video communication (RTC)
+  - ✅ Real-time messaging and presence (RTM)
+  - ✅ Stream push to external platforms (RTMP)
+  - ✅ Cross-channel media relay
+  - ✅ Volume detection and indicators
+  - ✅ Token management and auto-renewal
+  - ✅ Multi-user audio/video sessions
 - 🚧 **Tencent Cloud TRTC**: In development
 - 🚧 **ZEGO**: In development
-- ✅ **Mock Provider**: Testing support
+- ✅ **Mock Provider**: Testing and development support
 
 ## 🌐 本地化支持
 
@@ -276,8 +302,11 @@ RealtimeKit/
 - Environment 和 EnvironmentObject 支持
 
 ### RealtimeAgora (Agora 提供商)
-- Agora SDK 的 RTCProvider 和 RTMProvider 实现
-- 占位符实现，待后续任务完善
+- **完整实现**: Agora SDK 的 RTCProvider 和 RTMProvider 实现
+- **RTC 功能**: 音视频通信、推流、媒体中继、音量检测
+- **RTM 功能**: 实时消息、用户属性、频道管理、在线状态
+- **SDK 集成**: Agora RTC Engine iOS SDK 4.6.0+ 和 RTM Apple SDK 2.2.0+
+- **高级特性**: Token 自动续期、错误恢复、性能优化
 
 ### RealtimeMocking (测试模块)
 - Mock 提供商实现，用于单元测试

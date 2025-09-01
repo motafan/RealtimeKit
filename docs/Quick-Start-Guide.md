@@ -36,6 +36,18 @@ RealtimeKit 提供以下主要功能：
 - **Swift**: 6.2 及以上版本
 - **Xcode**: 15.0 及以上版本
 
+### 平台功能支持
+
+| 功能 | iOS | macOS | 说明 |
+|------|-----|-------|------|
+| 音频通信 | ✅ | ❌ | Agora SDK 仅支持 iOS |
+| 视频通信 | ✅ | ❌ | Agora SDK 仅支持 iOS |
+| 转推流 | ✅ | ❌ | Agora SDK 仅支持 iOS |
+| 媒体中继 | ✅ | ❌ | Agora SDK 仅支持 iOS |
+| 音量检测 | ✅ | ✅ | Mock 实现在 macOS 可用 |
+| 消息处理 | ✅ | ✅ | 核心功能跨平台支持 |
+| 状态持久化 | ✅ | ✅ | 核心功能跨平台支持 |
+
 ### 权限配置
 
 在 `Info.plist` 中添加必要的权限：
@@ -53,7 +65,16 @@ RealtimeKit 提供以下主要功能：
 
 ## 安装配置
 
-### 1. 添加 Package 依赖
+### 1. SDK 依赖说明
+
+RealtimeKit 已自动集成必要的第三方 SDK：
+
+- **Agora RTC Engine iOS**: 4.6.0+ (音视频通信)
+- **Agora RTM Apple**: 2.2.0+ (实时消息)
+
+这些依赖会在添加 RealtimeKit 时自动下载和配置，无需手动添加。
+
+### 2. 添加 Package 依赖
 
 #### 通过 Xcode
 
@@ -86,7 +107,29 @@ let package = Package(
 )
 ```
 
-### 2. 导入模块
+### 3. 导入模块
+
+根据目标平台选择合适的导入方式：
+
+```swift
+// 通用导入（推荐）
+import RealtimeKit
+
+// 或按需导入
+import RealtimeCore      // 核心功能（所有平台）
+import RealtimeSwiftUI   // SwiftUI 组件（所有平台）
+import RealtimeUIKit     // UIKit 组件（所有平台）
+
+// 平台特定导入
+#if os(iOS)
+import RealtimeAgora     // Agora SDK 集成（仅 iOS）
+#endif
+import RealtimeMocking   // Mock 实现（所有平台，用于测试）
+```
+
+### 4. 平台适配配置
+
+对于跨平台项目，建议创建平台适配层：
 
 ```swift
 // 完整功能导入
@@ -184,16 +227,72 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 ### 2. 获取服务商配置
 
-#### 声网 Agora
+#### 声网 Agora（推荐）
+
+RealtimeKit 现已完整实现 Agora 提供商，支持所有核心功能：
+
+**功能支持：**
+- ✅ 实时音视频通信 (RTC)
+- ✅ 实时消息传递 (RTM)
+- ✅ 转推流到第三方平台
+- ✅ 跨频道媒体中继
+- ✅ 音量检测和指示器
+- ✅ Token 自动管理和续期
+
+**配置步骤：**
 
 1. 注册 [Agora 开发者账号](https://www.agora.io/)
 2. 创建项目获取 App ID 和 App Certificate
-3. 在项目中使用这些配置
+3. RealtimeKit 已自动集成 Agora SDK 依赖，无需手动添加
+4. 在项目中使用这些配置
 
 ```swift
 let config = RealtimeConfig(
     appId: "your-agora-app-id",
-    appCertificate: "your-agora-app-certificate"
+    appCertificate: "your-agora-app-certificate"  // 生产环境推荐
+)
+
+// 配置 Agora 提供商
+try await RealtimeManager.shared.configure(
+    provider: .agora,
+    config: config
+)
+```
+
+**高级配置：**
+
+```swift
+// 自定义 Agora 配置
+let agoraConfig = AgoraProviderFactory.AgoraConfiguration(
+    enableCloudProxy: false,
+    enableAudioVolumeIndication: true,
+    enableLocalizedErrors: true,
+    logLevel: .info,
+    region: .global
+)
+
+let factory = AgoraProviderFactory(configuration: agoraConfig)
+```
+
+> **SDK 版本**: 
+> - Agora RTC Engine iOS: 4.6.0+
+> - Agora RTM Apple: 2.2.0+
+> 
+> **注意**: App Certificate 在生产环境中强烈建议使用，可提供更高的安全性。
+
+#### Mock 提供商（测试用）
+
+用于开发和测试，无需真实的服务商配置：
+
+```swift
+let config = RealtimeConfig(
+    appId: "mock-app-id",
+    appCertificate: nil
+)
+
+try await RealtimeManager.shared.configure(
+    provider: .mock,
+    config: config
 )
 ```
 
@@ -735,31 +834,75 @@ class VolumeIndicatorView: UIView {
 
 ### 1. 转推流功能
 
+RealtimeKit 提供完整的转推流功能，支持将房间内的音视频流推送到第三方平台（如 RTMP 服务器）。底层使用真实的服务商 SDK 实现，确保稳定可靠的推流体验。
+
 ```swift
-// 配置转推流
-let streamConfig = StreamPushConfig(
-    pushUrl: "rtmp://your-streaming-server.com/live/stream-key",
-    resolution: .resolution720p,
-    bitrate: 1000,
-    frameRate: 30,
+// 配置转推流参数
+let streamConfig = try StreamPushConfig(
+    url: "rtmp://your-streaming-server.com/live/stream-key",
     layout: StreamLayout(
-        backgroundColor: "#000000",
-        regions: [
-            StreamRegion(
+        canvasWidth: 1280,
+        canvasHeight: 720,
+        userRegions: [
+            StreamUserRegion(
                 userId: "user1",
-                x: 0, y: 0, width: 640, height: 360,
-                zOrder: 1, alpha: 1.0
+                x: 0, y: 0, width: 640, height: 720,
+                alpha: 1.0, renderMode: .fit
+            ),
+            StreamUserRegion(
+                userId: "user2", 
+                x: 640, y: 0, width: 640, height: 720,
+                alpha: 1.0, renderMode: .fit
             )
         ]
+    ),
+    audioConfig: StreamAudioConfig(
+        sampleRate: 48000,
+        bitrate: 128,
+        channels: 2
+    ),
+    videoConfig: StreamVideoConfig(
+        width: 1280,
+        height: 720,
+        bitrate: 2000,
+        frameRate: 30
     )
 )
 
 // 开始转推流
-try await RealtimeManager.shared.startStreamPush(config: streamConfig)
+do {
+    try await RealtimeManager.shared.startStreamPush(config: streamConfig)
+    print("转推流启动成功")
+} catch {
+    print("转推流启动失败: \(error)")
+}
+
+// 监控转推流状态
+RealtimeManager.shared.$streamPushState
+    .sink { state in
+        switch state {
+        case .running:
+            print("转推流正在运行")
+        case .stopped:
+            print("转推流已停止")
+        case .failed:
+            print("转推流失败")
+        default:
+            break
+        }
+    }
+    .store(in: &cancellables)
 
 // 停止转推流
 try await RealtimeManager.shared.stopStreamPush()
 ```
+
+**转推流最佳实践：**
+
+1. **验证推流 URL**: 确保 RTMP 服务器可达
+2. **合理设置参数**: 根据网络条件调整码率和分辨率
+3. **监控推流状态**: 及时处理推流异常
+4. **优雅停止**: 在应用退出前正确停止推流
 
 ### 2. 媒体中继功能
 

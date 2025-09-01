@@ -11,11 +11,276 @@
 - [UI 和界面问题](#ui-和界面问题)
 - [本地化问题](#本地化问题)
 - [存储和持久化问题](#存储和持久化问题)
+- [转推流相关问题](#转推流相关问题)
 - [性能问题](#性能问题)
 - [编译和构建问题](#编译和构建问题)
 - [调试工具和技巧](#调试工具和技巧)
 
 ## 服务提供商相关问题
+
+### Q: Agora SDK 集成问题
+
+**症状**: 使用 RealtimeAgora 模块时出现编译错误或运行时错误
+
+**解决方案**:
+
+1. **检查 SDK 版本兼容性**:
+   ```swift
+   // RealtimeKit 自动集成以下版本
+   // - AgoraRtcEngine_iOS: 4.6.0+
+   // - AgoraRtm_Apple: 2.2.0+
+   
+   // 如果项目中已有其他版本的 Agora SDK，可能会产生冲突
+   // 建议移除手动添加的 Agora SDK 依赖
+   ```
+
+2. **验证 App ID 格式**:
+   ```swift
+   func validateAgoraAppId(_ appId: String) -> Bool {
+       // Agora App ID 通常是 32 位字符串
+       guard appId.count == 32 else {
+           print("Agora App ID 长度应为 32 位")
+           return false
+       }
+       
+       // 只包含字母数字字符
+       let allowedCharacters = CharacterSet.alphanumerics
+       guard appId.unicodeScalars.allSatisfy(allowedCharacters.contains) else {
+           print("Agora App ID 包含无效字符")
+           return false
+       }
+       
+       return true
+   }
+   ```
+
+3. **处理 Agora 特定错误**:
+   ```swift
+   do {
+       try await RealtimeManager.shared.configure(
+           provider: .agora,
+           config: config
+       )
+   } catch RealtimeError.providerSpecificError(let details) {
+       if details.contains("INVALID_APP_ID") {
+           print("Agora App ID 无效，请检查控制台配置")
+       } else if details.contains("INVALID_TOKEN") {
+           print("Agora Token 无效或已过期")
+       } else if details.contains("INVALID_CHANNEL_NAME") {
+           print("频道名称格式不正确")
+       }
+   }
+   ```
+
+4. **检查网络和防火墙设置**:
+   ```swift
+   // Agora SDK 需要访问以下域名和端口
+   // - *.agora.io (HTTPS: 443, UDP: 1080, 8000)
+   // - *.agoralab.co (HTTPS: 443)
+   // - qoslbs.agoralab.co (HTTPS: 443)
+   
+   func checkAgoraConnectivity() async {
+       let testUrls = [
+           "https://api.agora.io",
+           "https://qoslbs.agoralab.co"
+       ]
+       
+       for urlString in testUrls {
+           guard let url = URL(string: urlString) else { continue }
+           
+           do {
+               let (_, response) = try await URLSession.shared.data(from: url)
+               if let httpResponse = response as? HTTPURLResponse {
+                   print("✅ \(urlString): \(httpResponse.statusCode)")
+               }
+           } catch {
+               print("❌ \(urlString): \(error)")
+           }
+       }
+   }
+   ```
+
+### Q: Agora Token 相关问题
+
+**症状**: Token 过期或无效导致连接失败
+
+**解决方案**:
+
+1. **实现 Token 自动续期**:
+   ```swift
+   class TokenManager {
+       private var rtcToken: String = ""
+       private var rtmToken: String = ""
+       
+       func setupTokenRenewal() {
+           // RTC Token 续期
+           rtcProvider.onTokenWillExpire { [weak self] secondsToExpire in
+               Task {
+                   do {
+                       let newToken = try await self?.fetchNewRTCToken()
+                       try await self?.rtcProvider.renewToken(newToken ?? "")
+                   } catch {
+                       print("RTC Token 续期失败: \(error)")
+                   }
+               }
+           }
+           
+           // RTM Token 续期
+           rtmProvider.onTokenWillExpire { [weak self] in
+               Task {
+                   do {
+                       let newToken = try await self?.fetchNewRTMToken()
+                       try await self?.rtmProvider.renewToken(newToken ?? "")
+                   } catch {
+                       print("RTM Token 续期失败: \(error)")
+                   }
+               }
+           }
+       }
+       
+       private func fetchNewRTCToken() async throws -> String {
+           // 从您的服务器获取新的 RTC Token
+           // 实现您的 Token 服务器逻辑
+           return "new_rtc_token"
+       }
+       
+       private func fetchNewRTMToken() async throws -> String {
+           // 从您的服务器获取新的 RTM Token
+           return "new_rtm_token"
+       }
+   }
+   ```
+
+2. **Token 验证工具**:
+   ```swift
+   func validateAgoraToken(_ token: String) -> Bool {
+       // 基本格式检查
+       guard !token.isEmpty else {
+           print("Token 不能为空")
+           return false
+       }
+       
+       // Agora Token 通常以特定前缀开始
+       guard token.hasPrefix("006") || token.hasPrefix("007") else {
+           print("Token 格式可能不正确")
+           return false
+       }
+       
+       return true
+   }
+   ```
+
+### Q: Agora 音频问题
+
+**症状**: 音频无法正常工作或音质差
+
+**解决方案**:
+
+1. **检查音频权限**:
+   ```swift
+   import AVFoundation
+   
+   func checkAudioPermissions() async -> Bool {
+       switch AVAudioSession.sharedInstance().recordPermission {
+       case .granted:
+           return true
+       case .denied:
+           print("音频权限被拒绝，请在设置中启用")
+           return false
+       case .undetermined:
+           return await withCheckedContinuation { continuation in
+               AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                   continuation.resume(returning: granted)
+               }
+           }
+       @unknown default:
+           return false
+       }
+   }
+   ```
+
+2. **优化音频配置**:
+   ```swift
+   let rtcConfig = RTCConfig(
+       appId: "your-agora-app-id",
+       audioConfig: RTCAudioConfig(
+           audioScenario: .meeting,        // 会议场景优化
+           audioProfile: .musicStandard,   // 高质量音频
+           enableEchoCancellation: true,   // 启用回声消除
+           enableNoiseSuppression: true    // 启用噪声抑制
+       )
+   )
+   ```
+
+### Q: Agora 推流问题
+
+**症状**: 推流失败或推流质量差
+
+**解决方案**:
+
+1. **验证推流 URL**:
+   ```swift
+   func validateRTMPUrl(_ url: String) -> Bool {
+       guard let urlComponents = URLComponents(string: url) else {
+           print("推流 URL 格式错误")
+           return false
+       }
+       
+       guard urlComponents.scheme == "rtmp" || urlComponents.scheme == "rtmps" else {
+           print("推流 URL 必须使用 RTMP 协议")
+           return false
+       }
+       
+       guard urlComponents.host != nil else {
+           print("推流 URL 缺少主机名")
+           return false
+       }
+       
+       return true
+   }
+   ```
+
+2. **优化推流参数**:
+   ```swift
+   let streamConfig = try StreamPushConfig(
+       url: "rtmp://your-server.com/live/stream-key",
+       layout: StreamLayout(canvasWidth: 1280, canvasHeight: 720),
+       audioConfig: StreamAudioConfig(
+           sampleRate: 48000,
+           bitrate: 128,      // 根据网络条件调整
+           channels: 2
+       ),
+       videoConfig: StreamVideoConfig(
+           width: 1280,
+           height: 720,
+           bitrate: 2000,     // 根据网络条件调整
+           frameRate: 30
+       )
+   )
+   ```
+
+3. **监控推流状态**:
+   ```swift
+   // 监听推流状态变化
+   RealtimeManager.shared.$streamPushState
+       .sink { state in
+           switch state {
+           case .running:
+               print("推流正常运行")
+           case .failed:
+               print("推流失败，尝试重新启动")
+               Task {
+                   try? await RealtimeManager.shared.stopStreamPush()
+                   try? await Task.sleep(nanoseconds: 2_000_000_000) // 等待2秒
+                   try? await RealtimeManager.shared.startStreamPush(config: streamConfig)
+               }
+           default:
+               break
+           }
+       }
+       .store(in: &cancellables)
+   ```
+   ```
 
 ### Q: 如何切换服务提供商？
 
@@ -52,7 +317,9 @@ let config = RealtimeConfig(
    ```
 
 2. **验证服务商支持状态**:
-   - ✅ Agora: 完全支持
+   - ✅ Agora: 完全支持（集成原生 SDK）
+     - RTC Engine iOS: 4.6.0+
+     - RTM Apple: Lite 版本
    - 🚧 腾讯云 TRTC: 开发中
    - 🚧 ZEGO: 开发中
    - ✅ Mock Provider: 测试支持
@@ -1119,6 +1386,162 @@ let config = RealtimeConfig(
    }
    ```
 
+## 转推流相关问题
+
+### Q: 转推流功能问题
+
+**症状**: 转推流无法正常启动或停止
+
+**解决方案**:
+
+1. **检查推流 URL 格式**:
+   ```swift
+   func validateStreamPushURL(_ url: String) -> Bool {
+       guard let urlComponents = URLComponents(string: url),
+             let scheme = urlComponents.scheme else {
+           return false
+       }
+       
+       // 支持的协议
+       let supportedSchemes = ["rtmp", "rtmps", "http", "https"]
+       return supportedSchemes.contains(scheme.lowercased())
+   }
+   ```
+
+2. **验证推流配置**:
+   ```swift
+   let config = try StreamPushConfig(
+       url: "rtmp://your-rtmp-server.com/live/stream-key",
+       layout: StreamLayout(canvasWidth: 1280, canvasHeight: 720),
+       audioConfig: StreamAudioConfig(bitrate: 128),
+       videoConfig: StreamVideoConfig(bitrate: 2000, frameRate: 30)
+   )
+   
+   // 验证配置
+   try config.validate()
+   ```
+
+3. **处理推流错误**:
+   ```swift
+   do {
+       try await RealtimeManager.shared.startStreamPush(config: config)
+   } catch RealtimeError.streamPushFailed(let reason) {
+       print("推流失败: \(reason)")
+       // 检查网络连接和服务器状态
+   } catch RealtimeError.invalidConfiguration(let details) {
+       print("配置错误: \(details)")
+       // 检查推流参数设置
+   }
+   ```
+
+4. **Agora 转推流特定问题**:
+   ```swift
+   // 检查 Agora RTC Engine 状态
+   func checkAgoraStreamPushStatus() async throws {
+       guard let agoraKit = agoraRTCEngine else {
+           throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+       }
+       
+       // 确保已加入频道
+       guard connectionState == .connected else {
+           throw RealtimeError.streamPushFailed(reason: "Must join channel before starting stream push")
+       }
+       
+       // 验证推流 URL 可达性
+       let url = URL(string: streamPushURL)!
+       let (_, response) = try await URLSession.shared.data(from: url)
+       
+       if let httpResponse = response as? HTTPURLResponse,
+          httpResponse.statusCode != 200 {
+           throw RealtimeError.streamPushFailed(reason: "RTMP server not reachable")
+       }
+   }
+   ```
+
+5. **推流状态监控**:
+   ```swift
+   // 监控推流状态变化
+   RealtimeManager.shared.$streamPushState
+       .sink { state in
+           switch state {
+           case .running:
+               print("✅ 推流正常运行")
+           case .failed:
+               print("❌ 推流失败，尝试重启")
+               Task {
+                   try? await RealtimeManager.shared.stopStreamPush()
+                   try? await Task.sleep(nanoseconds: 2_000_000_000) // 等待2秒
+                   try? await RealtimeManager.shared.startStreamPush(config: lastConfig)
+               }
+           case .stopped:
+               print("⏹️ 推流已停止")
+           default:
+               break
+           }
+       }
+       .store(in: &cancellables)
+   ```
+
+### Q: 推流质量问题
+
+**症状**: 推流画面卡顿、音画不同步或质量差
+
+**解决方案**:
+
+1. **优化推流参数**:
+   ```swift
+   // 根据网络条件调整参数
+   func createOptimizedStreamConfig(networkQuality: NetworkQuality) throws -> StreamPushConfig {
+       let (width, height, bitrate, frameRate) = switch networkQuality {
+       case .excellent:
+           (1920, 1080, 4000, 30)  // 高质量
+       case .good:
+           (1280, 720, 2000, 30)   // 标准质量
+       case .fair:
+           (854, 480, 1000, 25)    // 中等质量
+       case .poor:
+           (640, 360, 500, 15)     // 低质量
+       default:
+           (1280, 720, 2000, 30)   // 默认
+       }
+       
+       return try StreamPushConfig(
+           url: streamURL,
+           layout: StreamLayout(canvasWidth: width, canvasHeight: height),
+           audioConfig: StreamAudioConfig(bitrate: 128),
+           videoConfig: StreamVideoConfig(
+               width: width,
+               height: height,
+               bitrate: bitrate,
+               frameRate: frameRate
+           )
+       )
+   }
+   ```
+
+2. **监控推流质量**:
+   ```swift
+   // 实时监控推流质量指标
+   class StreamQualityMonitor: ObservableObject {
+       @Published var bitrate: Int = 0
+       @Published var frameRate: Int = 0
+       @Published var packetLoss: Double = 0
+       
+       func startMonitoring() {
+           Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+               Task { @MainActor in
+                   await self.updateQualityMetrics()
+               }
+           }
+       }
+       
+       private func updateQualityMetrics() async {
+           // 从底层 SDK 获取质量指标
+           // 这里需要根据具体的服务商 SDK 实现
+       }
+   }
+   ```
+
 ## 性能问题
 
 ### Q: 音量检测导致性能问题
@@ -1491,3 +1914,217 @@ struct DiagnosticResult {
 ```
 
 通过使用这些故障排除方法和调试工具，您应该能够快速定位和解决 RealtimeKit 使用过程中遇到的大部分问题。如果问题仍然存在，请查看 [FAQ](FAQ.md) 或联系技术支持。
+## 平
+台兼容性问题
+
+### Q: macOS 上 Agora SDK 功能不可用
+
+**症状**: 在 macOS 项目中使用 RealtimeAgora 模块时出现编译错误或功能限制
+
+**解决方案**:
+
+1. **了解平台限制**:
+   ```swift
+   // Agora SDK 集成仅在 iOS 平台可用
+   #if os(iOS)
+   import RealtimeAgora  // ✅ iOS 上可用
+   #else
+   import RealtimeMocking  // ✅ 其他平台使用 Mock Provider
+   #endif
+   ```
+
+2. **使用条件编译**:
+   ```swift
+   class PlatformSpecificManager {
+       func configureProvider() async throws {
+           #if os(iOS)
+           // iOS 上使用 Agora
+           try await RealtimeManager.shared.configure(
+               provider: .agora,
+               config: agoraConfig
+           )
+           #else
+           // macOS 上使用 Mock Provider
+           try await RealtimeManager.shared.configure(
+               provider: .mock,
+               config: mockConfig
+           )
+           #endif
+       }
+   }
+   ```
+
+3. **检查可用功能**:
+   ```swift
+   extension RealtimeManager {
+       var availableFeatures: Set<ProviderFeature> {
+           #if os(iOS)
+           return [
+               .audioStreaming,
+               .videoStreaming,
+               .streamPush,
+               .mediaRelay,
+               .volumeIndicator,
+               .messageProcessing
+           ]
+           #else
+           return [
+               .messageProcessing,  // 基础功能在所有平台可用
+               .volumeIndicator     // Mock 实现
+           ]
+           #endif
+       }
+   }
+   ```
+
+4. **平台特定的错误处理**:
+   ```swift
+   do {
+       try await RealtimeManager.shared.startStreamPush(config: streamConfig)
+   } catch RealtimeError.featureNotSupported(let feature) {
+       #if os(macOS)
+       showAlert("推流功能仅在 iOS 平台支持，当前为 macOS 平台")
+       #endif
+   }
+   ```
+
+### Q: 跨平台项目配置
+
+**症状**: 需要在同一项目中支持 iOS 和 macOS
+
+**解决方案**:
+
+1. **配置 Package.swift**:
+   ```swift
+   // Package.swift
+   let package = Package(
+       name: "YourApp",
+       platforms: [
+           .iOS(.v13),
+           .macOS(.v10_15)
+       ],
+       dependencies: [
+           .package(url: "https://github.com/your-org/RealtimeKit", from: "1.0.0")
+       ],
+       targets: [
+           .target(
+               name: "YourApp",
+               dependencies: [
+                   .product(name: "RealtimeCore", package: "RealtimeKit"),
+                   .product(name: "RealtimeSwiftUI", package: "RealtimeKit"),
+                   // 条件性依赖 Agora
+                   .product(name: "RealtimeAgora", package: "RealtimeKit", condition: .when(platforms: [.iOS])),
+                   .product(name: "RealtimeMocking", package: "RealtimeKit")
+               ]
+           )
+       ]
+   )
+   ```
+
+2. **创建平台抽象层**:
+   ```swift
+   protocol PlatformProvider {
+       func createRealtimeProvider() -> ProviderType
+       func supportedFeatures() -> Set<ProviderFeature>
+   }
+   
+   #if os(iOS)
+   class iOSPlatformProvider: PlatformProvider {
+       func createRealtimeProvider() -> ProviderType {
+           return .agora
+       }
+       
+       func supportedFeatures() -> Set<ProviderFeature> {
+           return [.audioStreaming, .videoStreaming, .streamPush, .mediaRelay]
+       }
+   }
+   #endif
+   
+   #if os(macOS)
+   class macOSPlatformProvider: PlatformProvider {
+       func createRealtimeProvider() -> ProviderType {
+           return .mock
+       }
+       
+       func supportedFeatures() -> Set<ProviderFeature> {
+           return [.messageProcessing, .volumeIndicator]
+       }
+   }
+   #endif
+   ```
+
+### Q: 条件编译最佳实践
+
+**症状**: 需要在代码中正确处理平台差异
+
+**解决方案**:
+
+1. **使用编译标志**:
+   ```swift
+   // 在需要平台特定功能的地方使用条件编译
+   #if os(iOS)
+   import AgoraRtcKit
+   import AgoraRtmKit
+   
+   class AgoraRTCProvider: RTCProvider {
+       // iOS 特定实现
+   }
+   #endif
+   
+   #if os(macOS)
+   class MockRTCProvider: RTCProvider {
+       // macOS 使用 Mock 实现
+   }
+   #endif
+   ```
+
+2. **创建平台适配器**:
+   ```swift
+   struct PlatformAdapter {
+       static func createRTCProvider() -> RTCProvider {
+           #if os(iOS)
+           return AgoraRTCProvider()
+           #else
+           return MockRTCProvider()
+           #endif
+       }
+       
+       static func isFeatureSupported(_ feature: ProviderFeature) -> Bool {
+           #if os(iOS)
+           return true  // iOS 支持所有功能
+           #else
+           // macOS 只支持部分功能
+           return [.messageProcessing, .volumeIndicator].contains(feature)
+           #endif
+       }
+   }
+   ```
+
+3. **运行时平台检测**:
+   ```swift
+   extension RealtimeManager {
+       var currentPlatform: Platform {
+           #if os(iOS)
+           return .iOS
+           #elseif os(macOS)
+           return .macOS
+           #else
+           return .unknown
+           #endif
+       }
+       
+       func validateFeatureSupport(_ feature: ProviderFeature) throws {
+           guard PlatformAdapter.isFeatureSupported(feature) else {
+               throw RealtimeError.featureNotSupported(
+                   "\(feature.rawValue) 在 \(currentPlatform) 平台不支持"
+               )
+           }
+       }
+   }
+   
+   enum Platform: String {
+       case iOS = "iOS"
+       case macOS = "macOS"
+       case unknown = "Unknown"
+   }
+   ```

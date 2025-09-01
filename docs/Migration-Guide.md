@@ -18,10 +18,52 @@
 ### 概述
 
 如果您当前使用 Agora SDK，迁移到 RealtimeKit 将为您提供：
+- **完整的 Agora 集成**: RealtimeKit 现已提供完整的 Agora 提供商实现（仅 iOS）
 - 统一的 API 接口，便于未来切换服务商
-- 自动状态持久化
-- 完整的本地化支持
+- 自动状态持久化和配置管理
+- 完整的本地化支持（5种语言）
 - 现代 Swift Concurrency 支持
+- 自动 SDK 依赖管理
+- 高级功能支持（推流、媒体中继、音量检测）
+
+### 平台支持说明
+
+**重要变更**: 从 RealtimeKit 1.0.0 开始，Agora SDK 集成仅在 iOS 平台可用：
+
+- **iOS 平台**: 完整的 Agora RTC/RTM 功能支持
+- **macOS 平台**: 使用 Mock Provider 进行开发和测试
+
+如果您的项目需要跨平台支持，请参考[跨平台迁移](#跨平台迁移)部分。
+
+### SDK 版本要求
+
+RealtimeKit 自动集成以下 Agora SDK 版本：
+- **Agora RTC Engine iOS**: 4.6.0+
+- **Agora RTM Apple**: 2.2.0+
+
+> **重要**: 
+> - RealtimeKit 会自动管理 Agora SDK 依赖，无需手动添加
+> - 如果项目中已有 Agora SDK，建议移除以避免冲突
+> - 支持最新的 Agora SDK 功能和性能优化
+
+### 新功能亮点
+
+RealtimeKit 的 Agora 实现提供以下完整功能：
+
+#### RTC 功能
+- ✅ 音视频通信和房间管理
+- ✅ 音频控制（静音、音量调节）
+- ✅ 推流到第三方平台（RTMP）
+- ✅ 跨频道媒体中继
+- ✅ 实时音量检测和指示器
+- ✅ Token 自动管理和续期
+
+#### RTM 功能
+- ✅ 实时消息传递
+- ✅ 频道管理和成员管理
+- ✅ 用户属性和频道属性
+- ✅ 在线状态查询和订阅
+- ✅ 连接状态监控
 
 ### 迁移步骤
 
@@ -828,3 +870,157 @@ class MigrationPerformanceMonitor {
 ---
 
 *本迁移指南会持续更新，欢迎提供反馈和建议。*
+## 跨平
+台迁移
+
+### 从单平台到跨平台
+
+如果您需要将现有的 iOS Agora 项目扩展到 macOS，需要进行以下调整：
+
+#### 1. 条件编译设置
+
+```swift
+// 平台特定的导入
+#if os(iOS)
+import RealtimeAgora
+#endif
+import RealtimeMocking
+
+// 平台特定的配置
+class PlatformManager {
+    func configureProvider() async throws {
+        #if os(iOS)
+        // iOS 使用 Agora
+        let config = RealtimeConfig(
+            appId: "your-agora-app-id",
+            appCertificate: "your-agora-certificate"
+        )
+        try await RealtimeManager.shared.configure(
+            provider: .agora,
+            config: config
+        )
+        #else
+        // macOS 使用 Mock Provider
+        let config = RealtimeConfig(
+            appId: "mock-app-id",
+            appCertificate: nil
+        )
+        try await RealtimeManager.shared.configure(
+            provider: .mock,
+            config: config
+        )
+        #endif
+    }
+}
+```
+
+#### 2. 功能适配
+
+```swift
+extension RealtimeManager {
+    var supportedFeatures: Set<ProviderFeature> {
+        #if os(iOS)
+        return [
+            .audioStreaming,
+            .videoStreaming,
+            .streamPush,
+            .mediaRelay,
+            .volumeIndicator,
+            .messageProcessing
+        ]
+        #else
+        return [
+            .messageProcessing,
+            .volumeIndicator  // Mock 实现
+        ]
+        #endif
+    }
+    
+    func validateFeatureSupport(_ feature: ProviderFeature) throws {
+        guard supportedFeatures.contains(feature) else {
+            throw RealtimeError.featureNotSupported(
+                "\(feature.rawValue) 在当前平台不支持"
+            )
+        }
+    }
+}
+```
+
+#### 3. UI 适配
+
+```swift
+// SwiftUI 跨平台适配
+struct PlatformAwareView: View {
+    @StateObject private var manager = RealtimeManager.shared
+    
+    var body: some View {
+        VStack {
+            #if os(iOS)
+            // iOS 特定的音频控制
+            AudioControlPanelView()
+            VolumeVisualizationView(volumeInfos: manager.volumeInfos)
+            #else
+            // macOS 的简化界面
+            Text("macOS 平台使用 Mock Provider")
+            Text("连接状态: \(manager.connectionState.rawValue)")
+            #endif
+        }
+    }
+}
+```
+
+### 迁移检查清单
+
+#### iOS 到跨平台迁移
+
+- [ ] 添加条件编译标志 `#if os(iOS)`
+- [ ] 为 macOS 配置 Mock Provider
+- [ ] 更新 UI 组件以支持平台差异
+- [ ] 测试两个平台的功能可用性
+- [ ] 更新文档说明平台限制
+- [ ] 配置 CI/CD 支持多平台构建
+
+#### 功能验证
+
+- [ ] iOS 平台 Agora 功能正常
+- [ ] macOS 平台 Mock Provider 工作
+- [ ] 跨平台 UI 组件显示正确
+- [ ] 错误处理包含平台信息
+- [ ] 日志输出区分平台差异
+
+### 最佳实践
+
+1. **使用平台抽象层**:
+   ```swift
+   protocol PlatformProvider {
+       func createRTCProvider() -> RTCProvider
+       func supportedFeatures() -> Set<ProviderFeature>
+   }
+   ```
+
+2. **统一错误处理**:
+   ```swift
+   enum PlatformError: LocalizedError {
+       case featureNotSupportedOnPlatform(String, String)
+       
+       var errorDescription: String? {
+           switch self {
+           case .featureNotSupportedOnPlatform(let feature, let platform):
+               return "\(feature) 功能在 \(platform) 平台不支持"
+           }
+       }
+   }
+   ```
+
+3. **配置管理**:
+   ```swift
+   struct PlatformConfig {
+       static var current: RealtimeConfig {
+           #if os(iOS)
+           return .agoraConfig
+           #else
+           return .mockConfig
+           #endif
+       }
+   }
+   ```

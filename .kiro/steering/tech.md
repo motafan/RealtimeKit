@@ -48,6 +48,17 @@
 - **Mock Providers**: RealtimeMocking module for testing
 - **Test Targets**: Separate test modules per package
 
+## Dependencies
+
+### External SDKs
+- **Agora RTC Engine iOS**: 4.6.0+ (integrated via SPM)
+- **Agora RTM Apple**: 2.2.0+ (integrated via SPM)
+
+### Dependency Management
+- All external dependencies are managed through Swift Package Manager
+- Agora SDKs are automatically resolved when building RealtimeAgora target
+- No manual SDK installation required
+
 ## Common Commands
 
 ### Building
@@ -57,6 +68,9 @@ swift build
 
 # Build specific target
 swift build --target RealtimeCore
+
+# Build with Agora SDK integration
+swift build --target RealtimeAgora
 
 # Build for release
 swift build -c release

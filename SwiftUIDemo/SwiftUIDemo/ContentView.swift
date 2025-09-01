@@ -3,6 +3,7 @@ import RealtimeCore
 import RealtimeMocking
 
 /// Main content view for SwiftUI Demo
+@available(iOS 14.0, macOS 11.0, *)
 struct ContentView: View {
     
     // MARK: - State Management with @StateObject
@@ -79,10 +80,12 @@ struct ContentView: View {
             }
             .navigationTitle("RealtimeKit SwiftUI Demo")
             .navigationBarTitleDisplayMode(.large)
-            .alert(alertTitle, isPresented: $showingAlert) {
-                Button("OK") { }
-            } message: {
-                Text(alertMessage)
+            .alert(isPresented: $showingAlert) {
+                Alert(
+                    title: Text(alertTitle),
+                    message: Text(alertMessage),
+                    dismissButton: .default(Text("OK"))
+                )
             }
             .onAppear {
                 setupDemo()
@@ -173,14 +176,18 @@ struct ContentView: View {
                         Label("Login", systemImage: "person.badge.plus")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .foregroundColor(.white)
+                    .background(Color.blue)
+                    .cornerRadius(8)
                     .disabled(userId.isEmpty || userName.isEmpty || hasActiveSession)
                     
                     Button(action: logoutUser) {
                         Label("Logout", systemImage: "person.badge.minus")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .foregroundColor(.primary)
+                    .background(Color.secondary.opacity(0.2))
+                    .cornerRadius(8)
                     .disabled(!hasActiveSession)
                 }
             }
@@ -204,8 +211,9 @@ struct ContentView: View {
                     )
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
-                .tint(realtimeManager.audioSettings.microphoneMuted ? .red : .orange)
+                .foregroundColor(realtimeManager.audioSettings.microphoneMuted ? .red : .orange)
+                .background(Color.secondary.opacity(0.2))
+                .cornerRadius(8)
                 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -229,8 +237,9 @@ struct ContentView: View {
                     Label("Enable Volume Detection", systemImage: "waveform")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
-                .tint(.green)
+                .foregroundColor(.green)
+                .background(Color.secondary.opacity(0.2))
+                .cornerRadius(8)
             }
         }
         .padding()
@@ -337,8 +346,9 @@ struct ContentView: View {
                     )
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
-                .tint(.purple)
+                .foregroundColor(.purple)
+                .background(Color.secondary.opacity(0.2))
+                .cornerRadius(8)
                 
                 Button(action: startMediaRelay) {
                     Label(
@@ -347,8 +357,9 @@ struct ContentView: View {
                     )
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
-                .tint(.teal)
+                .foregroundColor(Color(red: 0.0, green: 0.5, blue: 0.5))
+                .background(Color.secondary.opacity(0.2))
+                .cornerRadius(8)
             }
         }
         .padding()
@@ -403,8 +414,9 @@ struct ContentView: View {
                 Button("Reset All Persistent Data") {
                     resetPersistentData()
                 }
-                .buttonStyle(.bordered)
-                .tint(.red)
+                .foregroundColor(.red)
+                .background(Color.secondary.opacity(0.2))
+                .cornerRadius(8)
                 .font(.caption)
             }
         }
@@ -421,9 +433,7 @@ struct ContentView: View {
             do {
                 let config = RealtimeConfig(
                     appId: "demo_app_id",
-                    appCertificate: "demo_certificate",
-                    rtcToken: "demo_rtc_token",
-                    rtmToken: "demo_rtm_token"
+                    appCertificate: "demo_certificate"
                 )
                 
                 try await realtimeManager.configure(provider: .mock, config: config)
@@ -442,7 +452,9 @@ struct ContentView: View {
         volumeLevel = lastVolume
         
         // Update localization
-        localizationManager.setCurrentLanguage(selectedLanguage)
+        Task {
+            await localizationManager.setLanguage(selectedLanguage)
+        }
     }
     
     private func loginUser() {
@@ -518,8 +530,10 @@ struct ContentView: View {
     }
     
     private func updateLanguage(_ language: SupportedLanguage) {
-        preferredLanguage = language
-        localizationManager.setCurrentLanguage(language)
+        preferredLanguageRaw = language.rawValue
+        Task {
+            await localizationManager.setLanguage(language)
+        }
     }
     
     private func startStreamPush() {
@@ -528,15 +542,8 @@ struct ContentView: View {
                 if realtimeManager.streamPushState == .running {
                     try await realtimeManager.stopStreamPush()
                 } else {
-                    let config = StreamPushConfig(
-                        pushURL: "rtmp://demo.example.com/live/stream",
-                        width: 1280,
-                        height: 720,
-                        videoBitrate: 2000,
-                        videoFramerate: 30,
-                        audioSampleRate: 44100,
-                        audioBitrate: 128,
-                        audioChannels: 2
+                    let config = try StreamPushConfig(
+                        url: "rtmp://demo.example.com/live/stream"
                     )
                     
                     try await realtimeManager.startStreamPush(config: config)
@@ -558,16 +565,21 @@ struct ContentView: View {
                 if realtimeManager.mediaRelayState == .running {
                     try await realtimeManager.stopMediaRelay()
                 } else {
-                    let config = MediaRelayConfig(
-                        sourceChannelName: "source_channel",
-                        sourceChannelToken: "source_token",
-                        destinationChannels: [
-                            MediaRelayChannelInfo(
-                                channelName: "dest_channel_1",
-                                channelToken: "dest_token_1",
-                                uid: 12345
-                            )
-                        ]
+                    let sourceChannel = MediaRelayChannelInfo(
+                        channelName: "source_channel",
+                        userId: "source_user",
+                        token: "source_token"
+                    )
+                    
+                    let destinationChannel = MediaRelayChannelInfo(
+                        channelName: "dest_channel_1",
+                        userId: "dest_user",
+                        token: "dest_token_1"
+                    )
+                    
+                    let config = try MediaRelayConfig(
+                        sourceChannel: sourceChannel,
+                        destinationChannels: [destinationChannel]
                     )
                     
                     try await realtimeManager.startMediaRelay(config: config)
@@ -607,7 +619,7 @@ struct ContentView: View {
         } else {
             // Show actual volume data
             let totalVolume = realtimeManager.volumeInfos.reduce(0) { $0 + $1.volume }
-            let averageVolume = totalVolume / Float(realtimeManager.volumeInfos.count)
+            let averageVolume = Float(totalVolume) / Float(realtimeManager.volumeInfos.count)
             let speakingCount = realtimeManager.speakingUsers.count
             
             let baseIntensity = Double(averageVolume) * 0.8

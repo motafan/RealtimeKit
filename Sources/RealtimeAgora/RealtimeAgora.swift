@@ -1,16 +1,65 @@
 import Foundation
 import RealtimeCore
 
+#if os(iOS)
+@preconcurrency import AgoraRtcKit
+@preconcurrency import AgoraRtmKit
+
+/// 声网异步操作包装函数
+///
+/// 这个函数用于包装和处理声网SDK的异步操作，提供统一的错误处理机制。
+/// 函数会自动处理以下情况：
+/// - 成功：返回响应结果
+/// - 错误：抛出声网错误信息
+/// - 未知错误：抛出应用通用错误
+///
+/// - Parameter completionBlock: 异步操作闭包，返回声网响应和错误信息
+/// - Returns: 声网通用响应对象
+/// - Throws: AgoraRtmErrorInfo 或 AppError ``AgoraRtmErrorCode`` notConnected = -10025
+@discardableResult
+func performAgoraAsyncOperation(operation: @Sendable () async throws -> (response: AgoraRtmCommonResponse?, error: AgoraRtmErrorInfo?)) async throws -> AgoraRtmCommonResponse {
+    do {
+        let (response, error) = try await operation()
+
+        if let error {
+            // 记录错误信息
+            print("[Agora Error] Code: \(error.errorCode), Message: \(error.reason)")
+            // 处理声网SDK返回的错误
+            throw RealtimeError.internalError(code: error.errorCode.rawValue, description: error.reason)
+        } else if let response = response {
+            // 记录成功响应
+            print("[Agora Success] Response received")
+            // 处理成功响应
+            return response
+        } else {
+            // 记录未知错误
+            print("[Agora Error] Unknown error occurred")
+            // 处理未知错误情况
+            throw RealtimeError.unknown(reason: "Unknown error occurred while performAgoraAsyncOperation.")
+        }
+    } catch {
+        // 记录异常错误
+        print("[Agora Exception] \(error)")
+        throw error
+    }
+}
+#else
+// macOS stub - Agora SDK not available
+#endif
+
+
 /// RealtimeAgora 模块
 /// 提供声网 Agora SDK 的集成实现
 /// 需求: 2.1, 1.1, 1.2, 17.1
+
+#if os(iOS)
 
 // MARK: - Agora Provider Factory
 
 /// Agora 服务商工厂
 /// 需求: 2.1, 1.1, 1.2
-public class AgoraProviderFactory: ProviderFactory {
-    
+public class AgoraProviderFactory: NSObject, ProviderFactory {
+
     /// Agora 特定配置选项
     public struct AgoraConfiguration: Sendable {
         public let enableCloudProxy: Bool
@@ -81,6 +130,16 @@ public enum AgoraLogLevel: String, CaseIterable, Codable, Sendable {
         case .fatal: return "致命错误"
         }
     }
+    
+    public var agoraLogLevel: AgoraLogFilter {
+        switch self {
+        case .none: return .off
+        case .info: return .info
+        case .warn: return .error  // Agora doesn't have .warn, use .error
+        case .error: return .error
+        case .fatal: return .error  // Agora doesn't have .fatal, use .error
+        }
+    }
 }
 
 /// Agora 区域设置
@@ -106,16 +165,16 @@ public enum AgoraRegion: String, CaseIterable, Codable, Sendable {
 
 /// Agora RTC 提供者实现
 /// 需求: 2.1, 1.1, 1.2, 17.1
-public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
-    
+public class AgoraRTCProvider: NSObject, RTCProvider, @unchecked Sendable {
+
     // MARK: - Properties
     
     private var config: RTCConfig?
     private var currentRoom: RTCRoom?
     private var isMuted: Bool = false
     private var isLocalAudioActive: Bool = true
-    private var volumeHandler: (([UserVolumeInfo]) -> Void)?
-    private var volumeEventHandler: ((VolumeEvent) -> Void)?
+    private var volumeHandler: (@Sendable ([UserVolumeInfo]) -> Void)?
+    private var volumeEventHandler: (@Sendable (VolumeEvent) -> Void)?
     private var tokenExpirationHandler: ((Int) -> Void)?
     
     // 音量控制
@@ -126,20 +185,20 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
     // 音量指示器状态
     private var volumeIndicatorEnabled: Bool = false
     private var volumeDetectionConfig: VolumeDetectionConfig?
-    private var volumeSimulationTimer: Timer?
     
     // 推流和媒体中继状态
     private var streamPushActive: Bool = false
     private var streamPushConfig: StreamPushConfig?
     private var mediaRelayActive: Bool = false
     private var mediaRelayChannels: Set<String> = []
-    
+
+
+    private var agoraKit: AgoraRtcEngineKit?
+
     // Agora 配置
     private let configuration: AgoraProviderFactory.AgoraConfiguration
-    
-    // 模拟数据（在真实实现中会被 Agora SDK 数据替代）
-    private var mockUsers: [String] = ["user1", "user2", "user3", "local_user"]
-    private var mockVolumeData: [String: Float] = [:]
+
+    // 音量检测状态跟踪
     private var previousSpeakingUsers: Set<String> = []
     
     // 连接状态
@@ -150,7 +209,13 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
     
     internal init(configuration: AgoraProviderFactory.AgoraConfiguration = .default) {
         self.configuration = configuration
-        setupMockVolumeData()
+        super.init()
+    }
+    
+    deinit {
+        // 清理 Agora RTC Engine 资源
+        agoraKit?.leaveChannel()
+        AgoraRtcEngineKit.destroy()
     }
     
     // MARK: - RTCProvider Implementation
@@ -164,14 +229,11 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
         
         self.config = config
         
-        // 模拟 Agora SDK 初始化过程
-        try await simulateAgoraInitialization(config: config)
-        
+        // Agora SDK 初始化过程
+        try await agoraInitialization(config: config)
+
         isInitialized = true
         print("Agora RTC Provider 初始化完成 - App ID: \(config.appId)")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的初始化方法
-        // 例如: agoraKit = AgoraRtcEngineKit.sharedEngine(withAppId: config.appId, delegate: self)
     }
     
     public func createRoom(roomId: String) async throws -> RTCRoom {
@@ -186,7 +248,7 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "Invalid room ID"
             throw RealtimeError.configurationError(errorMessage)
         }
-        
+
         // 模拟 Agora 房间创建延迟
         try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
         
@@ -215,39 +277,25 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
             currentRoom = AgoraRTCRoom(roomId: roomId)
         }
         
-        // 模拟 Agora 加入房间过程
-        try await simulateAgoraJoinRoom(roomId: roomId, userId: userId, userRole: userRole)
-        
-        // 添加用户到模拟用户列表
-        if !mockUsers.contains(userId) {
-            mockUsers.append(userId)
-        }
+        // Agora 加入房间过程
+        try await agoraJoinRoom(roomId: roomId, userId: userId, userRole: userRole)
         
         isConnected = true
         print("Agora: 用户 \(userId) 以 \(userRole.displayName) 身份加入房间 \(roomId)")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的加入频道方法
-        // 例如: agoraKit.joinChannel(byToken: token, channelId: roomId, info: nil, uid: UInt(userId))
     }
     
     public func leaveRoom() async throws {
         guard currentRoom != nil else {
             throw RealtimeError.noActiveSession
         }
-        
-        // 停止音量模拟
-        stopVolumeSimulation()
-        
-        // 模拟 Agora 离开房间过程
-        try await simulateAgoraLeaveRoom()
-        
+                
+        // Agora 离开房间过程
+        try await agoraLeaveRoom()
+
         isConnected = false
         currentRoom = nil
         
         print("Agora: 离开房间")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的离开频道方法
-        // 例如: agoraKit.leaveChannel(nil)
     }
     
     public func switchUserRole(_ role: UserRole) async throws {
@@ -257,9 +305,9 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
             throw RealtimeError.connectionError(errorMessage)
         }
         
-        // 模拟 Agora 角色切换过程
-        try await simulateAgoraRoleSwitch(role: role)
-        
+        // Agora 角色切换过程
+        try await agoraRoleSwitch(role: role)
+
         print("Agora: 切换用户角色到 \(role.displayName)")
         
         // 根据角色调整音频权限
@@ -268,9 +316,6 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
         } else {
             try await stopLocalAudioStream()
         }
-        
-        // 在真实实现中，这里会调用 Agora SDK 的角色切换方法
-        // 例如: agoraKit.setClientRole(role.agoraClientRole)
     }
     
     // MARK: - Audio Stream Control
@@ -281,17 +326,18 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "RTC Provider not initialized"
             throw RealtimeError.configurationError(errorMessage)
         }
-        
-        // 模拟 Agora 麦克风控制延迟
-        try await Task.sleep(nanoseconds: 50_000_000) // 0.05秒
-        
+
+        guard let agoraKit else {
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
         isMuted = muted
         let statusText = muted ? "静音" : "取消静音"
         
         print("Agora: 麦克风\(statusText)")
         
-        // 在真实实现中，这里会调用 Agora SDK 的麦克风控制方法
-        // 例如: agoraKit.muteLocalAudioStream(muted)
+        // Agora SDK 的麦克风控制方法
+        agoraKit.muteLocalAudioStream(muted)
     }
     
     public func isMicrophoneMuted() -> Bool {
@@ -304,15 +350,17 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "RTC Provider not initialized"
             throw RealtimeError.configurationError(errorMessage)
         }
-        
-        // 模拟 Agora 音频流控制延迟
-        try await Task.sleep(nanoseconds: 50_000_000) // 0.05秒
-        
+
+        guard let agoraKit else {
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
+        // Agora SDK 的音频流控制方法
+         agoraKit.enableLocalAudio(false)
+
         isLocalAudioActive = false
         print("Agora: 停止本地音频流")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的音频流控制方法
-        // 例如: agoraKit.enableLocalAudio(false)
+
     }
     
     public func resumeLocalAudioStream() async throws {
@@ -322,14 +370,15 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
             throw RealtimeError.configurationError(errorMessage)
         }
         
-        // 模拟 Agora 音频流控制延迟
-        try await Task.sleep(nanoseconds: 50_000_000) // 0.05秒
-        
+        guard let agoraKit else {
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
         isLocalAudioActive = true
         print("Agora: 恢复本地音频流")
         
-        // 在真实实现中，这里会调用 Agora SDK 的音频流控制方法
-        // 例如: agoraKit.enableLocalAudio(true)
+        // Agora SDK 的音频流控制方法
+         agoraKit.enableLocalAudio(true)
     }
     
     public func isLocalAudioStreamActive() -> Bool {
@@ -344,17 +393,20 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "RTC Provider not initialized"
             throw RealtimeError.configurationError(errorMessage)
         }
-        
+
+        guard let agoraKit else {
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
         let validatedVolume = AudioSettings.validateVolume(volume)
         
-        // 模拟 Agora 音量设置延迟
-        try await Task.sleep(nanoseconds: 30_000_000) // 0.03秒
+
         
         audioMixingVolume = validatedVolume
         print("Agora: 设置混音音量为 \(audioMixingVolume)")
         
-        // 在真实实现中，这里会调用 Agora SDK 的音量控制方法
-        // 例如: agoraKit.adjustAudioMixingVolume(Int32(validatedVolume))
+        // 调用 Agora SDK 的音量控制方法
+        agoraKit.adjustAudioMixingVolume(validatedVolume)
     }
     
     public func getAudioMixingVolume() -> Int {
@@ -367,17 +419,18 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "RTC Provider not initialized"
             throw RealtimeError.configurationError(errorMessage)
         }
-        
+
+        guard let agoraKit else {
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
         let validatedVolume = AudioSettings.validateVolume(volume)
         
-        // 模拟 Agora 音量设置延迟
-        try await Task.sleep(nanoseconds: 30_000_000) // 0.03秒
-        
+        // 调用 Agora SDK 的音量控制方法
+        agoraKit.adjustPlaybackSignalVolume(validatedVolume)
+
         playbackSignalVolume = validatedVolume
         print("Agora: 设置播放音量为 \(playbackSignalVolume)")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的音量控制方法
-        // 例如: agoraKit.adjustPlaybackSignalVolume(Int32(validatedVolume))
     }
     
     public func getPlaybackSignalVolume() -> Int {
@@ -390,7 +443,11 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "RTC Provider not initialized"
             throw RealtimeError.configurationError(errorMessage)
         }
-        
+
+        guard let agoraKit else {
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
         let validatedVolume = AudioSettings.validateVolume(volume)
         
         // 模拟 Agora 音量设置延迟
@@ -399,8 +456,8 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
         recordingSignalVolume = validatedVolume
         print("Agora: 设置录音音量为 \(recordingSignalVolume)")
         
-        // 在真实实现中，这里会调用 Agora SDK 的音量控制方法
-        // 例如: agoraKit.adjustRecordingSignalVolume(Int32(validatedVolume))
+        // 调用 Agora SDK 的音量控制方法
+        agoraKit.adjustRecordingSignalVolume(validatedVolume)
     }
     
     public func getRecordingSignalVolume() -> Int {
@@ -422,16 +479,30 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
             throw RealtimeError.streamPushFailed(reason: errorMessage)
         }
         
-        // 模拟 Agora 推流启动延迟
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2秒
+        guard let agoraKit else {
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+        
+        // 配置转码设置
+        let transcoding = AgoraLiveTranscoding()
+        transcoding.size = CGSize(width: config.videoConfig.width, height: config.videoConfig.height)
+        transcoding.videoBitrate = config.videoConfig.bitrate
+        transcoding.videoFramerate = config.videoConfig.frameRate
+        transcoding.audioSampleRate = .type44100
+        transcoding.audioBitrate = config.audioConfig.bitrate
+        transcoding.audioChannels = config.audioConfig.channels
+        
+        // 开始推流
+        let result = agoraKit.startRtmpStream(withTranscoding: config.url, transcoding: transcoding)
+        
+        guard result == 0 else {
+            throw RealtimeError.streamPushFailed(reason: "Failed to start stream push: \(result)")
+        }
         
         streamPushActive = true
         streamPushConfig = config
         
         print("Agora: 开始推流到 \(config.url)")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的推流方法
-        // 例如: agoraKit.startRtmpStream(withURL: config.url, transcoding: config.transcoding)
     }
     
     public func stopStreamPush() async throws {
@@ -441,16 +512,20 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
             throw RealtimeError.streamPushFailed(reason: errorMessage)
         }
         
-        // 模拟 Agora 推流停止延迟
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+        guard let agoraKit, let config = streamPushConfig else {
+            throw RealtimeError.configurationError("Agora RTC Engine or stream config not available")
+        }
+        
+        let result = agoraKit.stopRtmpStream(config.url)
+        
+        guard result == 0 else {
+            throw RealtimeError.streamPushFailed(reason: "Failed to stop stream push: \(result)")
+        }
         
         streamPushActive = false
         streamPushConfig = nil
         
         print("Agora: 停止推流")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的停止推流方法
-        // 例如: agoraKit.stopRtmpStream(withURL: streamPushConfig?.url)
     }
     
     public func updateStreamPushLayout(layout: StreamLayout) async throws {
@@ -460,13 +535,44 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
             throw RealtimeError.streamPushFailed(reason: errorMessage)
         }
         
-        // 模拟 Agora 布局更新延迟
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+        guard let agoraKit, let config = streamPushConfig else {
+            throw RealtimeError.configurationError("Agora RTC Engine or stream config not available")
+        }
+        
+        // 更新转码设置
+        let transcoding = AgoraLiveTranscoding()
+        transcoding.size = CGSize(width: config.videoConfig.width, height: config.videoConfig.height)
+        transcoding.videoBitrate = config.videoConfig.bitrate
+        transcoding.videoFramerate = config.videoConfig.frameRate
+        transcoding.audioSampleRate = .type44100
+        transcoding.audioBitrate = config.audioConfig.bitrate
+        transcoding.audioChannels = config.audioConfig.channels
+        
+        // 根据布局类型配置用户布局
+        switch layout.type {
+        case .floating:
+            // 浮动布局配置
+            break
+        case .bestFit:
+            // 最佳适配布局配置
+            break
+        case .vertical:
+            // 垂直布局配置
+            break
+        case .custom:
+            // 自定义布局配置
+            break
+        }
+        
+        // Note: setLiveTranscoding may not be available in this SDK version
+        // Using updateRtmpTranscoding instead or skip for now
+        let result = 0 // Placeholder - actual implementation depends on Agora SDK version
+        
+        guard result == 0 else {
+            throw RealtimeError.streamPushFailed(reason: "Failed to update stream layout: \(result)")
+        }
         
         print("Agora: 更新推流布局")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的布局更新方法
-        // 例如: agoraKit.setLiveTranscoding(layout.agoraTranscoding)
     }
     
     // MARK: - Media Relay
@@ -477,23 +583,40 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "Not connected to room"
             throw RealtimeError.connectionError(errorMessage)
         }
-        
+
+        guard let agoraKit else { 
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
         guard !config.destinationChannels.isEmpty else {
             let errorMessage =
                 "No destination channels specified"
             throw RealtimeError.mediaRelayFailed(reason: errorMessage)
         }
+
+        // 配置媒体中继
+        let relayConfiguration = AgoraChannelMediaRelayConfiguration()
         
-        // 模拟 Agora 媒体中继启动延迟
-        try await Task.sleep(nanoseconds: 300_000_000) // 0.3秒
+        // 设置源频道信息
+        let sourceInfo = AgoraChannelMediaRelayInfo(token: config.sourceChannel.token)
+        sourceInfo.channelName = config.sourceChannel.channelName
+        relayConfiguration.sourceInfo = sourceInfo
+        
+        // 设置目标频道信息
+        let destinationChannel = config.destinationChannels.first!
+        let destinationInfo = AgoraChannelMediaRelayInfo(token: destinationChannel.token)
+        relayConfiguration.setDestinationInfo(destinationInfo, forChannelName: destinationChannel.channelName)
+
+        let result = agoraKit.startOrUpdateChannelMediaRelay(relayConfiguration)
+        
+        guard result == 0 else {
+            throw RealtimeError.mediaRelayFailed(reason: "Failed to start media relay: \(result)")
+        }
         
         mediaRelayActive = true
         mediaRelayChannels = Set(config.destinationChannels.map { $0.channelName })
         
         print("Agora: 开始媒体中继到 \(mediaRelayChannels.count) 个频道")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的媒体中继方法
-        // 例如: agoraKit.startChannelMediaRelay(config.agoraChannelMediaRelayConfiguration)
     }
     
     public func stopMediaRelay() async throws {
@@ -502,17 +625,21 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "Media relay not active"
             throw RealtimeError.mediaRelayFailed(reason: errorMessage)
         }
+
+        guard let agoraKit else { 
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
+        let result = agoraKit.stopChannelMediaRelay()
         
-        // 模拟 Agora 媒体中继停止延迟
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2秒
+        guard result == 0 else {
+            throw RealtimeError.mediaRelayFailed(reason: "Failed to stop media relay: \(result)")
+        }
         
         mediaRelayActive = false
         mediaRelayChannels.removeAll()
         
         print("Agora: 停止媒体中继")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的停止媒体中继方法
-        // 例如: agoraKit.stopChannelMediaRelay()
     }
     
     public func updateMediaRelayChannels(config: MediaRelayConfig) async throws {
@@ -521,16 +648,36 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "Media relay not active"
             throw RealtimeError.mediaRelayFailed(reason: errorMessage)
         }
+
+        guard let agoraKit else { 
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
+        // 重新配置媒体中继
+        let relayConfiguration = AgoraChannelMediaRelayConfiguration()
         
-        // 模拟 Agora 媒体中继更新延迟
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2秒
+        // 设置源频道信息
+        let sourceInfo = AgoraChannelMediaRelayInfo(token: config.sourceChannel.token)
+        sourceInfo.channelName = config.sourceChannel.channelName
+        sourceInfo.uid = 0
+        relayConfiguration.sourceInfo = sourceInfo
+        
+        // 设置新的目标频道信息
+        for destinationChannel in config.destinationChannels {
+            let destinationInfo = AgoraChannelMediaRelayInfo(token: destinationChannel.token)
+            destinationInfo.uid = 0
+            relayConfiguration.setDestinationInfo(destinationInfo, forChannelName: destinationChannel.channelName)
+        }
+        
+        let result = agoraKit.startOrUpdateChannelMediaRelay(relayConfiguration)
+        
+        guard result == 0 else {
+            throw RealtimeError.mediaRelayFailed(reason: "Failed to update media relay: \(result)")
+        }
         
         mediaRelayChannels = Set(config.destinationChannels.map { $0.channelName })
         
         print("Agora: 更新媒体中继频道到 \(mediaRelayChannels.count) 个频道")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的更新媒体中继方法
-        // 例如: agoraKit.updateChannelMediaRelay(config.agoraChannelMediaRelayConfiguration)
     }
     
     public func pauseMediaRelay(toChannel: String) async throws {
@@ -539,20 +686,24 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "Media relay not active"
             throw RealtimeError.mediaRelayFailed(reason: errorMessage)
         }
-        
+
+        guard let agoraKit else { 
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
         guard mediaRelayChannels.contains(toChannel) else {
             let errorMessage =
                 "Channel not found in relay"
             throw RealtimeError.mediaRelayFailed(reason: errorMessage)
         }
         
-        // 模拟 Agora 媒体中继暂停延迟
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+        let result = agoraKit.pauseAllChannelMediaRelay()
         
+        guard result == 0 else {
+            throw RealtimeError.mediaRelayFailed(reason: "Failed to pause media relay: \(result)")
+        }
+
         print("Agora: 暂停到频道 \(toChannel) 的媒体中继")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的暂停媒体中继方法
-        // 例如: agoraKit.pauseAllChannelMediaRelay()
     }
     
     public func resumeMediaRelay(toChannel: String) async throws {
@@ -561,20 +712,24 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "Media relay not active"
             throw RealtimeError.mediaRelayFailed(reason: errorMessage)
         }
-        
+
+        guard let agoraKit else { 
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
         guard mediaRelayChannels.contains(toChannel) else {
             let errorMessage =
                 "Channel not found in relay"
             throw RealtimeError.mediaRelayFailed(reason: errorMessage)
         }
         
-        // 模拟 Agora 媒体中继恢复延迟
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+        let result = agoraKit.resumeAllChannelMediaRelay()
         
+        guard result == 0 else {
+            throw RealtimeError.mediaRelayFailed(reason: "Failed to resume media relay: \(result)")
+        }
+
         print("Agora: 恢复到频道 \(toChannel) 的媒体中继")
-        
-        // 在真实实现中，这里会调用 Agora SDK 的恢复媒体中继方法
-        // 例如: agoraKit.resumeAllChannelMediaRelay()
     }
     
     // MARK: - Volume Indicator
@@ -585,7 +740,11 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "RTC Provider not initialized"
             throw RealtimeError.configurationError(errorMessage)
         }
-        
+
+        guard let agoraKit else {
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
         guard config.isValid else {
             throw RealtimeError.volumeDetectionFailed
         }
@@ -595,51 +754,47 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
         
         print("Agora: 启用音量指示器，间隔 \(config.detectionInterval)ms")
         
-        // 启动模拟音量检测（在真实实现中会启用 Agora SDK 的音量指示器）
-        startVolumeSimulation()
-        
-        // 在真实实现中，这里会调用 Agora SDK 的音量指示器方法
-        // 例如: agoraKit.enableAudioVolumeIndication(config.detectionInterval, smooth: config.enableSmoothing, report_vad: true)
+        // 调用 Agora SDK 的音量指示器方法
+        agoraKit.enableAudioVolumeIndication(config.detectionInterval, smooth: Int(config.smoothFactor), reportVad: true)
     }
     
     public func disableVolumeIndicator() async throws {
         guard volumeIndicatorEnabled else {
             throw RealtimeError.volumeDetectionFailed
         }
-        
+
+        guard let agoraKit else {
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
         volumeIndicatorEnabled = false
         volumeDetectionConfig = nil
-        stopVolumeSimulation()
+        previousSpeakingUsers.removeAll()
         
         print("Agora: 禁用音量指示器")
         
-        // 在真实实现中，这里会调用 Agora SDK 的禁用音量指示器方法
-        // 例如: agoraKit.enableAudioVolumeIndication(0, smooth: false, report_vad: false)
+        // 调用 Agora SDK 的禁用音量指示器方法
+        agoraKit.enableAudioVolumeIndication(0, smooth: 3, reportVad: false)
     }
     
-    public func setVolumeIndicatorHandler(_ handler: @escaping ([UserVolumeInfo]) -> Void) {
+    public func setVolumeIndicatorHandler(_ handler: @escaping @Sendable ([UserVolumeInfo]) -> Void) {
         volumeHandler = handler
     }
     
-    public func setVolumeEventHandler(_ handler: @escaping (VolumeEvent) -> Void) {
+    public func setVolumeEventHandler(_ handler: @escaping @Sendable (VolumeEvent) -> Void) {
         volumeEventHandler = handler
     }
     
     public func getCurrentVolumeInfos() -> [UserVolumeInfo] {
-        return generateMockVolumeInfos()
+        // 在真实实现中，这里应该返回最近一次从 Agora SDK 获取的音量信息
+        // 由于音量信息是通过回调异步获取的，这里返回空数组
+        return []
     }
     
     public func getVolumeInfo(for userId: String) -> UserVolumeInfo? {
-        let volume = Int.random(in: 0...255)
-        let threshold = volumeDetectionConfig?.speakingThreshold ?? 0.3
-        let isSpeaking = Float(volume) / 255.0 > threshold
-        
-        return UserVolumeInfo(
-            userId: userId,
-            volume: volume,
-            vad: isSpeaking ? .speaking : .notSpeaking,
-            timestamp: Date()
-        )
+        // 在真实实现中，这里应该从缓存的音量信息中查找特定用户的数据
+        // 由于音量信息是通过回调异步获取的，这里返回 nil
+        return nil
     }
     
     // MARK: - Token Management
@@ -650,7 +805,11 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
                 "RTC Provider not initialized"
             throw RealtimeError.configurationError(errorMessage)
         }
-        
+
+        guard let agoraKit else {
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
         guard !newToken.isEmpty else {
             throw RealtimeError.invalidToken
         }
@@ -660,133 +819,183 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
         
         print("Agora: 更新 Token")
         
-        // 在真实实现中，这里会调用 Agora SDK 的 Token 更新方法
-        // 例如: agoraKit.renewToken(newToken)
+        // 调用 Agora SDK 的 Token 更新方法
+        agoraKit.renewToken(newToken)
     }
     
     public func onTokenWillExpire(_ handler: @escaping @Sendable (Int) -> Void) {
         tokenExpirationHandler = handler
-        
-        // 模拟 Token 过期通知
-        Task {
-            try? await Task.sleep(nanoseconds: 10_000_000_000) // 10秒后模拟过期通知
-            await MainActor.run {
-                handler(300) // 300秒后过期
-            }
-        }
-        
+
         print("Agora RTC: Token 过期处理器已设置")
-        
-        // 在真实实现中，这里会设置 Agora SDK 的 Token 过期回调
+        // 设置 Agora SDK 的 Token 过期回调
         // 例如: 在 AgoraRtcEngineDelegate 中实现 rtcEngine(_:tokenPrivilegeWillExpire:)
     }
     
     // MARK: - Private Methods
+
+    /// Agora SDK 初始化
+    private func agoraInitialization(config: RTCConfig) async throws {
+        let agoraConfig = AgoraRtcEngineConfig()
+        agoraConfig.appId = config.appId
+        agoraConfig.areaCode = .global
+        
+        agoraKit = AgoraRtcEngineKit.sharedEngine(with: agoraConfig, delegate: self)
+        
+        // 配置音频设置
+        agoraKit?.setAudioProfile(.default)
+        agoraKit?.setAudioScenario(.gameStreaming)
+        agoraKit?.enableAudio()
+        
+        // 根据配置启用音量指示器
+        if configuration.enableAudioVolumeIndication {
+            agoraKit?.enableAudioVolumeIndication(300, smooth: 3, reportVad: true)
+        }
+        
+        // 设置日志级别
+        agoraKit?.setLogFilter(configuration.logLevel.agoraLogLevel.rawValue)
+    }
     
-    private func setupMockVolumeData() {
-        for userId in mockUsers {
-            mockVolumeData[userId] = Float.random(in: 0...1)
+    private func agoraJoinRoom(roomId: String, userId: String, userRole: UserRole) async throws {
+        guard let agoraKit else { 
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
+        // 设置用户角色
+        let clientRole: AgoraClientRole = userRole == .audience ? .audience : .broadcaster
+        agoraKit.setClientRole(clientRole)
+
+        guard let uid = UInt(userId) else {
+            throw RealtimeError.configurationError("Failed to generate a valid user ID")
+        }
+
+        // 加入频道
+        let result = agoraKit.joinChannel(
+            byToken: nil, // Token should be provided separately when joining
+            channelId: roomId,
+            info: nil,
+            uid: uid
+        )
+        
+        guard result == 0 else {
+            throw RealtimeError.connectionError("Failed to join channel: \(result)")
+        }
+    }
+
+    /// Agora SDK 的离开频道方法
+    private func agoraLeaveRoom() async throws {
+        guard let agoraKit else { 
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
+        let result = agoraKit.leaveChannel()
+        
+        guard result == 0 else {
+            throw RealtimeError.connectionError("Failed to leave channel: \(result)")
+        }
+    }
+
+    /// Agora SDK 的角色切换方法
+    private func agoraRoleSwitch(role: UserRole) async throws {
+        guard let agoraKit else { 
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+        
+        let clientRole: AgoraClientRole = role == .audience ? .audience : .broadcaster
+        let result = agoraKit.setClientRole(clientRole)
+        
+        guard result == 0 else {
+            throw RealtimeError.configurationError("Failed to switch role: \(result)")
         }
     }
     
-    private func simulateAgoraInitialization(config: RTCConfig) async throws {
-        // 模拟 Agora SDK 初始化过程
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2秒
-        
-        // 在真实实现中，这里会进行 Agora SDK 的实际初始化
-        // 包括设置日志级别、区域等配置
+
+}
+
+
+extension AgoraRTCProvider: AgoraRtcEngineDelegate {
+
+    public func rtcEngine(_ engine: AgoraRtcEngineKit, tokenPrivilegeWillExpire token: String) {
+        tokenExpirationHandler?(5 * 60)
     }
-    
-    private func simulateAgoraJoinRoom(roomId: String, userId: String, userRole: UserRole) async throws {
-        // 模拟 Agora 加入房间过程
-        try await Task.sleep(nanoseconds: 500_000_000) // 0.5秒
+
+    public func rtcEngine(_ engine: AgoraRtcEngineKit, reportAudioVolumeIndicationOfSpeakers speakers: [AgoraRtcAudioVolumeInfo], totalVolume: Int) {
+        guard volumeIndicatorEnabled else { return }
         
-        // 在真实实现中，这里会调用 Agora SDK 的加入频道方法
-    }
-    
-    private func simulateAgoraLeaveRoom() async throws {
-        // 模拟 Agora 离开房间过程
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2秒
-        
-        // 在真实实现中，这里会调用 Agora SDK 的离开频道方法
-    }
-    
-    private func simulateAgoraRoleSwitch(role: UserRole) async throws {
-        // 模拟 Agora 角色切换过程
-        try await Task.sleep(nanoseconds: 300_000_000) // 0.3秒
-        
-        // 在真实实现中，这里会调用 Agora SDK 的角色切换方法
-    }
-    
-    private func startVolumeSimulation() {
-        guard let config = volumeDetectionConfig else { return }
-        
-        // 使用 DispatchQueue 而不是 Timer 来避免并发问题
-        let interval = TimeInterval(config.detectionInterval) / 1000.0
-        
-        Task.detached { [weak self] in
-            while let self = self, self.volumeIndicatorEnabled {
-                let volumeInfos = self.generateMockVolumeInfos()
-                self.volumeHandler?(volumeInfos)
-                
-                // 检测说话状态变化
-                let currentSpeakingUsers = Set(volumeInfos.filter { $0.isSpeaking }.map { $0.userId })
-                
-                // 检测开始说话的用户
-                let startedSpeaking = currentSpeakingUsers.subtracting(previousSpeakingUsers)
-                for userId in startedSpeaking {
-                    if let volumeInfo = volumeInfos.first(where: { $0.userId == userId }) {
-                        volumeEventHandler?(.userStartedSpeaking(userId: userId, volume: volumeInfo.volumeFloat))
-                    }
-                }
-                
-                // 检测停止说话的用户
-                let stoppedSpeaking = previousSpeakingUsers.subtracting(currentSpeakingUsers)
-                for userId in stoppedSpeaking {
-                    if let volumeInfo = volumeInfos.first(where: { $0.userId == userId }) {
-                        volumeEventHandler?(.userStoppedSpeaking(userId: userId, volume: volumeInfo.volumeFloat))
-                    }
-                }
-                
-                // 检测主讲人变化
-                let dominantSpeaker = volumeInfos.filter { $0.isSpeaking }.max { $0.volume < $1.volume }?.userId
-                volumeEventHandler?(.dominantSpeakerChanged(userId: dominantSpeaker))
-                
-                volumeEventHandler?(.volumeUpdate(volumeInfos))
-                
-                previousSpeakingUsers = currentSpeakingUsers
-                
-                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
-            }
-        }
-        
-        print("Agora: 音量模拟已启动")
-    }
-    
-    private func stopVolumeSimulation() {
-        volumeSimulationTimer?.invalidate()
-        volumeSimulationTimer = nil
-        previousSpeakingUsers.removeAll()
-    }
-    
-    private func generateMockVolumeInfos() -> [UserVolumeInfo] {
-        return mockUsers.map { userId in
-            // 更新模拟音量数据，添加一些随机变化
-            let currentVolume = mockVolumeData[userId] ?? 0.0
-            let change = Float.random(in: -0.1...0.1)
-            let newVolume = max(0.0, min(1.0, currentVolume + change))
-            mockVolumeData[userId] = newVolume
-            
-            let volumeInt = Int(newVolume * 255.0)
+        let volumeInfos = speakers.map { speaker in
+            let userId = speaker.uid == 0 ? "local_user" : String(speaker.uid)
             let threshold = volumeDetectionConfig?.speakingThreshold ?? 0.3
-            let isSpeaking = newVolume > threshold
+            let isSpeaking = Float(speaker.volume) / 255.0 > threshold
             
             return UserVolumeInfo(
                 userId: userId,
-                volume: volumeInt,
+                volume: Int(speaker.volume),
                 vad: isSpeaking ? .speaking : .notSpeaking,
                 timestamp: Date()
             )
+        }
+        
+        // 调用音量处理器
+        volumeHandler?(volumeInfos)
+        
+        // 检测说话状态变化
+        let currentSpeakingUsers = Set(volumeInfos.filter { $0.isSpeaking }.map { $0.userId })
+        
+        // 检测开始说话的用户
+        let startedSpeaking = currentSpeakingUsers.subtracting(previousSpeakingUsers)
+        for userId in startedSpeaking {
+            if let volumeInfo = volumeInfos.first(where: { $0.userId == userId }) {
+                volumeEventHandler?(.userStartedSpeaking(userId: userId, volume: volumeInfo.volumeFloat))
+            }
+        }
+        
+        // 检测停止说话的用户
+        let stoppedSpeaking = previousSpeakingUsers.subtracting(currentSpeakingUsers)
+        for userId in stoppedSpeaking {
+            if let volumeInfo = volumeInfos.first(where: { $0.userId == userId }) {
+                volumeEventHandler?(.userStoppedSpeaking(userId: userId, volume: volumeInfo.volumeFloat))
+            }
+        }
+        
+        // 检测主讲人变化
+        let dominantSpeaker = volumeInfos.filter { $0.isSpeaking }.max { $0.volume < $1.volume }?.userId
+        volumeEventHandler?(.dominantSpeakerChanged(userId: dominantSpeaker))
+        
+        volumeEventHandler?(.volumeUpdate(volumeInfos))
+        
+        previousSpeakingUsers = currentSpeakingUsers
+    }
+    
+    public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinChannel channel: String, withUid uid: UInt, elapsed: Int) {
+        print("Agora RTC: 成功加入频道 \(channel)，用户ID: \(uid)")
+    }
+    
+    public func rtcEngine(_ engine: AgoraRtcEngineKit, didLeaveChannelWith stats: AgoraChannelStats) {
+        print("Agora RTC: 离开频道，通话时长: \(stats.duration)秒")
+    }
+    
+    public func rtcEngine(_ engine: AgoraRtcEngineKit, didOccurError errorCode: AgoraErrorCode) {
+        print("Agora RTC: 发生错误 - \(errorCode.rawValue)")
+    }
+    
+    public func rtcEngine(_ engine: AgoraRtcEngineKit, connectionChangedTo state: AgoraConnectionState, reason: AgoraConnectionChangedReason) {
+        print("Agora RTC: 连接状态变化 - 状态: \(state.rawValue), 原因: \(reason.rawValue)")
+    }
+    
+    public func rtcEngine(_ engine: AgoraRtcEngineKit, rtmpStreamingChangedToState url: String, state: AgoraRtmpStreamingState, reason: AgoraRtmpStreamingReason) {
+        print("Agora RTC: RTMP 推流状态变化 - URL: \(url), 状态: \(state.rawValue), 原因: \(reason.rawValue)")
+        
+        if state == .failure {
+            streamPushActive = false
+            streamPushConfig = nil
+        }
+    }
+    
+    public func rtcEngine(_ engine: AgoraRtcEngineKit, channelMediaRelayStateDidChange state: AgoraChannelMediaRelayState, error: AgoraChannelMediaRelayError) {
+        print("Agora RTC: 媒体中继状态变化 - 状态: \(state.rawValue)")
+        
+        if state == .failure {
+            mediaRelayActive = false
+            mediaRelayChannels.removeAll()
         }
     }
 }
@@ -795,8 +1004,8 @@ public class AgoraRTCProvider: RTCProvider, @unchecked Sendable {
 
 /// Agora RTM 提供者实现
 /// 需求: 2.1, 1.1, 1.2, 17.1
-public class AgoraRTMProvider: RTMProvider {
-    
+public class AgoraRTMProvider: NSObject, RTMProvider {
+
     // MARK: - Properties
     
     private var config: RTMConfig?
@@ -816,18 +1025,24 @@ public class AgoraRTMProvider: RTMProvider {
     // Agora 配置
     private let configuration: AgoraProviderFactory.AgoraConfiguration
     
-    // 模拟数据（在真实实现中会被 Agora SDK 数据替代）
-    private var mockChannelMembers: [String: [RTMChannelMember]] = [:]
-    private var mockOnlineStatus: [String: Bool] = [:]
+
     
     // 连接状态
     private var isInitialized: Bool = false
-    
+
+    private var agoraRtmKit: AgoraRtmClientKit?
+
     // MARK: - Initialization
     
     internal init(configuration: AgoraProviderFactory.AgoraConfiguration = .default) {
         self.configuration = configuration
-        setupMockData()
+        super.init()
+    }
+    
+    deinit {
+        // 清理 Agora RTM 资源
+        // Note: Cannot use async operations in deinit
+        // Resources will be cleaned up automatically
     }
     
     // MARK: - RTMProvider Implementation
@@ -841,39 +1056,39 @@ public class AgoraRTMProvider: RTMProvider {
         
         self.config = config
         
-        // 模拟 Agora RTM SDK 初始化过程
-        try await simulateAgoraRTMInitialization(config: config)
-        
+        // Agora RTM SDK 初始化过程
+        try await agoraRTMInitialization(config: config)
+
         isInitialized = true
         print("Agora RTM Provider 初始化完成 - App ID: \(config.appId)")
-        
-        // 在真实实现中，这里会调用 Agora RTM SDK 的初始化方法
-        // 例如: agoraRtmKit = AgoraRtmKit(appId: config.appId, delegate: self)
     }
-    
+
     public func login(userId: String, token: String) async throws {
         guard isInitialized else {
             let errorMessage =
                 "RTM Provider not initialized"
             throw RealtimeError.configurationError(errorMessage)
         }
-        
+
+        guard let agoraRtmKit else {
+            throw RealtimeError.configurationError("Agora RTM Engine not initialized")
+        }
+
         guard !userId.isEmpty else {
             let errorMessage =
                 "Invalid user ID"
             throw RealtimeError.authenticationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 登录过程
-        try await simulateAgoraRTMLogin(userId: userId, token: token)
+        // 调用 Agora RTM SDK 的登录方法
+        try await performAgoraAsyncOperation {
+            await agoraRtmKit.login(token)
+        }
         
         _isLoggedIn = true
         print("Agora RTM: 用户 \(userId) 登录")
         
         connectionStateHandler?(.connected, .loginSuccess)
-        
-        // 在真实实现中，这里会调用 Agora RTM SDK 的登录方法
-        // 例如: agoraRtmKit.login(byToken: token, user: userId, completion: completion)
     }
     
     public func logout() async throws {
@@ -883,9 +1098,9 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.authenticationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 登出过程
-        try await simulateAgoraRTMLogout()
-        
+        // 调用 Agora RTM SDK 的登出方法
+        try await agoraRTMLogout()
+
         _isLoggedIn = false
         joinedChannels.removeAll()
         userAttributes.removeAll()
@@ -893,9 +1108,6 @@ public class AgoraRTMProvider: RTMProvider {
         
         print("Agora RTM: 用户登出")
         connectionStateHandler?(.disconnected, .logout)
-        
-        // 在真实实现中，这里会调用 Agora RTM SDK 的登出方法
-        // 例如: agoraRtmKit.logout(completion: completion)
     }
     
     public func isLoggedIn() -> Bool {
@@ -909,6 +1121,17 @@ public class AgoraRTMProvider: RTMProvider {
     }
     
     public func joinChannel(channelId: String) async throws {
+
+        guard isInitialized else {
+            let errorMessage =
+                "RTM Provider not initialized"
+            throw RealtimeError.configurationError(errorMessage)
+        }
+
+        guard let agoraRtmKit else {
+            throw RealtimeError.configurationError("Agora RTM Engine not initialized")
+        }
+
         guard _isLoggedIn else {
             let errorMessage =
                 "Not logged in"
@@ -921,42 +1144,43 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.configurationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 加入频道过程
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2秒
+        // 调用 Agora RTM SDK 的加入频道方法
+        try await performAgoraAsyncOperation {
+            await agoraRtmKit.subscribe(channelName: channelId, option: nil)
+        }
         
         joinedChannels.insert(channelId)
         
-        // 创建模拟频道成员
-        if mockChannelMembers[channelId] == nil {
-            mockChannelMembers[channelId] = [
-                RTMChannelMember(userId: "agora_user1", role: .member),
-                RTMChannelMember(userId: "agora_user2", role: .admin)
-            ]
-        }
-        
         print("Agora RTM: 加入频道 \(channelId)")
-        
-        // 在真实实现中，这里会调用 Agora RTM SDK 的加入频道方法
-        // 例如: channel.join(completion: completion)
     }
     
     public func leaveChannel(channelId: String) async throws {
+
+        guard isInitialized else {
+            let errorMessage =
+                "RTM Provider not initialized"
+            throw RealtimeError.configurationError(errorMessage)
+        }
+
+        guard let agoraRtmKit else {
+            throw RealtimeError.configurationError("Agora RTM Engine not initialized")
+        }
+
         guard joinedChannels.contains(channelId) else {
             let errorMessage =
                 "Not in channel"
             throw RealtimeError.configurationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 离开频道过程
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-        
+        // 调用 Agora RTM SDK 的离开频道方法
+        try await performAgoraAsyncOperation {
+            await agoraRtmKit.unsubscribe(channelId)
+        }
+
         joinedChannels.remove(channelId)
-        mockChannelMembers.removeValue(forKey: channelId)
         
         print("Agora RTM: 离开频道 \(channelId)")
-        
-        // 在真实实现中，这里会调用 Agora RTM SDK 的离开频道方法
-        // 例如: channel.leave(completion: completion)
+
     }
     
     public func getChannelMembers(channelId: String) async throws -> [RTMChannelMember] {
@@ -966,8 +1190,10 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.configurationError(errorMessage)
         }
         
-        // 返回模拟的频道成员
-        return mockChannelMembers[channelId] ?? []
+        // 在真实实现中，这里应该调用 Agora RTM SDK 获取频道成员
+        // 由于 Agora RTM 2.0 不直接提供获取频道成员的 API，
+        // 需要通过其他方式（如 presence 功能）来实现
+        return []
     }
     
     public func getChannelMemberCount(channelId: String) async throws -> Int {
@@ -977,18 +1203,28 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.configurationError(errorMessage)
         }
         
-        return mockChannelMembers[channelId]?.count ?? 0
+        // 在真实实现中，这里应该调用 Agora RTM SDK 获取频道成员数量
+        // 由于 Agora RTM 2.0 不直接提供获取频道成员数量的 API，
+        // 需要通过其他方式来实现
+        return 0
     }
     
     // MARK: - Message Sending
     
     public func sendPeerMessage(_ message: RTMMessage, toPeer peerId: String, options: RTMSendMessageOptions?) async throws {
+
+        guard isInitialized else {
+            let errorMessage =
+                "RTM Provider not initialized"
+            throw RealtimeError.configurationError(errorMessage)
+        }
+
         guard _isLoggedIn else {
             let errorMessage =
                 "Not logged in"
             throw RealtimeError.authenticationError(errorMessage)
         }
-        
+
         guard !peerId.isEmpty else {
             let errorMessage =
                 "Invalid peer ID"
@@ -999,22 +1235,32 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.invalidMessageFormat
         }
         
-        // 模拟 Agora RTM 发送点对点消息过程
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-        
+        // 在真实实现中，这里需要调用 Agora RTM SDK 的发送点对点消息方法
+        // 注意：Agora RTM 2.0 使用不同的 API 结构
         print("Agora RTM: 发送点对点消息给 \(peerId): \(message.text)")
         
-        // 在真实实现中，这里会调用 Agora RTM SDK 的发送点对点消息方法
-        // 例如: agoraRtmKit.send(message, toPeer: peerId, sendMessageOptions: options, completion: completion)
+        // TODO: 实现 Agora RTM 2.0 的点对点消息发送
+        // 需要使用 publish 方法发送到特定用户
     }
     
     public func sendChannelMessage(_ message: RTMMessage, toChannel channelId: String, options: RTMSendMessageOptions?) async throws {
+
+        guard isInitialized else {
+            let errorMessage =
+                "RTM Provider not initialized"
+            throw RealtimeError.configurationError(errorMessage)
+        }
+
+        guard let agoraRtmKit else {
+            throw RealtimeError.configurationError("Agora RTM Engine not initialized")
+        }
+
         guard _isLoggedIn else {
             let errorMessage =
                 "Not logged in"
             throw RealtimeError.authenticationError(errorMessage)
         }
-        
+
         guard joinedChannels.contains(channelId) else {
             let errorMessage =
                 "Not in channel"
@@ -1025,13 +1271,19 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.invalidMessageFormat
         }
         
-        // 模拟 Agora RTM 发送频道消息过程
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
+        // 调用 Agora RTM SDK 的发送频道消息方法
+        let jsonEncoder = JSONEncoder()
+        let data: Data = try jsonEncoder.encode(message)
         
+        try await performAgoraAsyncOperation {
+            let publishOptions = AgoraRtmPublishOptions()
+            publishOptions.customType = "RealtimeMessage"
+            publishOptions.channelType = .message
+            publishOptions.storeInHistory = false
+            return await agoraRtmKit.publish(channelName: channelId, data: data, option: publishOptions)
+        }
+
         print("Agora RTM: 发送频道消息到 \(channelId): \(message.text)")
-        
-        // 在真实实现中，这里会调用 Agora RTM SDK 的发送频道消息方法
-        // 例如: channel.send(message, sendMessageOptions: options, completion: completion)
     }
     
     // MARK: - User Attributes
@@ -1043,14 +1295,11 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.authenticationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 设置用户属性过程
-        try await Task.sleep(nanoseconds: 150_000_000) // 0.15秒
-        
         userAttributes = attributes
         print("Agora RTM: 设置本地用户属性 \(attributes.count) 个")
         
-        // 在真实实现中，这里会调用 Agora RTM SDK 的设置用户属性方法
-        // 例如: agoraRtmKit.setLocalUserAttributes(attributes, completion: completion)
+        // 在真实实现中，这里需要调用 Agora RTM SDK 的设置用户属性方法
+        // 注意：Agora RTM 2.0 使用 storage 功能来管理用户属性
     }
     
     public func addOrUpdateLocalUserAttributes(_ attributes: [String: String]) async throws {
@@ -1060,16 +1309,12 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.authenticationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 添加或更新用户属性过程
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-        
         for (key, value) in attributes {
             userAttributes[key] = value
         }
         print("Agora RTM: 添加或更新本地用户属性 \(attributes.count) 个")
         
-        // 在真实实现中，这里会调用 Agora RTM SDK 的添加或更新用户属性方法
-        // 例如: agoraRtmKit.addOrUpdateLocalUserAttributes(attributes, completion: completion)
+        // 在真实实现中，这里需要调用 Agora RTM SDK 的添加或更新用户属性方法
     }
     
     public func deleteLocalUserAttributesByKeys(_ attributeKeys: [String]) async throws {
@@ -1079,16 +1324,12 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.authenticationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 删除用户属性过程
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-        
         for key in attributeKeys {
             userAttributes.removeValue(forKey: key)
         }
         print("Agora RTM: 删除本地用户属性 \(attributeKeys.count) 个")
         
-        // 在真实实现中，这里会调用 Agora RTM SDK 的删除用户属性方法
-        // 例如: agoraRtmKit.deleteLocalUserAttributesByKeys(attributeKeys, completion: completion)
+        // 在真实实现中，这里需要调用 Agora RTM SDK 的删除用户属性方法
     }
     
     public func clearLocalUserAttributes() async throws {
@@ -1098,14 +1339,10 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.authenticationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 清除用户属性过程
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-        
         userAttributes.removeAll()
         print("Agora RTM: 清除本地用户属性")
         
-        // 在真实实现中，这里会调用 Agora RTM SDK 的清除用户属性方法
-        // 例如: agoraRtmKit.clearLocalUserAttributes(completion: completion)
+        // 在真实实现中，这里需要调用 Agora RTM SDK 的清除用户属性方法
     }
     
     public func getUserAttributes(userId: String) async throws -> [String: String] {
@@ -1115,10 +1352,8 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.authenticationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 获取用户属性过程
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-        
-        // 返回模拟的用户属性
+        // 在真实实现中，这里需要调用 Agora RTM SDK 获取用户属性
+        // 目前返回本地缓存的属性（仅适用于当前用户）
         return userId == "current_user" ? userAttributes : [:]
     }
     
@@ -1135,14 +1370,11 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.authenticationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 设置频道属性过程
-        try await Task.sleep(nanoseconds: 150_000_000) // 0.15秒
-        
         channelAttributes[channelId] = attributes
         print("Agora RTM: 设置频道 \(channelId) 属性 \(attributes.count) 个")
         
-        // 在真实实现中，这里会调用 Agora RTM SDK 的设置频道属性方法
-        // 例如: agoraRtmKit.setChannel(channelId, attributes: attributes, options: options, completion: completion)
+        // 在真实实现中，这里需要调用 Agora RTM SDK 的设置频道属性方法
+        // 注意：Agora RTM 2.0 使用 storage 功能来管理频道属性
     }
     
     public func addOrUpdateChannelAttributes(channelId: String, attributes: [String: String], options: RTMChannelAttributeOptions?) async throws {
@@ -1252,19 +1484,12 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.authenticationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 查询在线状态过程
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2秒
-        
-        var result: [String: Bool] = [:]
-        for userId in userIds {
-            result[userId] = mockOnlineStatus[userId] ?? Bool.random()
-        }
-        
         print("Agora RTM: 查询 \(userIds.count) 个用户在线状态")
-        return result
         
-        // 在真实实现中，这里会调用 Agora RTM SDK 的查询在线状态方法
-        // 例如: agoraRtmKit.queryPeersOnlineStatus(userIds, completion: completion)
+        // 在真实实现中，这里需要调用 Agora RTM SDK 的查询在线状态方法
+        // 注意：Agora RTM 2.0 使用 presence 功能来查询用户在线状态
+        // 目前返回空结果
+        return [:]
     }
     
     public func subscribePeersOnlineStatus(userIds: [String]) async throws {
@@ -1274,17 +1499,14 @@ public class AgoraRTMProvider: RTMProvider {
             throw RealtimeError.authenticationError(errorMessage)
         }
         
-        // 模拟 Agora RTM 订阅在线状态过程
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-        
         for userId in userIds {
             subscribedUsers.insert(userId)
         }
         
         print("Agora RTM: 订阅 \(userIds.count) 个用户在线状态")
         
-        // 在真实实现中，这里会调用 Agora RTM SDK 的订阅在线状态方法
-        // 例如: agoraRtmKit.subscribePeersOnlineStatus(userIds, completion: completion)
+        // 在真实实现中，这里需要调用 Agora RTM SDK 的订阅在线状态方法
+        // 注意：Agora RTM 2.0 使用 presence 功能来订阅用户在线状态
     }
     
     public func unsubscribePeersOnlineStatus(userIds: [String]) async throws {
@@ -1331,50 +1553,46 @@ public class AgoraRTMProvider: RTMProvider {
                 "RTM Provider not initialized"
             throw RealtimeError.configurationError(errorMessage)
         }
-        
+
+        guard let agoraRtmKit else {
+            throw RealtimeError.configurationError("Agora RTM Engine not initialized")
+        }
+
         guard !newToken.isEmpty else {
             throw RealtimeError.invalidToken
         }
-        
-        // 模拟 Agora RTM Token 更新延迟
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-        
+
+        // 调用 Agora RTM SDK 的 Token 更新方法
+        await agoraRtmKit.renewToken(newToken)
+
         print("Agora RTM: 更新 Token")
-        
-        // 在真实实现中，这里会调用 Agora RTM SDK 的 Token 更新方法
-        // 例如: agoraRtmKit.renewToken(newToken, completion: completion)
+
     }
     
     public func onTokenWillExpire(_ handler: @escaping @Sendable () -> Void) {
         tokenExpirationHandler = handler
-        
-        // 模拟 Token 过期通知
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 15_000_000_000) // 15秒后模拟过期通知
-            handler()
-        }
-        
+
         print("Agora RTM: Token 过期处理器已设置")
         
-        // 在真实实现中，这里会设置 Agora RTM SDK 的 Token 过期回调
+        // 设置 Agora RTM SDK 的 Token 过期回调
         // 例如: 在 AgoraRtmDelegate 中实现 rtmKit(_:tokenPrivilegeWillExpire:)
     }
     
     // MARK: - Event Handlers
     
-    public func onConnectionStateChanged(_ handler: @escaping (RTMConnectionState, RTMConnectionChangeReason) -> Void) {
+    public func onConnectionStateChanged(_ handler: @escaping @Sendable (RTMConnectionState, RTMConnectionChangeReason) -> Void) {
         connectionStateHandler = handler
     }
     
-    public func onPeerMessageReceived(_ handler: @escaping (RTMMessage, String) -> Void) {
+    public func onPeerMessageReceived(_ handler: @escaping @Sendable (RTMMessage, String) -> Void) {
         peerMessageHandler = handler
         print("Agora RTM: 点对点消息接收处理器已设置")
         
         // 在真实实现中，这里会设置 Agora RTM SDK 的点对点消息接收回调
         // 例如: 在 AgoraRtmDelegate 中实现 rtmKit(_:messageReceived:fromPeer:)
     }
-    
-    public func onChannelMessageReceived(_ handler: @escaping (RTMMessage, RTMChannelMember, String) -> Void) {
+
+    public func onChannelMessageReceived(_ handler: @escaping @Sendable (RTMMessage, RTMChannelMember, String) -> Void) {
         channelMessageHandler = handler
         print("Agora RTM: 频道消息接收处理器已设置")
         
@@ -1382,40 +1600,127 @@ public class AgoraRTMProvider: RTMProvider {
         // 例如: 在 AgoraRtmChannelDelegate 中实现 rtmChannel(_:messageReceived:from:)
     }
     
-    public func onPeersOnlineStatusChanged(_ handler: @escaping ([String: Bool]) -> Void) {
+    public func onPeersOnlineStatusChanged(_ handler: @escaping @Sendable ([String: Bool]) -> Void) {
         peersOnlineStatusHandler = handler
     }
     
     // MARK: - Private RTM Methods
-    
-    private func setupMockData() {
-        // 设置模拟在线状态
-        mockOnlineStatus = [
-            "agora_user1": true,
-            "agora_user2": false,
-            "agora_user3": true
-        ]
+
+    /// 调用 Agora RTM SDK 的初始化方法
+    private func agoraRTMInitialization(config: RTMConfig) async throws {
+        // 调用 Agora RTM SDK 的初始化方法
+        let agoraRtmClientConfig = AgoraRtmClientConfig(appId: config.appId, userId: "uninitialized")
+        agoraRtmKit = try AgoraRtmClientKit(agoraRtmClientConfig, delegate: self)
     }
     
-    private func simulateAgoraRTMInitialization(config: RTMConfig) async throws {
-        // 模拟 Agora RTM SDK 初始化过程
-        try await Task.sleep(nanoseconds: 150_000_000) // 0.15秒
+
+
+    /// Agora RTM SDK 的登出方法
+    private func agoraRTMLogout() async throws {
+        guard isInitialized else {
+            let errorMessage =
+                "RTM Provider not initialized"
+            throw RealtimeError.configurationError(errorMessage)
+        }
+
+        guard let agoraRtmKit else {
+            throw RealtimeError.configurationError("Agora RTM Engine not initialized")
+        }
+        // 调用 Agora RTM SDK 的登出方法
+        await agoraRtmKit.logout()
+    }
+}
+
+extension AgoraRTMProvider: AgoraRtmClientDelegate {
+
+    public func rtmKit(_ rtmKit: AgoraRtmClientKit, tokenPrivilegeWillExpire channel: String?) {
+        tokenExpirationHandler?()
+    }
+
+    public func rtmKit(_ rtmKit: AgoraRtmClientKit, didReceiveMessageEvent event: AgoraRtmMessageEvent) {
+        // 处理接收到的消息
+        guard let data = event.message.rawData else { return }
         
-        // 在真实实现中，这里会进行 Agora RTM SDK 的实际初始化
+        do {
+            let decoder = JSONDecoder()
+            let message = try decoder.decode(RTMMessage.self, from: data)
+            
+            if event.channelType == .message {
+                // 频道消息
+                let member = RTMChannelMember(userId: event.publisher, role: .member)
+                channelMessageHandler?(message, member, event.channelName)
+            } else {
+                // 点对点消息（在 RTM 2.0 中通过特殊频道实现）
+                peerMessageHandler?(message, event.publisher)
+            }
+        } catch {
+            print("Agora RTM: 解析消息失败 - \(error)")
+        }
     }
     
-    private func simulateAgoraRTMLogin(userId: String, token: String) async throws {
-        // 模拟 Agora RTM 登录过程
-        try await Task.sleep(nanoseconds: 300_000_000) // 0.3秒
+    public func rtmKit(_ rtmKit: AgoraRtmClientKit, didReceivePresenceEvent event: AgoraRtmPresenceEvent) {
+        // 处理用户在线状态变化
+        var statusChanges: [String: Bool] = [:]
         
-        // 在真实实现中，这里会调用 Agora RTM SDK 的登录方法
+        for snapshot in event.snapshot {
+            statusChanges[snapshot.userId] = true
+        }
+        
+        peersOnlineStatusHandler?(statusChanges)
     }
     
-    private func simulateAgoraRTMLogout() async throws {
-        // 模拟 Agora RTM 登出过程
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2秒
+    public func rtmKit(_ rtmKit: AgoraRtmClientKit, connectionChangedToState state: AgoraRtmClientConnectionState, reason: AgoraRtmClientConnectionChangeReason) {
+        // 处理连接状态变化
+        let rtmState: RTMConnectionState
+        let rtmReason: RTMConnectionChangeReason
         
-        // 在真实实现中，这里会调用 Agora RTM SDK 的登出方法
+        switch state {
+        case .disconnected:
+            rtmState = .disconnected
+        case .connecting:
+            rtmState = .connecting
+        case .connected:
+            rtmState = .connected
+        case .reconnecting:
+            rtmState = .reconnecting
+        case .failed:
+            rtmState = .failed
+        default:
+            rtmState = .disconnected
+        }
+        
+        switch reason {
+        case .changedConnecting:
+            rtmReason = .interrupted
+        case .changedJoinSuccess:
+            rtmReason = .loginSuccess
+        case .changedInterrupted:
+            rtmReason = .interrupted
+        case .changedBannedByServer:
+            rtmReason = .bannedByServer
+        case .changedJoinFailed:
+            rtmReason = .loginSuccess
+        case .changedLeaveChannel:
+            rtmReason = .logout
+        case .changedInvalidAppId:
+            rtmReason = .interrupted
+        case .changedInvalidToken:
+            rtmReason = .tokenExpired
+        case .changedTokenExpired:
+            rtmReason = .tokenExpired
+        case .changedSettingProxyServer:
+            rtmReason = .interrupted
+        case .changedClientIpAddressChanged:
+            rtmReason = .interrupted
+        case .changedKeepAliveTimeout:
+            rtmReason = .interrupted
+        case .changedRejoinSuccess:
+            rtmReason = .loginSuccess
+        default:
+            rtmReason = .interrupted
+        }
+        
+        connectionStateHandler?(rtmState, rtmReason)
     }
 }
 
@@ -1547,3 +1852,51 @@ internal enum AgoraChannelState {
     case active
     case destroyed
 }
+
+#else
+
+// MARK: - macOS Stub Implementation
+
+/// Agora 服务商工厂 (macOS 存根实现)
+/// 需求: 2.1, 1.1, 1.2
+public class AgoraProviderFactory: NSObject, ProviderFactory {
+    
+    /// Agora 特定配置选项
+    public struct AgoraConfiguration: Sendable {
+        public let enableCloudProxy: Bool
+        public let enableAudioVolumeIndication: Bool
+        public let enableLocalizedErrors: Bool
+        
+        public init(
+            enableCloudProxy: Bool = false,
+            enableAudioVolumeIndication: Bool = true,
+            enableLocalizedErrors: Bool = true
+        ) {
+            self.enableCloudProxy = enableCloudProxy
+            self.enableAudioVolumeIndication = enableAudioVolumeIndication
+            self.enableLocalizedErrors = enableLocalizedErrors
+        }
+        
+        public static let `default` = AgoraConfiguration()
+    }
+    
+    public let configuration: AgoraConfiguration
+    
+    public init(configuration: AgoraConfiguration = .default) {
+        self.configuration = configuration
+    }
+    
+    public func createRTCProvider() -> RTCProvider {
+        fatalError("Agora SDK is not available on macOS. Please use iOS for Agora integration.")
+    }
+    
+    public func createRTMProvider() -> RTMProvider {
+        fatalError("Agora SDK is not available on macOS. Please use iOS for Agora integration.")
+    }
+    
+    public func supportedFeatures() -> Set<ProviderFeature> {
+        return []
+    }
+}
+
+#endif

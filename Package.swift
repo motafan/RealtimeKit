@@ -7,7 +7,7 @@ let package = Package(
     name: "RealtimeKit",
     defaultLocalization: "en",
     platforms: [
-        .iOS(.v13),
+        .iOS(.v14),
         .macOS(.v10_15)
     ],
     products: [
@@ -45,8 +45,8 @@ let package = Package(
     ],
     dependencies: [
         // Agora SDK dependencies (uncomment when ready to integrate real SDK)
-        // .package(url: "https://github.com/AgoraIO/AgoraRtcEngine_iOS", from: "4.0.0"),
-        // .package(url: "https://github.com/AgoraIO/AgoraRtm_Apple", from: "1.5.0")
+         .package(url: "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git", from: "4.6.0"),
+         .package(url: "https://github.com/AgoraIO/AgoraRtm_Apple.git", branch: "lite_iOS"),
     ],
     targets: [
         // Main RealtimeKit target that re-exports all modules
@@ -98,10 +98,10 @@ let package = Package(
         .target(
             name: "RealtimeAgora",
             dependencies: [
-                "RealtimeCore"
-                // Add Agora SDK dependencies when ready:
-                // .product(name: "AgoraRtcKit", package: "AgoraRtcEngine_iOS"),
-                // .product(name: "AgoraRtmKit", package: "AgoraRtmKit_iOS")
+                "RealtimeCore",
+                // Add Agora SDK dependencies for iOS only:
+                .product(name: "RtcBasic", package: "AgoraRtcEngine_iOS", condition: .when(platforms: [.iOS])),
+                .product(name: "AgoraRTM", package: "AgoraRtm_Apple", condition: .when(platforms: [.iOS])),
             ],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency")

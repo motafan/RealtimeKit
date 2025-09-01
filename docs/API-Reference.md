@@ -227,6 +227,28 @@ public func updateStreamPushLayout(layout: StreamLayout) async throws
 @Published public private(set) var streamPushState: StreamPushState
 ```
 
+**转推流功能说明：**
+
+转推流功能允许将房间内的音视频流推送到第三方平台（如 RTMP 服务器）。RealtimeKit 通过底层服务商 SDK 实现真实的流推送，确保稳定可靠的直播体验。
+
+**示例：**
+
+```swift
+// 配置转推流参数
+let streamConfig = try StreamPushConfig(
+    url: "rtmp://live.example.com/live/stream123",
+    layout: StreamLayout(canvasWidth: 1280, canvasHeight: 720),
+    audioConfig: StreamAudioConfig(bitrate: 128),
+    videoConfig: StreamVideoConfig(width: 1280, height: 720, bitrate: 2000)
+)
+
+// 开始转推流
+try await RealtimeManager.shared.startStreamPush(config: streamConfig)
+
+// 停止转推流
+try await RealtimeManager.shared.stopStreamPush()
+```
+
 #### 媒体中继功能
 
 ```swift
@@ -1026,16 +1048,30 @@ public enum ProviderFeature: String, CaseIterable {
 
 ### AgoraProviderFactory
 
-声网服务商工厂实现。
+声网服务商工厂实现，提供完整的 Agora SDK 集成。
 
 ```swift
 public class AgoraProviderFactory: ProviderFactory {
+    public struct AgoraConfiguration: Sendable {
+        public let enableCloudProxy: Bool
+        public let enableAudioVolumeIndication: Bool
+        public let enableLocalizedErrors: Bool
+        public let logLevel: AgoraLogLevel
+        public let region: AgoraRegion
+        
+        public static let `default` = AgoraConfiguration()
+    }
+    
+    public let configuration: AgoraConfiguration
+    
+    public init(configuration: AgoraConfiguration = .default)
+    
     public func createRTCProvider() -> RTCProvider {
-        return AgoraRTCProvider()
+        return AgoraRTCProvider(configuration: configuration)
     }
     
     public func createRTMProvider() -> RTMProvider {
-        return AgoraRTMProvider()
+        return AgoraRTMProvider(configuration: configuration)
     }
     
     public func supportedFeatures() -> Set<ProviderFeature> {
@@ -1049,6 +1085,299 @@ public class AgoraProviderFactory: ProviderFactory {
         ]
     }
 }
+```
+
+**使用示例：**
+
+```swift
+// 创建 Agora 配置
+let agoraConfig = AgoraProviderFactory.AgoraConfiguration(
+    enableCloudProxy: false,
+    enableAudioVolumeIndication: true,
+    enableLocalizedErrors: true,
+    logLevel: .info,
+    region: .global
+)
+
+// 创建工厂实例
+let factory = AgoraProviderFactory(configuration: agoraConfig)
+
+// 创建提供者
+let rtcProvider = factory.createRTCProvider()
+let rtmProvider = factory.createRTMProvider()
+
+// 初始化 RTC 提供者
+let rtcConfig = RTCConfig(
+    appId: "your-agora-app-id",
+    appCertificate: "your-app-certificate",
+    region: .global
+)
+try await rtcProvider.initialize(config: rtcConfig)
+
+// 初始化 RTM 提供者
+let rtmConfig = RTMConfig(
+    appId: "your-agora-app-id",
+    region: .global
+)
+try await rtmProvider.initialize(config: rtmConfig)
+```
+
+#### Agora RTC 功能
+
+**房间管理：**
+```swift
+// 创建和加入房间
+let room = try await rtcProvider.createRoom(roomId: "meeting_room_001")
+try await rtcProvider.joinRoom(roomId: "meeting_room_001", userId: "user123", userRole: .broadcaster)
+
+// 角色切换
+try await rtcProvider.switchUserRole(.audience)
+
+// 离开房间
+try await rtcProvider.leaveRoom()
+```
+
+**音频控制：**
+```swift
+// 麦克风控制
+try await rtcProvider.muteMicrophone(true)
+let isMuted = rtcProvider.isMicrophoneMuted()
+
+// 音频流控制
+try await rtcProvider.stopLocalAudioStream()
+try await rtcProvider.resumeLocalAudioStream()
+let isActive = rtcProvider.isLocalAudioStreamActive()
+
+// 音量控制
+try await rtcProvider.setAudioMixingVolume(80)
+try await rtcProvider.setPlaybackSignalVolume(90)
+try await rtcProvider.setRecordingSignalVolume(70)
+```
+
+**音量检测：**
+```swift
+let volumeConfig = VolumeDetectionConfig(
+    detectionInterval: 300,
+    speakingThreshold: 0.3,
+    includeLocalUser: true
+)
+
+try await rtcProvider.enableVolumeIndicator(config: volumeConfig)
+
+// 设置音量更新处理器
+rtcProvider.setVolumeIndicatorHandler { volumeInfos in
+    for volumeInfo in volumeInfos {
+        print("用户 \(volumeInfo.userId) 音量: \(volumeInfo.volume)")
+    }
+}
+
+// 设置音量事件处理器
+rtcProvider.setVolumeEventHandler { event in
+    switch event {
+    case .userStartedSpeaking(let userId, let volume):
+        print("用户 \(userId) 开始说话，音量: \(Int(volume * 100))%")
+    case .userStoppedSpeaking(let userId, let volume):
+        print("用户 \(userId) 停止说话，音量: \(Int(volume * 100))%")
+    case .dominantSpeakerChanged(let userId):
+        print("主讲人变更为: \(userId ?? "无")")
+    case .volumeUpdate(let volumeInfos):
+        // 处理音量信息更新
+        break
+    }
+}
+```
+
+**推流功能：**
+```swift
+let streamConfig = try StreamPushConfig(
+    url: "rtmp://live.example.com/live/stream123",
+    layout: StreamLayout(canvasWidth: 1280, canvasHeight: 720),
+    audioConfig: StreamAudioConfig(bitrate: 128),
+    videoConfig: StreamVideoConfig(width: 1280, height: 720, bitrate: 2000)
+)
+
+// 开始推流
+try await rtcProvider.startStreamPush(config: streamConfig)
+
+// 更新推流布局
+let newLayout = StreamLayout(canvasWidth: 1920, canvasHeight: 1080)
+try await rtcProvider.updateStreamPushLayout(layout: newLayout)
+
+// 停止推流
+try await rtcProvider.stopStreamPush()
+```
+
+**媒体中继：**
+```swift
+let relayConfig = try MediaRelayConfig(
+    sourceChannel: MediaRelayChannelInfo(
+        channelName: "source_channel",
+        userId: "user123",
+        token: "source_token"
+    ),
+    destinationChannels: [
+        MediaRelayChannelInfo(
+            channelName: "dest_channel_1",
+            userId: "user456",
+            token: "dest_token_1"
+        ),
+        MediaRelayChannelInfo(
+            channelName: "dest_channel_2",
+            userId: "user789",
+            token: "dest_token_2"
+        )
+    ]
+)
+
+// 开始媒体中继
+try await rtcProvider.startMediaRelay(config: relayConfig)
+
+// 暂停特定频道的中继
+try await rtcProvider.pauseMediaRelay(toChannel: "dest_channel_1")
+
+// 恢复特定频道的中继
+try await rtcProvider.resumeMediaRelay(toChannel: "dest_channel_1")
+
+// 停止媒体中继
+try await rtcProvider.stopMediaRelay()
+```
+
+#### Agora RTM 功能
+
+**用户登录：**
+```swift
+try await rtmProvider.login(userId: "user123", token: "rtm_token")
+let isLoggedIn = rtmProvider.isLoggedIn()
+
+// 登出
+try await rtmProvider.logout()
+```
+
+**频道管理：**
+```swift
+// 创建频道
+let channel = rtmProvider.createChannel(channelId: "chat_room")
+
+// 加入频道
+try await rtmProvider.joinChannel(channelId: "chat_room")
+
+// 获取频道成员
+let members = try await rtmProvider.getChannelMembers(channelId: "chat_room")
+let memberCount = try await rtmProvider.getChannelMemberCount(channelId: "chat_room")
+
+// 离开频道
+try await rtmProvider.leaveChannel(channelId: "chat_room")
+```
+
+**消息发送：**
+```swift
+let message = RTMMessage(text: "Hello, world!", senderId: "user123")
+
+// 发送点对点消息
+try await rtmProvider.sendPeerMessage(message, toPeer: "user456", options: nil)
+
+// 发送频道消息
+try await rtmProvider.sendChannelMessage(message, toChannel: "chat_room", options: nil)
+```
+
+**用户属性管理：**
+```swift
+// 设置本地用户属性
+try await rtmProvider.setLocalUserAttributes([
+    "nickname": "张三",
+    "status": "online",
+    "avatar": "https://example.com/avatar.jpg"
+])
+
+// 添加或更新属性
+try await rtmProvider.addOrUpdateLocalUserAttributes([
+    "mood": "happy",
+    "location": "北京"
+])
+
+// 删除特定属性
+try await rtmProvider.deleteLocalUserAttributesByKeys(["mood"])
+
+// 清除所有属性
+try await rtmProvider.clearLocalUserAttributes()
+
+// 获取用户属性
+let attributes = try await rtmProvider.getUserAttributes(userId: "user123")
+```
+
+**频道属性管理：**
+```swift
+// 设置频道属性
+try await rtmProvider.setChannelAttributes(
+    channelId: "chat_room",
+    attributes: [
+        "topic": "技术讨论",
+        "description": "iOS 开发技术交流群"
+    ],
+    options: nil
+)
+
+// 获取频道属性
+let channelAttrs = try await rtmProvider.getChannelAttributes(channelId: "chat_room")
+```
+
+**在线状态管理：**
+```swift
+// 查询用户在线状态
+let onlineStatus = try await rtmProvider.queryPeersOnlineStatus(userIds: ["user1", "user2", "user3"])
+
+// 订阅用户在线状态变化
+try await rtmProvider.subscribePeersOnlineStatus(userIds: ["user1", "user2"])
+
+// 取消订阅
+try await rtmProvider.unsubscribePeersOnlineStatus(userIds: ["user1"])
+
+// 获取已订阅的用户列表
+let subscribedUsers = try await rtmProvider.querySubscribedPeersList()
+```
+
+**事件处理：**
+```swift
+// 连接状态变化
+rtmProvider.onConnectionStateChanged { state, reason in
+    print("RTM 连接状态: \(state), 原因: \(reason)")
+}
+
+// 点对点消息接收
+rtmProvider.onPeerMessageReceived { message, peerId in
+    print("收到来自 \(peerId) 的消息: \(message.text)")
+}
+
+// 频道消息接收
+rtmProvider.onChannelMessageReceived { message, member, channelId in
+    print("频道 \(channelId) 收到来自 \(member.userId) 的消息: \(message.text)")
+}
+
+// 在线状态变化
+rtmProvider.onPeersOnlineStatusChanged { statusMap in
+    for (userId, isOnline) in statusMap {
+        print("用户 \(userId) \(isOnline ? "上线" : "下线")")
+    }
+}
+```
+
+**Token 管理：**
+```swift
+// 更新 Token
+try await rtcProvider.renewToken("new_rtc_token")
+try await rtmProvider.renewToken("new_rtm_token")
+
+// 设置 Token 过期处理器
+rtcProvider.onTokenWillExpire { secondsToExpire in
+    print("RTC Token 将在 \(secondsToExpire) 秒后过期")
+    // 在这里实现 Token 续期逻辑
+}
+
+rtmProvider.onTokenWillExpire {
+    print("RTM Token 即将过期")
+    // 在这里实现 Token 续期逻辑
+}
+```
 ```
 
 ### MockProviderFactory

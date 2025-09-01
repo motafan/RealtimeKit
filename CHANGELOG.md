@@ -5,6 +5,11 @@ All notable changes to RealtimeKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🔧 Changed
+- **依赖更新**: 升级 Agora RTM Apple SDK 从 Lite 分支到稳定版本 2.2.0+，提供更好的稳定性和功能支持
+
 ## [1.0.0] - 2024-12-XX
 
 ### 🎉 Initial Release

@@ -12,6 +12,12 @@
 - **Platforms**: iOS 13.0+, macOS 10.15+
 - **License**: MIT
 
+## 🔧 Latest Updates
+
+### Dependency Updates
+- **Agora RTM SDK**: 升级到稳定版本 2.2.0+（从 Lite 分支升级），提供更好的稳定性和功能支持
+- **Agora RTC SDK**: 继续使用 4.6.0+ 版本
+
 ## 🌟 What's New in 1.0.0
 
 ### 🚀 Core Features
