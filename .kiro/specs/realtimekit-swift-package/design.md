@@ -119,7 +119,7 @@ public protocol RTCProvider: AnyObject {
     // 基础生命周期
     func initialize(config: RTCConfig) async throws
     func createRoom(roomId: String) async throws -> RTCRoom
-    func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws
+    func joinRoom(roomId: String, userId: String, userRole: UserRole, token: String?) async throws
     func leaveRoom() async throws
     func switchUserRole(_ role: UserRole) async throws
     
@@ -2999,7 +2999,7 @@ public class RealtimeViewModel: ObservableObject {
             throw RealtimeError.noActiveSession
         }
         
-        try await realtimeManager.joinRoom(roomId: roomId, userId: session.userId, userRole: session.userRole)
+        try await realtimeManager.joinRoom(roomId: roomId, token: session.token)
     }
     
     public func toggleMicrophone() async throws {
@@ -3330,7 +3330,7 @@ func testNetworkErrorRecovery() async throws {
     
     // 模拟网络错误
     do {
-        try await manager.joinRoom(roomId: "invalid", userId: "test", userRole: .audience)
+        try await manager.joinRoom(roomId: "invalid", token: "invalid_token")
         #expect(Bool(false), "Should throw network error")
     } catch let error as LocalizedRealtimeError {
         #expect(error == .networkUnavailable)

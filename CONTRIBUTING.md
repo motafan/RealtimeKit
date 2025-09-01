@@ -442,7 +442,7 @@ class MockRTCProvider: RTCProvider {
     var joinRoomCalled = false
     var lastRoomId: String?
     
-    func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws {
+    func joinRoom(roomId: String, userId: String, userRole: UserRole, token: String?) async throws {
         joinRoomCalled = true
         lastRoomId = roomId
     }
@@ -457,7 +457,7 @@ struct MockProviderTests {
     func testMockProvider() async throws {
         let mockProvider = MockRTCProvider()
         
-        try await mockProvider.joinRoom(roomId: "test-room", userId: "test-user", userRole: .broadcaster)
+        try await mockProvider.joinRoom(roomId: "test-room", userId: "test-user", userRole: .broadcaster, token: nil)
         
         #expect(mockProvider.joinRoomCalled == true)
         #expect(mockProvider.lastRoomId == "test-room")

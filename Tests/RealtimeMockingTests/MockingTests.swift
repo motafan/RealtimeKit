@@ -93,7 +93,7 @@ struct MockingTests {
         #expect(room.roomId == "test_room")
         
         // 测试加入房间
-        try await provider.joinRoom(roomId: "test_room", userId: "test_user", userRole: .broadcaster)
+        try await provider.joinRoom(roomId: "test_room", userId: "test_user", userRole: .broadcaster, token: nil)
         
         // 测试切换角色
         try await provider.switchUserRole(.audience)
@@ -474,7 +474,7 @@ struct MockingTests {
         // 测试不同用户角色
         let room = try await provider.createRoom(roomId: "test_room")
         #expect(room.roomId == "test_room")
-        try await provider.joinRoom(roomId: "test_room", userId: "test_user", userRole: role)
+        try await provider.joinRoom(roomId: "test_room", userId: "test_user", userRole: role, token: nil)
         try await provider.switchUserRole(role)
         
         // 验证角色相关的权限

@@ -40,7 +40,7 @@ struct MediaRelayManagerTests {
         func createRoom(roomId: String) async throws -> RTCRoom { 
             return MockRTCRoom(roomId: roomId)
         }
-        func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws {}
+        func joinRoom(roomId: String, userId: String, userRole: UserRole, token: String?) async throws {}
         func leaveRoom() async throws {}
         func switchUserRole(_ role: UserRole) async throws {}
         func muteMicrophone(_ muted: Bool) async throws {}

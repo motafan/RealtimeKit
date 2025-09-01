@@ -145,7 +145,7 @@ public class MockRTCProvider: RTCProvider, @unchecked Sendable {
         return room
     }
     
-    public func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws {
+    public func joinRoom(roomId: String, userId: String, userRole: UserRole, token: String?) async throws {
         if configuration.simulateNetworkDelay {
             try await simulateDelay()
         }

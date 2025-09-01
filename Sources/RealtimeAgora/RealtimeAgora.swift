@@ -5,43 +5,252 @@ import RealtimeCore
 @preconcurrency import AgoraRtcKit
 @preconcurrency import AgoraRtmKit
 
-/// 声网异步操作包装函数
+/// 执行 Agora 异步操作的通用包装器
 ///
-/// 这个函数用于包装和处理声网SDK的异步操作，提供统一的错误处理机制。
-/// 函数会自动处理以下情况：
-/// - 成功：返回响应结果
-/// - 错误：抛出声网错误信息
-/// - 未知错误：抛出应用通用错误
+/// 提供统一的错误处理、日志记录和重试机制，用于包装 Agora SDK 的异步操作。
+/// 
+/// 功能特性：
+/// - 统一错误处理和转换
+/// - 结构化日志记录
+/// - 操作超时控制
+/// - 自动重试机制（可选）
+/// - 性能监控
 ///
-/// - Parameter completionBlock: 异步操作闭包，返回声网响应和错误信息
-/// - Returns: 声网通用响应对象
-/// - Throws: AgoraRtmErrorInfo 或 AppError ``AgoraRtmErrorCode`` notConnected = -10025
+/// - Parameters:
+///   - operation: 要执行的异步操作闭包
+///   - operationName: 操作名称，用于日志记录和错误追踪
+///   - timeout: 操作超时时间（秒），默认 30 秒
+///   - retryCount: 重试次数，默认 0（不重试）
+/// - Returns: Agora 通用响应对象
+/// - Throws: RealtimeError 类型的错误
 @discardableResult
-func performAgoraAsyncOperation(operation: @Sendable () async throws -> (response: AgoraRtmCommonResponse?, error: AgoraRtmErrorInfo?)) async throws -> AgoraRtmCommonResponse {
-    do {
-        let (response, error) = try await operation()
-
-        if let error {
-            // 记录错误信息
-            print("[Agora Error] Code: \(error.errorCode), Message: \(error.reason)")
-            // 处理声网SDK返回的错误
-            throw RealtimeError.internalError(code: error.errorCode.rawValue, description: error.reason)
-        } else if let response = response {
-            // 记录成功响应
-            print("[Agora Success] Response received")
+func executeAgoraOperation(
+    _ operation: @escaping @Sendable () async throws -> (response: AgoraRtmCommonResponse?, error: AgoraRtmErrorInfo?),
+    operationName: String = "Unknown",
+    timeout: TimeInterval = 30.0,
+    retryCount: Int = 0
+) async throws -> AgoraRtmCommonResponse {
+    let startTime = CFAbsoluteTimeGetCurrent()
+    var lastError: Error?
+    
+    // 重试循环
+    for attempt in 0...retryCount {
+        do {
+            // 执行带超时的操作
+            let result = try await withTimeout(timeout) {
+                try await operation()
+            }
+            
+            let (response, error) = result
+            let executionTime = CFAbsoluteTimeGetCurrent() - startTime
+            
+            // 处理错误响应
+            if let error = error {
+                let agoraError = RealtimeError.internalError(
+                    code: error.errorCode.rawValue,
+                    description: error.reason
+                )
+                
+                // 记录结构化错误日志
+                logAgoraOperation(
+                    name: operationName,
+                    success: false,
+                    executionTime: executionTime,
+                    attempt: attempt + 1,
+                    error: agoraError
+                )
+                
+                // 判断是否应该重试
+                if attempt < retryCount && shouldRetryError(error.errorCode) {
+                    lastError = agoraError
+                    try await Task.sleep(nanoseconds: UInt64(pow(2.0, Double(attempt)) * 1_000_000_000)) // 指数退避
+                    continue
+                }
+                
+                throw agoraError
+            }
+            
             // 处理成功响应
+            guard let response = response else {
+                let unknownError = RealtimeError.unknown(
+                    reason: "Operation '\(operationName)' completed without response or error"
+                )
+                
+                logAgoraOperation(
+                    name: operationName,
+                    success: false,
+                    executionTime: executionTime,
+                    attempt: attempt + 1,
+                    error: unknownError
+                )
+                
+                throw unknownError
+            }
+            
+            // 记录成功日志
+            logAgoraOperation(
+                name: operationName,
+                success: true,
+                executionTime: executionTime,
+                attempt: attempt + 1
+            )
+            
             return response
-        } else {
-            // 记录未知错误
-            print("[Agora Error] Unknown error occurred")
-            // 处理未知错误情况
-            throw RealtimeError.unknown(reason: "Unknown error occurred while performAgoraAsyncOperation.")
+            
+        } catch is CancellationError {
+            let timeoutError = RealtimeError.operationTimeout(operation: operationName)
+            logAgoraOperation(
+                name: operationName,
+                success: false,
+                executionTime: CFAbsoluteTimeGetCurrent() - startTime,
+                attempt: attempt + 1,
+                error: timeoutError
+            )
+            throw timeoutError
+            
+        } catch let error as RealtimeError {
+            // 已经是 RealtimeError，直接重新抛出
+            lastError = error
+            if attempt < retryCount && shouldRetryRealtimeError(error) {
+                try await Task.sleep(nanoseconds: UInt64(pow(2.0, Double(attempt)) * 1_000_000_000))
+                continue
+            }
+            throw error
+            
+        } catch {
+            // 其他未知错误
+            let wrappedError = RealtimeError.unknown(reason: "Unexpected error in '\(operationName)': \(error.localizedDescription)")
+            lastError = wrappedError
+            
+            logAgoraOperation(
+                name: operationName,
+                success: false,
+                executionTime: CFAbsoluteTimeGetCurrent() - startTime,
+                attempt: attempt + 1,
+                error: wrappedError
+            )
+            
+            if attempt < retryCount {
+                try await Task.sleep(nanoseconds: UInt64(pow(2.0, Double(attempt)) * 1_000_000_000))
+                continue
+            }
+            
+            throw wrappedError
         }
-    } catch {
-        // 记录异常错误
-        print("[Agora Exception] \(error)")
-        throw error
     }
+    
+    // 如果所有重试都失败了，抛出最后一个错误
+    throw lastError ?? RealtimeError.unknown(reason: "All retry attempts failed for operation '\(operationName)'")
+}
+
+// MARK: - Helper Functions
+
+/// 带超时的异步操作执行器
+private func withTimeout<T: Sendable>(
+    _ timeout: TimeInterval,
+    operation: @escaping @Sendable () async throws -> T
+) async throws -> T {
+    try await withThrowingTaskGroup(of: T.self) { group in
+        // 添加主操作任务
+        group.addTask {
+            try await operation()
+        }
+        
+        // 添加超时任务
+        group.addTask {
+            try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+            throw CancellationError()
+        }
+        
+        // 等待第一个完成的任务
+        let result = try await group.next()!
+        group.cancelAll()
+        return result
+    }
+}
+
+/// 判断 Agora 错误是否应该重试
+private func shouldRetryError(_ errorCode: AgoraRtmErrorCode) -> Bool {
+    // 基于错误代码的数值范围进行判断，而不是具体的枚举值
+    let code = errorCode.rawValue
+    
+    // 网络相关错误 (通常可重试)
+    if code == -10001 || // 网络不可用
+       code == -10002 || // 连接失败
+       code == -10003 || // 超时
+       code == -10025 || // 未连接
+       code == -10026 {  // 连接中断
+        return true
+    }
+    
+    // 认证相关错误 (不应重试，需要用户干预)
+    if code == -10004 || // 无效token
+       code == -10005 || // token过期
+       code == -10006 {  // 认证失败
+        return false
+    }
+    
+    // 状态相关错误 (不应重试)
+    if code == -10007 || // 未登录
+       code == -10008 || // 未加入频道
+       code == -10009 {  // 重复操作
+        return false
+    }
+    
+    // 其他错误默认不重试
+    return false
+}
+
+/// 判断 RealtimeError 是否应该重试
+private func shouldRetryRealtimeError(_ error: RealtimeError) -> Bool {
+    switch error {
+    case .connectionError, .operationTimeout:
+        return true
+    case .invalidToken, .configurationError:
+        return false
+    default:
+        return false
+    }
+}
+
+/// 记录 Agora 操作的结构化日志
+private func logAgoraOperation(
+    name: String,
+    success: Bool,
+    executionTime: TimeInterval,
+    attempt: Int,
+    error: Error? = nil
+) {
+    let status = success ? "SUCCESS" : "FAILED"
+    let timeString = String(format: "%.3f", executionTime * 1000) // 转换为毫秒
+    let attemptInfo = attempt > 1 ? " (attempt \(attempt))" : ""
+    
+    if success {
+        print("[Agora] \(status): \(name) completed in \(timeString)ms\(attemptInfo)")
+    } else {
+        let errorInfo = error?.localizedDescription ?? "Unknown error"
+        print("[Agora] \(status): \(name) failed in \(timeString)ms\(attemptInfo) - \(errorInfo)")
+    }
+}
+
+// MARK: - Backward Compatibility & Convenience Methods
+
+/// 简化版本的 Agora 操作执行器（向后兼容）
+///
+/// 为简单操作提供便捷接口，使用默认配置
+/// - Parameter operation: 要执行的异步操作闭包
+/// - Returns: Agora 通用响应对象
+/// - Throws: RealtimeError 类型的错误
+@discardableResult
+func performAgoraOperation(
+    _ operation: @escaping @Sendable () async throws -> (response: AgoraRtmCommonResponse?, error: AgoraRtmErrorInfo?)
+) async throws -> AgoraRtmCommonResponse {
+    try await executeAgoraOperation(
+        operation,
+        operationName: "Agora Operation",
+        timeout: 30.0,
+        retryCount: 0
+    )
 }
 #else
 // macOS stub - Agora SDK not available
@@ -259,7 +468,7 @@ public class AgoraRTCProvider: NSObject, RTCProvider, @unchecked Sendable {
         return room
     }
     
-    public func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws {
+    public func joinRoom(roomId: String, userId: String, userRole: UserRole, token: String?) async throws {
         guard isInitialized else {
             let errorMessage =
                 "RTC Provider not initialized"
@@ -278,7 +487,7 @@ public class AgoraRTCProvider: NSObject, RTCProvider, @unchecked Sendable {
         }
         
         // Agora 加入房间过程
-        try await agoraJoinRoom(roomId: roomId, userId: userId, userRole: userRole)
+        try await agoraJoinRoom(roomId: roomId, userId: userId, userRole: userRole, token: token)
         
         isConnected = true
         print("Agora: 用户 \(userId) 以 \(userRole.displayName) 身份加入房间 \(roomId)")
@@ -936,7 +1145,7 @@ public class AgoraRTCProvider: NSObject, RTCProvider, @unchecked Sendable {
         agoraKit?.setLogFilter(configuration.logLevel.agoraLogLevel.rawValue)
     }
     
-    private func agoraJoinRoom(roomId: String, userId: String, userRole: UserRole) async throws {
+    private func agoraJoinRoom(roomId: String, userId: String, userRole: UserRole, token: String?) async throws {
         guard let agoraKit else { 
             throw RealtimeError.configurationError("Agora RTC Engine not initialized")
         }
@@ -949,9 +1158,9 @@ public class AgoraRTCProvider: NSObject, RTCProvider, @unchecked Sendable {
             throw RealtimeError.configurationError("Failed to generate a valid user ID")
         }
 
-        // 加入频道
+        // 加入频道，使用提供的token
         let result = agoraKit.joinChannel(
-            byToken: nil, // Token should be provided separately when joining
+            byToken: token,
             channelId: roomId,
             info: nil,
             uid: uid
@@ -1134,11 +1343,11 @@ public class AgoraRTMProvider: NSObject, RTMProvider {
         
         self.config = config
         
-        // Agora RTM SDK 初始化过程
-        try await agoraRTMInitialization(config: config)
-
+        // 延迟 RTM SDK 初始化到 login 时，因为 Agora RTM SDK 需要 userId
+        // RTM SDK 将在 login 方法中完成初始化
+        
         isInitialized = true
-        print("Agora RTM Provider 初始化完成 - App ID: \(config.appId)")
+        print("Agora RTM Provider 配置完成 - App ID: \(config.appId)")
     }
 
     public func login(userId: String, token: String) async throws {
@@ -1148,8 +1357,8 @@ public class AgoraRTMProvider: NSObject, RTMProvider {
             throw RealtimeError.configurationError(errorMessage)
         }
 
-        guard let agoraRtmKit else {
-            throw RealtimeError.configurationError("Agora RTM Engine not initialized")
+        guard let config = self.config else {
+            throw RealtimeError.configurationError("RTM configuration not available")
         }
 
         guard !userId.isEmpty else {
@@ -1158,10 +1367,22 @@ public class AgoraRTMProvider: NSObject, RTMProvider {
             throw RealtimeError.authenticationError(errorMessage)
         }
         
-        // 调用 Agora RTM SDK 的登录方法
-        try await performAgoraAsyncOperation {
-            await agoraRtmKit.login(token)
+        // 如果 RTM SDK 还未初始化，现在进行初始化
+        if agoraRtmKit == nil {
+            try await agoraRTMInitialization(config: config, userId: userId)
         }
+        
+        guard let agoraRtmKit else {
+            throw RealtimeError.configurationError("Agora RTM Engine initialization failed")
+        }
+        
+        // 调用 Agora RTM SDK 的登录方法
+        try await executeAgoraOperation(
+            { await agoraRtmKit.login(token) },
+            operationName: "RTM Login",
+            timeout: 15.0,
+            retryCount: 2
+        )
         
         _isLoggedIn = true
         print("Agora RTM: 用户 \(userId) 登录")
@@ -1223,9 +1444,12 @@ public class AgoraRTMProvider: NSObject, RTMProvider {
         }
         
         // 调用 Agora RTM SDK 的加入频道方法
-        try await performAgoraAsyncOperation {
-            await agoraRtmKit.subscribe(channelName: channelId, option: nil)
-        }
+        try await executeAgoraOperation(
+            { await agoraRtmKit.subscribe(channelName: channelId, option: nil) },
+            operationName: "RTM Subscribe Channel",
+            timeout: 10.0,
+            retryCount: 1
+        )
         
         joinedChannels.insert(channelId)
         
@@ -1251,9 +1475,11 @@ public class AgoraRTMProvider: NSObject, RTMProvider {
         }
         
         // 调用 Agora RTM SDK 的离开频道方法
-        try await performAgoraAsyncOperation {
-            await agoraRtmKit.unsubscribe(channelId)
-        }
+        try await executeAgoraOperation(
+            { await agoraRtmKit.unsubscribe(channelId) },
+            operationName: "RTM Unsubscribe Channel",
+            timeout: 10.0
+        )
 
         joinedChannels.remove(channelId)
         
@@ -1353,13 +1579,18 @@ public class AgoraRTMProvider: NSObject, RTMProvider {
         let jsonEncoder = JSONEncoder()
         let data: Data = try jsonEncoder.encode(message)
         
-        try await performAgoraAsyncOperation {
-            let publishOptions = AgoraRtmPublishOptions()
-            publishOptions.customType = "RealtimeMessage"
-            publishOptions.channelType = .message
-            publishOptions.storeInHistory = false
-            return await agoraRtmKit.publish(channelName: channelId, data: data, option: publishOptions)
-        }
+        try await executeAgoraOperation(
+            {
+                let publishOptions = AgoraRtmPublishOptions()
+                publishOptions.customType = "RealtimeMessage"
+                publishOptions.channelType = .message
+                publishOptions.storeInHistory = false
+                return await agoraRtmKit.publish(channelName: channelId, data: data, option: publishOptions)
+            },
+            operationName: "RTM Publish Message",
+            timeout: 5.0,
+            retryCount: 1
+        )
 
         print("Agora RTM: 发送频道消息到 \(channelId): \(message.text)")
     }
@@ -1685,9 +1916,9 @@ public class AgoraRTMProvider: NSObject, RTMProvider {
     // MARK: - Private RTM Methods
 
     /// 调用 Agora RTM SDK 的初始化方法
-    private func agoraRTMInitialization(config: RTMConfig) async throws {
+    private func agoraRTMInitialization(config: RTMConfig, userId: String) async throws {
         // 调用 Agora RTM SDK 的初始化方法
-        let agoraRtmClientConfig = AgoraRtmClientConfig(appId: config.appId, userId: "uninitialized")
+        let agoraRtmClientConfig = AgoraRtmClientConfig(appId: config.appId, userId: userId)
         agoraRtmKit = try AgoraRtmClientKit(agoraRtmClientConfig, delegate: self)
     }
     

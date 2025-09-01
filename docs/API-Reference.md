@@ -276,7 +276,7 @@ public protocol RTCProvider: AnyObject {
     // 生命周期管理
     func initialize(config: RTCConfig) async throws
     func createRoom(roomId: String) async throws -> RTCRoom
-    func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws
+    func joinRoom(roomId: String, userId: String, userRole: UserRole, token: String?) async throws
     func leaveRoom() async throws
     
     // 音频控制
@@ -1128,7 +1128,7 @@ try await rtmProvider.initialize(config: rtmConfig)
 ```swift
 // 创建和加入房间
 let room = try await rtcProvider.createRoom(roomId: "meeting_room_001")
-try await rtcProvider.joinRoom(roomId: "meeting_room_001", userId: "user123", userRole: .broadcaster)
+try await rtcProvider.joinRoom(roomId: "meeting_room_001", userId: "user123", userRole: .broadcaster, token: "your_token_here")
 
 // 角色切换
 try await rtcProvider.switchUserRole(.audience)

@@ -44,7 +44,7 @@
 public protocol RTCProvider {
     func initialize(config: RTCConfig) async throws
     func createRoom(roomId: String) async throws -> RTCRoom
-    func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws
+    func joinRoom(roomId: String, userId: String, userRole: UserRole, token: String?) async throws
     func leaveRoom() async throws
     func switchUserRole(_ role: UserRole) async throws
     
@@ -617,7 +617,7 @@ public class RealtimeManager: ObservableObject {
             throw RealtimeError.noActiveSession
         }
         
-        try await rtcProvider.joinRoom(roomId: roomId, userId: session.userId, userRole: session.userRole)
+        try await rtcProvider.joinRoom(roomId: roomId, userId: session.userId, userRole: session.userRole, token: session.token)
         await MainActor.run {
             connectionState = .connected
         }

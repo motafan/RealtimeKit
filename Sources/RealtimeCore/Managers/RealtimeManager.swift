@@ -1705,7 +1705,7 @@ public class RealtimeManager: ObservableObject {
         return room
     }
     
-    public func joinRoom(roomId: String) async throws {
+    public func joinRoom(roomId: String, token: String? = nil) async throws {
         guard let rtcProvider = rtcProvider,
               let currentSession = currentSession else {
             throw RealtimeError.noActiveSession
@@ -1716,11 +1716,15 @@ public class RealtimeManager: ObservableObject {
             throw RealtimeError.insufficientPermissions(currentSession.userRole)
         }
         
+        // 获取token：优先使用传入的token，否则使用存储的token
+        let authToken = token ?? authTokens[currentProvider.rawValue]
+        
         // 加入RTC房间（音视频通话）
         try await rtcProvider.joinRoom(
             roomId: roomId,
             userId: currentSession.userId,
-            userRole: currentSession.userRole
+            userRole: currentSession.userRole,
+            token: authToken
         )
         
         // 根据角色配置音频权限（这里才是正确的地方）

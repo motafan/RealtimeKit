@@ -151,7 +151,7 @@ internal class InternalMockRTCProvider: RTCProvider {
         return room
     }
     
-    func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws {
+    func joinRoom(roomId: String, userId: String, userRole: UserRole, token: String?) async throws {
         guard isInitialized else {
             throw RealtimeError.configurationError("Provider 未初始化")
         }
@@ -160,7 +160,7 @@ internal class InternalMockRTCProvider: RTCProvider {
             currentRoom = MockRTCRoom(roomId: roomId)
         }
         
-        print("MockRTCProvider 加入房间: \(roomId), 用户: \(userId), 角色: \(userRole.displayName)")
+        print("MockRTCProvider 加入房间: \(roomId), 用户: \(userId), 角色: \(userRole.displayName), token: \(token != nil ? "已提供" : "未提供")")
     }
     
     func leaveRoom() async throws {

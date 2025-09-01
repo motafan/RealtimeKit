@@ -19,7 +19,8 @@ public protocol RTCProvider: AnyObject {
     ///   - roomId: 要加入的房间标识符
     ///   - userId: 用户标识符
     ///   - userRole: 用户在房间中的角色（主播、观众等）
-    func joinRoom(roomId: String, userId: String, userRole: UserRole) async throws
+    ///   - token: 用于身份验证的访问令牌
+    func joinRoom(roomId: String, userId: String, userRole: UserRole, token: String?) async throws
     
     /// 离开当前房间
     func leaveRoom() async throws

@@ -69,7 +69,7 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
     // MARK: - Generic Errors
     case unknown(reason: String?)
     case operationCancelled
-    case operationTimeout
+    case operationTimeout(operation: String)
     case internalError(code: Int, description: String?)
     
     // MARK: - LocalizedError Protocol Implementation
@@ -470,8 +470,8 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
             return "Unknown error" + (reason != nil ? ": \(reason!)" : "")
         case .operationCancelled:
             return "Operation cancelled"
-        case .operationTimeout:
-            return "Operation timeout"
+        case .operationTimeout(let operation):
+            return "Operation timeout: \(operation)"
         case .internalError(let code, let description):
             return "Internal error (\(code))" + (description != nil ? ": \(description!)" : "")
         }
@@ -564,8 +564,8 @@ public enum RealtimeError: Error, LocalizedError, Sendable, Equatable {
             return lhsReason == rhsReason
         case (.operationCancelled, .operationCancelled):
             return true
-        case (.operationTimeout, .operationTimeout):
-            return true
+        case (.operationTimeout(let lhsOp), .operationTimeout(let rhsOp)):
+            return lhsOp == rhsOp
         case (.internalError(let lhsCode, let lhsDescription), .internalError(let rhsCode, let rhsDescription)):
             return lhsCode == rhsCode && lhsDescription == rhsDescription
         default:
