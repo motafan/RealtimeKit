@@ -535,44 +535,125 @@ public class AgoraRTCProvider: NSObject, RTCProvider, @unchecked Sendable {
             throw RealtimeError.streamPushFailed(reason: errorMessage)
         }
         
-        guard let agoraKit, let config = streamPushConfig else {
-            throw RealtimeError.configurationError("Agora RTC Engine or stream config not available")
+        guard let config = streamPushConfig else {
+            throw RealtimeError.configurationError("Stream config not available")
         }
+
+        guard let agoraKit else {
+            throw RealtimeError.configurationError("Agora RTC Engine not initialized")
+        }
+
+        // 验证布局配置
+        try layout.validate()
         
         // 更新转码设置
         let transcoding = AgoraLiveTranscoding()
-        transcoding.size = CGSize(width: config.videoConfig.width, height: config.videoConfig.height)
+        transcoding.size = CGSize(width: layout.canvasWidth, height: layout.canvasHeight)
         transcoding.videoBitrate = config.videoConfig.bitrate
         transcoding.videoFramerate = config.videoConfig.frameRate
         transcoding.audioSampleRate = .type44100
         transcoding.audioBitrate = config.audioConfig.bitrate
         transcoding.audioChannels = config.audioConfig.channels
         
-        // 根据布局类型配置用户布局
+        // 配置用户区域
+        var transcodingUsers: [AgoraLiveTranscodingUser] = []
+        
+        for userRegion in layout.userRegions {
+            let transcodingUser = AgoraLiveTranscodingUser()
+            transcodingUser.uid = UInt(userRegion.userId) ?? 0
+            transcodingUser.rect = CGRect(
+                x: userRegion.x,
+                y: userRegion.y,
+                width: userRegion.width,
+                height: userRegion.height
+            )
+            transcodingUser.alpha = userRegion.alpha
+            // Note: AgoraLiveTranscodingUser doesn't have renderMode property
+            // The render mode is handled by the Agora SDK internally
+            
+            transcodingUsers.append(transcodingUser)
+        }
+        
+        transcoding.transcodingUsers = transcodingUsers
+        
+        // 根据布局类型进行特殊配置
         switch layout.type {
         case .floating:
-            // 浮动布局配置
+            // 浮动布局：用户可以自由定位
             break
         case .bestFit:
-            // 最佳适配布局配置
-            break
+            // 最佳适配布局：自动调整用户区域以最佳适配画布
+            configureBestFitLayout(transcoding: transcoding, layout: layout)
         case .vertical:
-            // 垂直布局配置
-            break
+            // 垂直布局：用户垂直排列
+            configureVerticalLayout(transcoding: transcoding, layout: layout)
         case .custom:
-            // 自定义布局配置
+            // 自定义布局：使用用户提供的区域配置
             break
         }
         
-        // Note: setLiveTranscoding may not be available in this SDK version
-        // Using updateRtmpTranscoding instead or skip for now
-        let result = 0 // Placeholder - actual implementation depends on Agora SDK version
+        // Note: AgoraLiveTranscoding doesn't have backgroundImage property
+        // Background images would need to be handled differently in Agora SDK
+        
+        // 更新转码配置 - 使用正确的方法名
+        let result = agoraKit.updateRtmpTranscoding(transcoding)
         
         guard result == 0 else {
             throw RealtimeError.streamPushFailed(reason: "Failed to update stream layout: \(result)")
         }
         
-        print("Agora: 更新推流布局")
+        print("Agora: 更新推流布局成功 - 类型: \(layout.type.displayName), 画布: \(layout.canvasWidth)x\(layout.canvasHeight), 用户区域: \(layout.userRegions.count)")
+    }
+    
+    // MARK: - Layout Configuration Helpers
+    
+    private func configureBestFitLayout(transcoding: AgoraLiveTranscoding, layout: StreamLayout) {
+        // 最佳适配布局：根据用户数量自动计算最佳布局
+        let userCount = layout.userRegions.count
+        guard userCount > 0, let transcodingUsers = transcoding.transcodingUsers else { return }
+        
+        let canvasWidth = layout.canvasWidth
+        let canvasHeight = layout.canvasHeight
+        
+        // 计算网格布局
+        let cols = Int(ceil(sqrt(Double(userCount))))
+        let rows = Int(ceil(Double(userCount) / Double(cols)))
+        
+        let userWidth = canvasWidth / cols
+        let userHeight = canvasHeight / rows
+        
+        // 更新转码用户位置
+        for (index, transcodingUser) in transcodingUsers.enumerated() {
+            let row = index / cols
+            let col = index % cols
+            
+            transcodingUser.rect = CGRect(
+                x: col * userWidth,
+                y: row * userHeight,
+                width: userWidth,
+                height: userHeight
+            )
+        }
+    }
+    
+    private func configureVerticalLayout(transcoding: AgoraLiveTranscoding, layout: StreamLayout) {
+        // 垂直布局：用户垂直排列
+        let userCount = layout.userRegions.count
+        guard userCount > 0, let transcodingUsers = transcoding.transcodingUsers else { return }
+        
+        let canvasWidth = layout.canvasWidth
+        let canvasHeight = layout.canvasHeight
+        let userHeight = canvasHeight / userCount
+        
+        // 更新转码用户位置
+        for (index, transcodingUser) in transcodingUsers.enumerated() {
+            transcodingUser.rect = CGRect(
+                x: 0,
+                y: index * userHeight,
+                width: canvasWidth,
+                height: userHeight
+            )
+        }
     }
     
     // MARK: - Media Relay
@@ -907,10 +988,7 @@ public class AgoraRTCProvider: NSObject, RTCProvider, @unchecked Sendable {
             throw RealtimeError.configurationError("Failed to switch role: \(result)")
         }
     }
-    
-
 }
-
 
 extension AgoraRTCProvider: AgoraRtcEngineDelegate {
 

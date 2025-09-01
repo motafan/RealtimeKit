@@ -33,13 +33,13 @@
           "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
           "name" : "AgoraRtcEngine_iOS"
         },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraContentInspectExtension/AgoraContentInspectExtension.xcframework",
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/video_dec/video_dec.xcframework",
         "source" : {
-          "checksum" : "bdd43108421dd341115a5abf4940cb3da33aed23442bb0e7d3131957e510bde1",
+          "checksum" : "7dee6417eb03f23aff70018885c5026587686c2568a20642b900615a1c26bf33",
           "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraContentInspectExtension.xcframework.zip"
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/video_dec.xcframework.zip"
         },
-        "targetName" : "AgoraContentInspectExtension"
+        "targetName" : "video_dec"
       },
       {
         "kind" : {
@@ -53,33 +53,13 @@
           "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
           "name" : "AgoraRtcEngine_iOS"
         },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/Agorafdkaac/Agorafdkaac.xcframework",
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraClearVisionExtension/AgoraClearVisionExtension.xcframework",
         "source" : {
-          "checksum" : "b7bc7ee9396b9b8e38d30ed207c2ff8b3ab7a2cb1c553289b994d3aa36758ae9",
+          "checksum" : "f8f6d7510783360aa456fd2ffe58d17e807bfa46f4288d0f17e02a255fdbe083",
           "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/Agorafdkaac.xcframework.zip"
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraClearVisionExtension.xcframework.zip"
         },
-        "targetName" : "Agorafdkaac"
-      },
-      {
-        "kind" : {
-          "xcframework" : {
-
-          }
-        },
-        "packageRef" : {
-          "identity" : "agorartcengine_ios",
-          "kind" : "remoteSourceControl",
-          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
-          "name" : "AgoraRtcEngine_iOS"
-        },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraVideoQualityAnalyzerExtension/AgoraVideoQualityAnalyzerExtension.xcframework",
-        "source" : {
-          "checksum" : "8d66fa58a95f197dbe37bf70d19b4b732ad2adbdcbda1707344b3bb171b06f8d",
-          "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraVideoQualityAnalyzerExtension.xcframework.zip"
-        },
-        "targetName" : "AgoraVideoQualityAnalyzerExtension"
+        "targetName" : "AgoraClearVisionExtension"
       },
       {
         "kind" : {
@@ -113,6 +93,86 @@
           "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
           "name" : "AgoraRtcEngine_iOS"
         },
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraVideoEncoderExtension/AgoraVideoEncoderExtension.xcframework",
+        "source" : {
+          "checksum" : "1ef22bee65845919ebf4e4623ac5f97470ed1453d3a26ce197489b28e4d49246",
+          "type" : "remote",
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraVideoEncoderExtension.xcframework.zip"
+        },
+        "targetName" : "AgoraVideoEncoderExtension"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "agorartcengine_ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
+          "name" : "AgoraRtcEngine_iOS"
+        },
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraVideoQualityAnalyzerExtension/AgoraVideoQualityAnalyzerExtension.xcframework",
+        "source" : {
+          "checksum" : "8d66fa58a95f197dbe37bf70d19b4b732ad2adbdcbda1707344b3bb171b06f8d",
+          "type" : "remote",
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraVideoQualityAnalyzerExtension.xcframework.zip"
+        },
+        "targetName" : "AgoraVideoQualityAnalyzerExtension"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "agorartcengine_ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
+          "name" : "AgoraRtcEngine_iOS"
+        },
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/Agorafdkaac/Agorafdkaac.xcframework",
+        "source" : {
+          "checksum" : "b7bc7ee9396b9b8e38d30ed207c2ff8b3ab7a2cb1c553289b994d3aa36758ae9",
+          "type" : "remote",
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/Agorafdkaac.xcframework.zip"
+        },
+        "targetName" : "Agorafdkaac"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "agorartcengine_ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
+          "name" : "AgoraRtcEngine_iOS"
+        },
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraAiEchoCancellationLLExtension/AgoraAiEchoCancellationLLExtension.xcframework",
+        "source" : {
+          "checksum" : "a8680a8525ff36584d60da992ea4ac30df1db69fcc423247ddd446f19e7d4378",
+          "type" : "remote",
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraAiEchoCancellationLLExtension.xcframework.zip"
+        },
+        "targetName" : "AgoraAiEchoCancellationLLExtension"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "agorartcengine_ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
+          "name" : "AgoraRtcEngine_iOS"
+        },
         "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraVideoAv1EncoderExtension/AgoraVideoAv1EncoderExtension.xcframework",
         "source" : {
           "checksum" : "f4b25809d64ef3a2e5962668ee9c2dc5fb839cad171239c89e5d88f4615c59af",
@@ -120,6 +180,26 @@
           "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraVideoAv1EncoderExtension.xcframework.zip"
         },
         "targetName" : "AgoraVideoAv1EncoderExtension"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "agorartcengine_ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
+          "name" : "AgoraRtcEngine_iOS"
+        },
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraFaceCaptureExtension/AgoraFaceCaptureExtension.xcframework",
+        "source" : {
+          "checksum" : "26923e8f76c40d9f893484242298166a57c0201e4b12c8af9e7eecf276be01d4",
+          "type" : "remote",
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraFaceCaptureExtension.xcframework.zip"
+        },
+        "targetName" : "AgoraFaceCaptureExtension"
       },
       {
         "kind" : {
@@ -153,13 +233,53 @@
           "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
           "name" : "AgoraRtcEngine_iOS"
         },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraVideoEncoderExtension/AgoraVideoEncoderExtension.xcframework",
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraSoundTouch/AgoraSoundTouch.xcframework",
         "source" : {
-          "checksum" : "1ef22bee65845919ebf4e4623ac5f97470ed1453d3a26ce197489b28e4d49246",
+          "checksum" : "d6c24489d543c0036fec57f45f548b73bb5cec0231d451e5c7fe521096518b4d",
           "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraVideoEncoderExtension.xcframework.zip"
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraSoundTouch.xcframework.zip"
         },
-        "targetName" : "AgoraVideoEncoderExtension"
+        "targetName" : "AgoraSoundTouch"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "agorartcengine_ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
+          "name" : "AgoraRtcEngine_iOS"
+        },
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/video_enc/video_enc.xcframework",
+        "source" : {
+          "checksum" : "d5cf00b8770c2c53a6b43e42474f0bd0e5185b06df34db94b9cebb5adf1ab062",
+          "type" : "remote",
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/video_enc.xcframework.zip"
+        },
+        "targetName" : "video_enc"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "agorartcengine_ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
+          "name" : "AgoraRtcEngine_iOS"
+        },
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraSpatialAudioExtension/AgoraSpatialAudioExtension.xcframework",
+        "source" : {
+          "checksum" : "f7cad45f618488ebf04fe1c8cdfb013503fde743f6c98d4dfb90bcd77a2085a5",
+          "type" : "remote",
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraSpatialAudioExtension.xcframework.zip"
+        },
+        "targetName" : "AgoraSpatialAudioExtension"
       },
       {
         "kind" : {
@@ -213,13 +333,13 @@
           "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
           "name" : "AgoraRtcEngine_iOS"
         },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraSpatialAudioExtension/AgoraSpatialAudioExtension.xcframework",
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraReplayKitExtension/AgoraReplayKitExtension.xcframework",
         "source" : {
-          "checksum" : "f7cad45f618488ebf04fe1c8cdfb013503fde743f6c98d4dfb90bcd77a2085a5",
+          "checksum" : "60cdf0d0e74daa7834a433335fdbaef35f55c11ca10e524b6848847a763906e1",
           "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraSpatialAudioExtension.xcframework.zip"
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraReplayKitExtension.xcframework.zip"
         },
-        "targetName" : "AgoraSpatialAudioExtension"
+        "targetName" : "AgoraReplayKitExtension"
       },
       {
         "kind" : {
@@ -233,13 +353,33 @@
           "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
           "name" : "AgoraRtcEngine_iOS"
         },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraLipSyncExtension/AgoraLipSyncExtension.xcframework",
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraAudioBeautyExtension/AgoraAudioBeautyExtension.xcframework",
         "source" : {
-          "checksum" : "57fd60a97afa464ea565393816a6878a33cb5e7bda9c07932769781142266544",
+          "checksum" : "2de624ae87eaec09ecf6922cf0287c7c769eb0c9967e7c196a44050f1fcefe3f",
           "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraLipSyncExtension.xcframework.zip"
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraAudioBeautyExtension.xcframework.zip"
         },
-        "targetName" : "AgoraLipSyncExtension"
+        "targetName" : "AgoraAudioBeautyExtension"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "agorartcengine_ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
+          "name" : "AgoraRtcEngine_iOS"
+        },
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraVideoDecoderExtension/AgoraVideoDecoderExtension.xcframework",
+        "source" : {
+          "checksum" : "5fc03d081e30f9313702d65c10f152a48414c59da9b5456c69aabce3e1511ff6",
+          "type" : "remote",
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraVideoDecoderExtension.xcframework.zip"
+        },
+        "targetName" : "AgoraVideoDecoderExtension"
       },
       {
         "kind" : {
@@ -293,6 +433,46 @@
           "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
           "name" : "AgoraRtcEngine_iOS"
         },
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraLipSyncExtension/AgoraLipSyncExtension.xcframework",
+        "source" : {
+          "checksum" : "57fd60a97afa464ea565393816a6878a33cb5e7bda9c07932769781142266544",
+          "type" : "remote",
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraLipSyncExtension.xcframework.zip"
+        },
+        "targetName" : "AgoraLipSyncExtension"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "agorartcengine_ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
+          "name" : "AgoraRtcEngine_iOS"
+        },
+        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraContentInspectExtension/AgoraContentInspectExtension.xcframework",
+        "source" : {
+          "checksum" : "bdd43108421dd341115a5abf4940cb3da33aed23442bb0e7d3131957e510bde1",
+          "type" : "remote",
+          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraContentInspectExtension.xcframework.zip"
+        },
+        "targetName" : "AgoraContentInspectExtension"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "agorartcengine_ios",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
+          "name" : "AgoraRtcEngine_iOS"
+        },
         "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraAiNoiseSuppressionExtension/AgoraAiNoiseSuppressionExtension.xcframework",
         "source" : {
           "checksum" : "b496357a105fee8633e306aacf9856afbb41a5117311d5ce7a30913ca6e40ee1",
@@ -313,106 +493,6 @@
           "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
           "name" : "AgoraRtcEngine_iOS"
         },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/video_dec/video_dec.xcframework",
-        "source" : {
-          "checksum" : "7dee6417eb03f23aff70018885c5026587686c2568a20642b900615a1c26bf33",
-          "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/video_dec.xcframework.zip"
-        },
-        "targetName" : "video_dec"
-      },
-      {
-        "kind" : {
-          "xcframework" : {
-
-          }
-        },
-        "packageRef" : {
-          "identity" : "agorartcengine_ios",
-          "kind" : "remoteSourceControl",
-          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
-          "name" : "AgoraRtcEngine_iOS"
-        },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraClearVisionExtension/AgoraClearVisionExtension.xcframework",
-        "source" : {
-          "checksum" : "f8f6d7510783360aa456fd2ffe58d17e807bfa46f4288d0f17e02a255fdbe083",
-          "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraClearVisionExtension.xcframework.zip"
-        },
-        "targetName" : "AgoraClearVisionExtension"
-      },
-      {
-        "kind" : {
-          "xcframework" : {
-
-          }
-        },
-        "packageRef" : {
-          "identity" : "agorartcengine_ios",
-          "kind" : "remoteSourceControl",
-          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
-          "name" : "AgoraRtcEngine_iOS"
-        },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraReplayKitExtension/AgoraReplayKitExtension.xcframework",
-        "source" : {
-          "checksum" : "60cdf0d0e74daa7834a433335fdbaef35f55c11ca10e524b6848847a763906e1",
-          "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraReplayKitExtension.xcframework.zip"
-        },
-        "targetName" : "AgoraReplayKitExtension"
-      },
-      {
-        "kind" : {
-          "xcframework" : {
-
-          }
-        },
-        "packageRef" : {
-          "identity" : "agorartcengine_ios",
-          "kind" : "remoteSourceControl",
-          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
-          "name" : "AgoraRtcEngine_iOS"
-        },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraSoundTouch/AgoraSoundTouch.xcframework",
-        "source" : {
-          "checksum" : "d6c24489d543c0036fec57f45f548b73bb5cec0231d451e5c7fe521096518b4d",
-          "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraSoundTouch.xcframework.zip"
-        },
-        "targetName" : "AgoraSoundTouch"
-      },
-      {
-        "kind" : {
-          "xcframework" : {
-
-          }
-        },
-        "packageRef" : {
-          "identity" : "agorartcengine_ios",
-          "kind" : "remoteSourceControl",
-          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
-          "name" : "AgoraRtcEngine_iOS"
-        },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraVideoDecoderExtension/AgoraVideoDecoderExtension.xcframework",
-        "source" : {
-          "checksum" : "5fc03d081e30f9313702d65c10f152a48414c59da9b5456c69aabce3e1511ff6",
-          "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraVideoDecoderExtension.xcframework.zip"
-        },
-        "targetName" : "AgoraVideoDecoderExtension"
-      },
-      {
-        "kind" : {
-          "xcframework" : {
-
-          }
-        },
-        "packageRef" : {
-          "identity" : "agorartcengine_ios",
-          "kind" : "remoteSourceControl",
-          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
-          "name" : "AgoraRtcEngine_iOS"
-        },
         "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraVideoSegmentationExtension/AgoraVideoSegmentationExtension.xcframework",
         "source" : {
           "checksum" : "0ec4ed6ec9130d938076e36472b2bc5935b832df81cb8f29a4ccc656adf0d9d8",
@@ -420,86 +500,6 @@
           "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraVideoSegmentationExtension.xcframework.zip"
         },
         "targetName" : "AgoraVideoSegmentationExtension"
-      },
-      {
-        "kind" : {
-          "xcframework" : {
-
-          }
-        },
-        "packageRef" : {
-          "identity" : "agorartcengine_ios",
-          "kind" : "remoteSourceControl",
-          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
-          "name" : "AgoraRtcEngine_iOS"
-        },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraAiEchoCancellationLLExtension/AgoraAiEchoCancellationLLExtension.xcframework",
-        "source" : {
-          "checksum" : "a8680a8525ff36584d60da992ea4ac30df1db69fcc423247ddd446f19e7d4378",
-          "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraAiEchoCancellationLLExtension.xcframework.zip"
-        },
-        "targetName" : "AgoraAiEchoCancellationLLExtension"
-      },
-      {
-        "kind" : {
-          "xcframework" : {
-
-          }
-        },
-        "packageRef" : {
-          "identity" : "agorartcengine_ios",
-          "kind" : "remoteSourceControl",
-          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
-          "name" : "AgoraRtcEngine_iOS"
-        },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraAudioBeautyExtension/AgoraAudioBeautyExtension.xcframework",
-        "source" : {
-          "checksum" : "2de624ae87eaec09ecf6922cf0287c7c769eb0c9967e7c196a44050f1fcefe3f",
-          "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraAudioBeautyExtension.xcframework.zip"
-        },
-        "targetName" : "AgoraAudioBeautyExtension"
-      },
-      {
-        "kind" : {
-          "xcframework" : {
-
-          }
-        },
-        "packageRef" : {
-          "identity" : "agorartcengine_ios",
-          "kind" : "remoteSourceControl",
-          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
-          "name" : "AgoraRtcEngine_iOS"
-        },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/AgoraFaceCaptureExtension/AgoraFaceCaptureExtension.xcframework",
-        "source" : {
-          "checksum" : "26923e8f76c40d9f893484242298166a57c0201e4b12c8af9e7eecf276be01d4",
-          "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/AgoraFaceCaptureExtension.xcframework.zip"
-        },
-        "targetName" : "AgoraFaceCaptureExtension"
-      },
-      {
-        "kind" : {
-          "xcframework" : {
-
-          }
-        },
-        "packageRef" : {
-          "identity" : "agorartcengine_ios",
-          "kind" : "remoteSourceControl",
-          "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
-          "name" : "AgoraRtcEngine_iOS"
-        },
-        "path" : "/Users/sondra/Documents/GitHub/RealtimeKit/.build/artifacts/agorartcengine_ios/video_enc/video_enc.xcframework",
-        "source" : {
-          "checksum" : "d5cf00b8770c2c53a6b43e42474f0bd0e5185b06df34db94b9cebb5adf1ab062",
-          "type" : "remote",
-          "url" : "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.0/video_enc.xcframework.zip"
-        },
-        "targetName" : "video_enc"
       },
       {
         "kind" : {
